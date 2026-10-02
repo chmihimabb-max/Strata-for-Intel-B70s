@@ -10,6 +10,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "strata/kernels/flag.hpp"   // strata_flag_read: the flag word's read spelling per backend (M5b)
+
 namespace strata::kernels {
 namespace {
 
@@ -423,8 +425,12 @@ void gdn_step_norm_multi(float* state, const float* h, int conv_channels, const 
 }
 
 namespace {
+// The flag read is strata_flag_read (include/strata/kernels/flag.hpp): a volatile load under CUDA/HIP, and a
+// SYSTEM-scope atomic load under SYCL, because a poll loop over DEVICE flag memory has to be read in a way the
+// device's own cache does not answer from a stale line (measured, M5b: a volatile poll of a device word saw
+// only the last value of a burst, the system-scope atomic saw all of them).
 __global__ void wait_flag_ge_kernel(const volatile uint32_t* flag, uint32_t value) {
-    while (*flag < value) strata_spin_pause();
+    while (strata_flag_read(flag) < value) strata_spin_pause();
     __threadfence_system();
 }
 }  // namespace
@@ -472,8 +478,10 @@ __global__ void resident_plan_kernel(const int32_t* __restrict__ ids, int n, int
     *skip = ring;
 }
 __global__ void wait_flag_ge_or_kernel(const volatile uint32_t* flag, uint32_t value, const volatile uint32_t* skip) {
-    if (*skip == value) return;
-    while (*flag < value) strata_spin_pause();
+    if (*skip == value) return;   // `skip` is DEVICE memory written by resident_plan_kernel on this stream: the
+                                  // plain volatile read is the right spelling for it (and the read that matters
+                                  // for correctness, the flag, goes through strata_flag_read below)
+    while (strata_flag_read(flag) < value) strata_spin_pause();
     __threadfence_system();
 }
 __global__ void copy_i32_unless_kernel(int32_t* __restrict__ dst, const volatile int32_t* src, int n,

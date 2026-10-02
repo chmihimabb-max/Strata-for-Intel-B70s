@@ -74,6 +74,30 @@ bool mapped(size_t bytes, void** h, void** d) {
     return cudaHostGetDevicePointer(d, *h, 0) == cudaSuccess;
 }
 
+/// The FLAG words are the one staging buffer that is NOT mapped (Strata XPU M5b, card t_3ebd6083).
+///
+/// Every other buffer here is written by the host and read once by a kernel, and a mapped buffer is fine for
+/// that: probe_m5b_payload.cpp measured a 16 KiB and a 1 MiB mapped payload rewritten per round and read once
+/// to be read FRESH every time (12 of 12 rounds).  A flag is different - it is read by a POLL LOOP, and on this
+/// backend a poll loop over mapped host memory never sees the host's stores: the device's cache answers from a
+/// stale line, `_mm_clflush`/`_mm_sfence`/non-temporal stores do not change that, and a system-scope atomic
+/// load of mapped host memory is unreliable too (measured: one transition to the last value after ~300 ms, and
+/// a sparse subset for the atomic spellings - probes probe_m5b_observe.cpp / probe_m5b_flush.cpp,
+/// plan-evidence/m5b-observe-run.log, m5b-flush-run.log).
+///
+/// So the host keeps a mapped word for its OWN reads (the diag line, the raise-only CAS) but the word the
+/// KERNELS read is DEVICE memory, and the host publishes into it with a 4-byte copy (publish_flag /
+/// raise_flag_dev).  That combination - device flag word, host publication by copy, system-scope atomic poll
+/// (include/strata/kernels/flag.hpp) - is what measured 10 of 10 values in three separate runs, and what makes
+/// tests/sycl/handoff.cpp complete (100 of 100 rounds; it used to hang at 300 s, M2 Risk 8).
+bool flag_mapped(size_t bytes, void** h, void** d) {
+    if (cudaHostAlloc(h, bytes, cudaHostAllocMapped) != cudaSuccess) return false;
+    std::memset(*h, 0, bytes);
+    *d = nullptr;
+    if (cudaMalloc(d, bytes) != cudaSuccess) return false;
+    return cudaMemset(*d, 0, bytes) == cudaSuccess;
+}
+
 strata::kernels::QsaShapes shapes_of(const ModelGeometry& g) {
     strata::kernels::QsaShapes s = strata::kernels::qsa_real_shapes();
     s.n_head = g.n_head;
@@ -133,15 +157,40 @@ const int64_t g_test_stall = [] {
 }();
 }  // namespace
 
+/// Publish a flag the KERNELS are waiting on: the store goes to the host's own word (the diag line and the
+/// engine's own reads use it) and then, as a 4-byte copy on the copy stream, into the DEVICE word the spin
+/// kernels read.  See flag_mapped's note for why a mapped store alone is not enough on this backend.
+void Verifier::publish_flag(uint32_t* host_word, uint32_t* dev_word, uint32_t value) {
+    *(volatile uint32_t*) host_word = value;
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+    if (dev_word != nullptr) cudaMemcpyAsync(dev_word, host_word, sizeof(uint32_t), cudaMemcpyHostToDevice, copy_);
+}
+
+/// The same, for a flag that may only be RAISED (flag B): the CAS stays on the host word and the word itself is
+/// what gets copied, so the device sees the CAS's result.
+void Verifier::raise_flag_dev(uint32_t* host_word, uint32_t* dev_word, uint32_t value) {
+    raise_flag(host_word, value);
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+    if (dev_word != nullptr) cudaMemcpyAsync(dev_word, host_word, sizeof(uint32_t), cudaMemcpyHostToDevice, copy_);
+}
+
 bool Verifier::release_gpu_waits(int timeout_ms) {
     released_.store(true);
-    // the words the spin kernels read (wait_flag_ge, wait_flag_ge_or) are mapped host memory, so a store here
-    // reaches them with no API call; UINT32_MAX is past every ring.  (E-6's skip words are device memory, but
+    // the host's own words: UINT32_MAX is past every ring.  (E-6's skip words are device memory, but
     // wait_flag_ge_or also returns on its flag.)  A host function raising flag B later only raises.
     for (uint32_t* p : {h_flag_, h_flagA_, h_flagB_})
         if (p != nullptr) *(volatile uint32_t*) p = UINT32_MAX;
     std::atomic_thread_fence(std::memory_order_seq_cst);
     _mm_sfence();
+    // M5b: the words the spin kernels read are DEVICE memory, so the release has to be published there too -
+    // and a plain mapped store would never be observed by a poll loop on this backend (see flag_mapped's note).
+    // SYNCHRONOUS on purpose: the release runs while a window may still be recording (a capture in the compat
+    // layer is a global flag, and an async copy would be recorded as a node instead of submitted).
+    uint32_t* const flag_host[3] = {h_flag_, h_flagA_, h_flagB_};
+    uint32_t* const flag_dev[3] = {m_flag_, m_flagA_, m_flagB_};
+    for (int i = 0; i < 3; ++i)
+        if (flag_host[i] != nullptr && flag_dev[i] != nullptr)
+            cudaMemcpy(flag_dev[i], flag_host[i], sizeof(uint32_t), cudaMemcpyHostToDevice);
     const OnDevice on_device(device_);
     const Clock::time_point t0 = Clock::now();
     for (cudaStream_t s : {cs_, copy_}) {
@@ -160,8 +209,13 @@ void Verifier::diag(std::FILE* f) const {
     const char* where = progress().where.load();
     const bool current = where != nullptr && std::strncmp(where, "verify window", 13) == 0;
     std::fprintf(f, "  verify window%s: %d tokens at position %lld, host at layer step %u; the GPU rang %u; flags: "
-                    "served %u, plan (A) %u, copies (B) %u\n", current ? "" : " (last window, not the current stage)",
-                 last_t_, (long long) last_pos0_, cur_layer_ + 1, rd(h_seq_), rd(h_flag_), rd(h_flagA_), rd(h_flagB_));
+                    "served %u, plan (A) %u, copies (B) %u; tail beacons",
+                 current ? "" : " (last window, not the current stage)", last_t_, (long long) last_pos0_,
+                 cur_layer_ + 1, rd(h_seq_), rd(h_flag_), rd(h_flagA_), rd(h_flagB_));
+    // M5b: the tail beacons (0 layers done, 1 head's read done, 2 quantize done, 3 mmvq done, 4 argmax done,
+    // 5 unused, 6 the last layer's gr_write done): the last non-zero word is how far the GPU got.
+    for (int i = 0; i < 8; ++i) std::fprintf(f, " %d", rd(h_beacon_ + i));
+    std::fprintf(f, "\n");
 }
 
 Verifier::~Verifier() {
@@ -180,9 +234,13 @@ Verifier::~Verifier() {
     if (commit_done_) cudaEventDestroy(commit_done_);
     if (arena_) cudaFree(arena_);
     void* hosts[] = {h_tok_, h_step_, h_pos_, h_commit_, h_ple_, h_out_, h_x_, h_ids_, h_w_, h_seq_, h_flag_, h_ymiss_,
-                     h_flagA_, h_plan_, h_flagB_};
+                     h_flagA_, h_plan_, h_flagB_, h_beacon_};
     for (void* h : hosts)
         if (h) cudaFreeHost(h);
+    // M5b: the flag words the kernels read are DEVICE allocations (see flag_mapped's note), so they are freed
+    // with cudaFree - they are not in the host-pointer list above.
+    for (uint32_t* d : {m_flag_, m_flagA_, m_flagB_})
+        if (d) cudaFree(d);
 }
 
 bool Verifier::init(const WeightTable& wt, const ModelGeometry& g, SessionState& ss, const VerifyHits& hits,
@@ -258,9 +316,10 @@ bool Verifier::init(const WeightTable& wt, const ModelGeometry& g, SessionState&
               mapped(T * K * 4, (void**) &h_ids_, (void**) &m_ids_) &&
               mapped(T * K * 4, (void**) &h_w_, (void**) &m_w_) &&
               mapped(64, (void**) &h_seq_, (void**) &m_seq_) &&
-              mapped(64, (void**) &h_flag_, (void**) &m_flag_) &&
-              mapped(64, (void**) &h_flagA_, (void**) &m_flagA_) &&
-              mapped(64, (void**) &h_flagB_, (void**) &m_flagB_) &&
+              flag_mapped(4, (void**) &h_flag_, (void**) &m_flag_) &&
+              flag_mapped(4, (void**) &h_flagA_, (void**) &m_flagA_) &&
+              flag_mapped(4, (void**) &h_flagB_, (void**) &m_flagB_) &&
+              mapped(64, (void**) &h_beacon_, (void**) &m_beacon_) &&
               mapped(T * K * N * 4, (void**) &h_ymiss_, (void**) &m_ymiss_);
     if (!ok) { err = "verify: mapped staging allocation failed"; return false; }
     // the GPU plan: counts(4) | start(cap+1) | dst(cap) | tok(cap) | pad | ptr(cap u64) | ptr2(cap u64) | start2(cap+1)
@@ -358,6 +417,15 @@ bool Verifier::init(const WeightTable& wt, const ModelGeometry& g, SessionState&
         const char* v = std::getenv("STRATA_VERIFY_DEVICE_PLAN");
         device_plan_ = v != nullptr && std::atoi(v) != 0;
     }
+    // M5b: the tail wait is a bounded, self-diagnosing poll when asked for (see run()'s tail note).  The value is
+    // the budget in ms (default 60 s).
+    {
+        const char* v = std::getenv("STRATA_VERIFY_TAIL_DEBUG");
+        if (v != nullptr && std::atoi(v) != 0) {
+            tail_debug_ = true;
+            if (std::atoi(v) > 1) tail_wait_ms_ = std::atoi(v);
+        }
+    }
     if (device_plan_) {
         bool ok2 = cudaMalloc((void**) &skip_, 64) == cudaSuccess && cudaMemset(skip_, 0, 64) == cudaSuccess;
         if (ok2 && hits.slot_off != nullptr && hits.n_slots > 0) {
@@ -403,6 +471,16 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
     const int G = (split_ && T >= 2) ? 2 : 1;
     static const bool dec_batch = [] { const char* v = std::getenv("STRATA_DEC_BATCH"); return v == nullptr || std::atoi(v) != 0; }();
     auto stamp = [&](int64_t l, int i, int grp) { if (prof_on_ && grp == 0) gpu_stamp(prof_, (int) (l * kProfPer + i), cs); };
+    // M5b: the TAIL beacons.  `gpu_stamp` cannot be used for this (the oneAPI device clock extension is not
+    // supported on this part: sycl::aspect::ext_oneapi_clock_device is absent, so the profiler path throws), and
+    // the point is to see how far the GPU got when the window's tail never finishes.  A beacon is the engine's own
+    // doorbell ring (one thread, a system fence, an increment of a MAPPED word), so the host can read it after a
+    // timeout with no driver call.  Word i is non-zero once stage i has been REACHED in some window; one window per
+    // probe run, so the map from "words set" to "the GPU got this far" is unambiguous.  Recorded only when
+    // STRATA_VERIFY_TAIL_DEBUG is on, so a healthy window pays nothing.
+    auto beacon = [&](int i) {
+        if (tail_debug_ && m_beacon_ != nullptr) strata::kernels::doorbell_ring(m_beacon_ + i, cs);
+    };
     const int tb_[2] = {0, (T + 1) / 2}, te_[2] = {G == 2 ? (T + 1) / 2 : T, T};
     groups_[T] = G;
 
@@ -799,6 +877,7 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
         if (l == g.n_layers - 1) {
             for (int t = tb; t < te; ++t) gr_write(Rt(t), bo_ + t * N, inj2_ + t * HC, gs, Rt(t), cs);
             if (cvec().covers(l)) cvec_apply(Rt(tb), l, n, HC * N, nullptr, 0, nullptr, 0, false, cs);
+            beacon(6);   // M5b: the last layer's gr_write/cvec are done
         } else if (cvec().covers(l)) {
             cvec_apply(Rt(tb), l, n, HC * N, bo_ + tb * N, N, inj2_ + tb * HC, HC, true, cs);
         }
@@ -812,6 +891,7 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
             if (!post(l, grp)) return false;
             if (l + 1 < le_ && !pre(l + 1, grp)) return false;
         }
+    beacon(0);   // M5b: the layer loop itself is done
     if (le_ < g.n_layers) {   // a layer split's earlier stage: hand the residual on, no head
         for (int t = 0; t < T; ++t) {
             copy_from_mapped(hand_out_ + (size_t) t * HB, Rt(t), HC * N, cs);
@@ -837,10 +917,13 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
                 return false;
             }
         }
+        beacon(1);   // M5b: the head's per-token read/projection is done
         if (head_ != nullptr && head_->loaded()) {
             try {
                 native_quantize_q8_1(head_mixed_, xq_, (int) N, T, cs);
+                beacon(2);   // M5b: the head's activation quantization is done
                 native_mmvq(head_->type(), head_->weights(), xq_, head_logits_, (int) N, (int) n_vocab_, T, cs);
+                beacon(3);   // M5b: the head's native matvec is done
             } catch (const std::exception& e) {
                 err = std::string("verify head: ") + e.what();
                 return false;
@@ -853,6 +936,7 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
         sp.greedy = true;
         sp.temperature = 0.0f;
         sample_tokens(head_logits_, T, (int) n_vocab_, nullptr, 0, sp, m_out_, cs);
+        beacon(4);   // M5b: the window's last stage (the argmax) is done
     }
     stamp(g.n_layers, 1, 0);
     return true;
@@ -1054,6 +1138,16 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
     *(volatile uint32_t*) h_flagA_ = 0;
     *(volatile uint32_t*) h_flagB_ = 0;
     std::atomic_thread_fence(std::memory_order_seq_cst);
+    // M5b: the flags the kernels read are DEVICE words, so the reset has to reach them - and it has to reach them
+    // BEFORE this window's kernels start polling, because a window's rings restart at 1 and a left-over value
+    // from the previous window would satisfy a wait early (the layer would then read a payload the host has not
+    // served yet).  The copies go on the copy stream; sync it, since the launch below is on cs_.
+    cudaMemcpyAsync(m_flag_, h_flag_, sizeof(uint32_t), cudaMemcpyHostToDevice, copy_);
+    cudaMemcpyAsync(m_flagA_, h_flagA_, sizeof(uint32_t), cudaMemcpyHostToDevice, copy_);
+    cudaMemcpyAsync(m_flagB_, h_flagB_, sizeof(uint32_t), cudaMemcpyHostToDevice, copy_);
+    // M5b: the tail beacons count the stages the GPU reached, so they restart at 0 with the window
+    for (int i = 0; i < 8; ++i) h_beacon_[i] = 0;
+    cudaStreamSynchronize(copy_);
     last_t_ = T;
     last_pos0_ = pos0;
     for (int t = 0; t < T; ++t) last_tokens_[t] = tokens[t];
@@ -1064,7 +1158,8 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
     (void) cudaStreamQuery(cs_);
     VDBG("launched\n");
     volatile uint32_t* const seq = h_seq_;
-    volatile uint32_t* const flag = h_flag_;
+    // (the flag word is no longer written through a pointer here: publish_flag copies it into the device word
+    //  the kernels read - M5b, see flag_mapped's note)
     const int G = groups_[T] > 0 ? groups_[T] : 1;
     const int gtb[2] = {0, (T + 1) / 2}, gte[2] = {G == 2 ? (T + 1) / 2 : T, T};
     const int64_t steps = (le_ - lb_) * G;
@@ -1116,23 +1211,51 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
             sink_.start[0] = 0;
             sink_.start2[0] = 0;
             std::atomic_thread_fence(std::memory_order_seq_cst);
-            *(volatile uint32_t*) h_flagA_ = want;
-            raise_flag(h_flagB_, want);
+            publish_flag(h_flagA_, m_flagA_, want);
+            raise_flag_dev(h_flagB_, m_flagB_, want);
         }
-        if (!(test_stall && k + 1 == steps)) *flag = want;
+        if (!(test_stall && k + 1 == steps)) publish_flag(h_flag_, m_flag_, want);
         ms_wait += std::chrono::duration<double, std::milli>(b - a).count();
         ms_pool += ms_since(b);
     }
     progress_at("verify window: waiting for the GPU to finish the window (flags A/B/M raised)", (int64_t) T);
-    // #267: a window the GPU never finishes (a spin kernel that never sees its flag) holds the host here; the stall
-    // watchdog then releases every verifier's GPU waits (release_live_verifiers) before it ends the engine, so no
-    // spin kernel outlives the process - the case that left Windows GPUs "lost" until a power cycle.  The wait
-    // itself stays a blocking sync: a cudaStreamQuery poll here cost IQ3_S ~3% decode (a core calling the driver
-    // beside the expert workers).
-    const cudaError_t se = cudaStreamSynchronize(cs_);
-    if (se != cudaSuccess) { err = std::string("verify: ") + cudaGetErrorString(se); return false; }
-    progress_at("verify window: waiting for the expert copies", (int64_t) T);
-    cudaStreamSynchronize(copy_);   // no host function of this window may raise flag B in the next one
+    // #267's TAIL COUNTERPART (M5b).  The layer loop above has its own bounded wait, but a window whose TAIL (the
+    // last layer's combine and the head) never finishes used to sit in this blocking sync until the driver reset
+    // the context - measured on the W4A16 pack as `strata/sycl: stream sync failed: level_zero backend failed
+    // with error: 20 (UR_RESULT_ERROR_DEVICE_LOST)` with nothing said about where the GPU was.  With
+    // STRATA_VERIFY_TAIL_DEBUG=1 the wait is a bounded poll that dumps the diag line (the same one the layer
+    // watchdog dumps) and releases the window's GPU waits instead of blocking forever.  The blocking sync stays
+    // the default: a cudaStreamQuery poll here cost IQ3_S ~3% decode (a core calling the driver beside the
+    // expert workers).
+    if (tail_debug_) {
+        const Clock::time_point ts = Clock::now();
+        while (cudaStreamQuery(cs_) == cudaErrorNotReady) {
+            const long long waited = (long long) ms_since(ts);
+            if (waited > tail_wait_ms_) {
+                diag(stderr);
+                const bool released = release_gpu_waits(5000);
+                std::fprintf(stderr,
+                             "strata verify: the window's tail did not finish within %lld ms (#267 tail); "
+                             "its GPU waits were %s\n",
+                             waited, released ? "released and the GPU finished" : "released but the GPU did not finish within 5 s");
+                err = "verify: the window's tail did not finish (the last layer's combine or the head)";
+                return false;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        ms_tail += ms_since(ts);
+        progress_at("verify window: waiting for the expert copies", (int64_t) T);
+        cudaStreamSynchronize(copy_);
+        if (cudaStreamQuery(cs_) != cudaSuccess) {
+            err = "verify: the window's tail reported an error";
+            return false;
+        }
+    } else {
+        const cudaError_t se = cudaStreamSynchronize(cs_);
+        if (se != cudaSuccess) { err = std::string("verify: ") + cudaGetErrorString(se); return false; }
+        progress_at("verify window: waiting for the expert copies", (int64_t) T);
+        cudaStreamSynchronize(copy_);   // no host function of this window may raise flag B in the next one
+    }
     if (prof_on_ && G == 1) {       // the window's GPU stage stamps
         cudaMemcpy(prof_h_.data(), prof_, prof_h_.size() * 8, cudaMemcpyDeviceToHost);
         const int64_t L = g.n_layers;
@@ -1242,24 +1365,31 @@ void Verifier::raise_flag(uint32_t* flag, uint32_t value) {
 }
 
 // Plan v0.3 P6: the PCIe share by DMA.  The copy engine moves the blobs while the CPU computes its own share and the
-// GPU its VRAM experts; a host function raises flag B when they have landed (the graph waits for it before the PCIe
-// groups).  Staging is split between the two token groups of a split window.
+// GPU its VRAM experts; flag B - raised once the staged blobs have landed - is what the graph waits for before the
+// PCIe groups run.
+//
+// M5b CHANGED THE RAISE, NOT THE ORDER.  It used to be `cudaLaunchHostFunc(copy_, raise_flag, …)`, which is what
+// M4's note above describes; the flag is a DEVICE word now (flag_mapped's note: a mapped store is never observed
+// by a poll loop on this backend), so the raise is a 4-byte copy into it - and because `copy_` is an IN-ORDER
+// queue, enqueueing that copy here, right after the blobs, gives exactly the guarantee the host function was
+// there for.  It also removes a recorded host function from the window, which the closure-based capture cannot
+// replay anyway (cudaLaunchHostFunc submits to the queue instead of appending a node).
 void Verifier::fetch_dma(void* ctx, const uint8_t* const* src, int n, size_t bytes) {
     Verifier* v = (Verifier*) ctx;
     const uint32_t want = v->cur_layer_ + 1;
-    if (n <= 0) { raise_flag(v->h_flagB_, want); return; }
+    if (n <= 0) {
+        v->raise_flag_dev(v->h_flagB_, v->m_flagB_, want);
+        return;
+    }
     uint8_t* stage = (uint8_t*) v->sink_.staging;                  // this group's half in a split window
     for (int i = 0; i < n; ++i) cudaMemcpyAsync(stage + (size_t) i * bytes, src[i], bytes, cudaMemcpyHostToDevice, v->copy_);
-    FlagSet& fs = v->flag_sets_[v->cur_layer_ % (sizeof v->flag_sets_ / sizeof v->flag_sets_[0])];
-    fs.flag = v->h_flagB_;
-    fs.value = want;
-    cudaLaunchHostFunc(v->copy_, [](void* p) { FlagSet* s = (FlagSet*) p; raise_flag(s->flag, s->value); }, &fs);
+    v->raise_flag_dev(v->h_flagB_, v->m_flagB_, want);
 }
 
 void Verifier::publish_plan(void* ctx) {
     Verifier* v = (Verifier*) ctx;
     _mm_sfence();
-    *(volatile uint32_t*) v->h_flagA_ = v->cur_layer_ + 1;
+    v->publish_flag(v->h_flagA_, v->m_flagA_, v->cur_layer_ + 1);
 }
 
 bool Verifier::window_logprobs(const int32_t* targets, int T, int64_t pos0, int32_t extra_id, std::FILE* out,

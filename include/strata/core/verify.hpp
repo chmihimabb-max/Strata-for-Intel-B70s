@@ -220,6 +220,9 @@ private:
     uint32_t* h_flag_ = nullptr; uint32_t* m_flag_ = nullptr;
     uint32_t* h_flagA_ = nullptr; uint32_t* m_flagA_ = nullptr;  // the GPU plan is in place
     uint32_t* h_flagB_ = nullptr; uint32_t* m_flagB_ = nullptr;  // the PCIe share's DMA copies have landed
+    // M5b: the window's TAIL beacons (mapped, one word per stage, written by the GPU's own doorbell ring): the
+    // diag line reads them, so a tail that never finishes says how far the GPU got.
+    uint32_t* h_beacon_ = nullptr; uint32_t* m_beacon_ = nullptr;
     cudaEvent_t commit_done_ = nullptr;   // recorded after an async commit (set_commit_async); see wait_commit
     bool commit_pending_ = false;
     cudaStream_t copy_ = nullptr;                                 // the copy engine's stream (DMA of missed experts)
@@ -233,8 +236,17 @@ private:
     uint32_t cur_layer_ = 0;
     static void publish_plan(void* ctx);
     void set_plan_slot(int grp);
+    /// M5b: publish a flag into the DEVICE word the spin kernels read (the host word alone is not enough).
+    void publish_flag(uint32_t* host_word, uint32_t* dev_word, uint32_t value);
+    void raise_flag_dev(uint32_t* host_word, uint32_t* dev_word, uint32_t value);
     bool split_ = false;   // opt-in (--spec-split): exact but slower, see the overlap study
     int groups_[9] = {};
+    // M5b: the window's TAIL wait (the last layer's combine + the head).  Off by default - the blocking sync is
+    // the measured-cheaper path for a healthy window; on (STRATA_VERIFY_TAIL_DEBUG=<ms>) it is a bounded poll
+    // that dumps diag() and releases the GPU waits instead of blocking until the driver resets the context.
+    bool tail_debug_ = false;
+    long long tail_wait_ms_ = 60000;
+    double ms_tail = 0.0;
     float* h_ymiss_ = nullptr;   float* m_ymiss_ = nullptr;     // T * k * n_embd
 
     // device

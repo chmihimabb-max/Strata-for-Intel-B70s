@@ -27,6 +27,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "strata/kernels/flag.hpp"   // strata_flag_read: the flag word's read spelling per backend (M5b)
+
 namespace strata::kernels {
 namespace {
 
@@ -44,9 +46,9 @@ __global__ void __launch_bounds__(S) gdn_conv_l2_multi_kernel(uint8_t* _sycl_dyn
                                                               const float* __restrict__ w, float* __restrict__ h,
                                                               int C, int qk_heads, float eps, int t_begin) {
     
-#line 30 "src/kernels/cuda/verify_kernels.cu"
+#line 32 "src/kernels/cuda/verify_kernels.cu"
 float (&part)[S/32] = *::sycl::ext::oneapi::group_local_memory_for_overwrite<float [S/32]>(::strata::sycl_compat::this_item().get_group()).get();
-#line 30 "src/kernels/cuda/verify_kernels.cu"
+#line 32 "src/kernels/cuda/verify_kernels.cu"
 
     const int t = t_begin + blockIdx.y;
     const int c = blockIdx.x * S + threadIdx.x;
@@ -142,19 +144,19 @@ __global__ void __launch_bounds__(S * RG) gdn_step_norm_multi_kernel(uint8_t* _s
                                                                      float* __restrict__ y, int h_k, int h_v, int T,
                                                                      const int32_t* __restrict__ n_keep, int t_out_begin) {
     
-#line 124 "src/kernels/cuda/verify_kernels.cu"
+#line 126 "src/kernels/cuda/verify_kernels.cu"
 float (&sk)[S] = *::sycl::ext::oneapi::group_local_memory_for_overwrite<float [S]>(::strata::sycl_compat::this_item().get_group()).get();float (&sq)[S] = *::sycl::ext::oneapi::group_local_memory_for_overwrite<float [S]>(::strata::sycl_compat::this_item().get_group()).get();
-#line 124 "src/kernels/cuda/verify_kernels.cu"
+#line 126 "src/kernels/cuda/verify_kernels.cu"
 
     
-#line 125 "src/kernels/cuda/verify_kernels.cu"
+#line 127 "src/kernels/cuda/verify_kernels.cu"
 float (&red)[RG][S] = *::sycl::ext::oneapi::group_local_memory_for_overwrite<float [RG][S]>(::strata::sycl_compat::this_item().get_group()).get();
-#line 125 "src/kernels/cuda/verify_kernels.cu"
+#line 127 "src/kernels/cuda/verify_kernels.cu"
 
     
-#line 126 "src/kernels/cuda/verify_kernels.cu"
+#line 128 "src/kernels/cuda/verify_kernels.cu"
 float (&wsum)[S*RG/32] = *::sycl::ext::oneapi::group_local_memory_for_overwrite<float [S*RG/32]>(::strata::sycl_compat::this_item().get_group()).get();
-#line 126 "src/kernels/cuda/verify_kernels.cu"
+#line 128 "src/kernels/cuda/verify_kernels.cu"
 
     const int head = blockIdx.x;
     const int col = threadIdx.x;
@@ -297,9 +299,9 @@ __global__ void map_ids_kernel(uint8_t* _sycl_dyn, ::strata::sycl_compat::launch
 __global__ void row_top_prob_kernel(uint8_t* _sycl_dyn, ::strata::sycl_compat::launch_shape _sycl_shape, const float* __restrict__ logits, int n_vocab, const int32_t* __restrict__ ids,
                                     float* __restrict__ probs) {
     
-#line 267 "src/kernels/cuda/verify_kernels.cu"
+#line 269 "src/kernels/cuda/verify_kernels.cu"
 float (&part)[32] = *::sycl::ext::oneapi::group_local_memory_for_overwrite<float [32]>(::strata::sycl_compat::this_item().get_group()).get();
-#line 267 "src/kernels/cuda/verify_kernels.cu"
+#line 269 "src/kernels/cuda/verify_kernels.cu"
 
     const int t = blockIdx.x;
     const float* l = logits + (size_t) t * n_vocab;
@@ -346,7 +348,7 @@ void fetch_blobs(const unsigned long long* src, const int32_t* n, uint8_t* dst, 
     if (cap <= 0) return;
     if (blob_bytes % 16 != 0) { std::fprintf(stderr, "fetch_blobs: blob size must be a multiple of 16\n"); std::exit(1); }
     
-#line 312 "src/kernels/cuda/verify_kernels.cu"
+#line 314 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -354,14 +356,14 @@ void fetch_blobs(const unsigned long long* src, const int32_t* n, uint8_t* dst, 
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; fetch_blobs_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 48 * 8, 256, 0, (cudaStream_t) stream, src, n, (uint4*) dst, (long long) (blob_bytes / 16))
-#line 312 "src/kernels/cuda/verify_kernels.cu"
+#line 314 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("fetch_blobs");
 }
 
 void rebase_ptrs(unsigned long long* ptr, const int32_t* n, uint8_t* base, int64_t blob_bytes, void* stream) {
     
-#line 317 "src/kernels/cuda/verify_kernels.cu"
+#line 319 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -369,14 +371,14 @@ void rebase_ptrs(unsigned long long* ptr, const int32_t* n, uint8_t* base, int64
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; rebase_ptrs_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 1, 128, 0, (cudaStream_t) stream, ptr, n, (unsigned long long) base, (long long) blob_bytes)
-#line 317 "src/kernels/cuda/verify_kernels.cu"
+#line 319 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("rebase_ptrs");
 }
 
 void add_streams_broadcast(const float* h, const float* e, float* R, int64_t n_embd, int hc, int n_tok, void* stream) {
     
-#line 322 "src/kernels/cuda/verify_kernels.cu"
+#line 324 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -384,7 +386,7 @@ void add_streams_broadcast(const float* h, const float* e, float* R, int64_t n_e
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; add_streams_broadcast_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( dim3((unsigned) ((n_embd * hc + 255) / 256), (unsigned) n_tok), 256, 0, (cudaStream_t) stream, h, e, R, n_embd, hc)
-#line 323 "src/kernels/cuda/verify_kernels.cu"
+#line 325 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("add_streams_broadcast");
 }
@@ -392,7 +394,7 @@ void add_streams_broadcast(const float* h, const float* e, float* R, int64_t n_e
 void ident_hits(const int32_t* ids, int n, int32_t* slot, int32_t* dst, int32_t* count, void* stream) {
     if (n < 1 || n > 1024) { std::fprintf(stderr, "ident_hits: n out of range\n"); std::exit(1); }
     
-#line 329 "src/kernels/cuda/verify_kernels.cu"
+#line 331 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -400,7 +402,7 @@ void ident_hits(const int32_t* ids, int n, int32_t* slot, int32_t* dst, int32_t*
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; ident_hits_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 1, 1024, 0, (cudaStream_t) stream, ids, n, slot, dst, count)
-#line 329 "src/kernels/cuda/verify_kernels.cu"
+#line 331 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("ident_hits");
 }
@@ -408,7 +410,7 @@ void ident_hits(const int32_t* ids, int n, int32_t* slot, int32_t* dst, int32_t*
 void mtp_select(const float* R_src, int64_t R_stride, const int32_t* ids, const int32_t* row_dev, float* R_dst,
                 int32_t* tok_dst, int32_t* out, int j, void* stream, const float* probs, float* out_p) {
     
-#line 335 "src/kernels/cuda/verify_kernels.cu"
+#line 337 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -417,7 +419,7 @@ void mtp_select(const float* R_src, int64_t R_stride, const int32_t* ids, const 
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; mtp_select_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 16, 256, 0, (cudaStream_t) stream, R_src, R_stride, ids, row_dev, R_dst, tok_dst, out, j,
                                                              probs, out_p)
-#line 336 "src/kernels/cuda/verify_kernels.cu"
+#line 338 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("mtp_select");
 }
@@ -426,7 +428,7 @@ void gather_rows(const uint8_t* src, int64_t row_bytes, const int32_t* ids, int6
     cudaStream_t s = (cudaStream_t) stream;
     if (row_bytes % 16 == 0)
         
-#line 343 "src/kernels/cuda/verify_kernels.cu"
+#line 345 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -434,11 +436,11 @@ void gather_rows(const uint8_t* src, int64_t row_bytes, const int32_t* ids, int6
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; gather_rows_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 48 * 8, 256, 0, s, (const uint4*) src, row_bytes / 16, ids, n, (uint4*) dst)
-#line 343 "src/kernels/cuda/verify_kernels.cu"
+#line 345 "src/kernels/cuda/verify_kernels.cu"
 ;
     else if (row_bytes % 4 == 0)
         
-#line 345 "src/kernels/cuda/verify_kernels.cu"
+#line 347 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -446,11 +448,11 @@ void gather_rows(const uint8_t* src, int64_t row_bytes, const int32_t* ids, int6
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; gather_rows_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 48 * 8, 256, 0, s, (const uint32_t*) src, row_bytes / 4, ids, n, (uint32_t*) dst)
-#line 345 "src/kernels/cuda/verify_kernels.cu"
+#line 347 "src/kernels/cuda/verify_kernels.cu"
 ;
     else
         
-#line 347 "src/kernels/cuda/verify_kernels.cu"
+#line 349 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -458,14 +460,14 @@ void gather_rows(const uint8_t* src, int64_t row_bytes, const int32_t* ids, int6
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; gather_rows_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 48 * 8, 256, 0, s, src, row_bytes, ids, n, dst)
-#line 347 "src/kernels/cuda/verify_kernels.cu"
+#line 349 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("gather_rows");
 }
 
 void map_ids(int32_t* ids, const int32_t* table, int n, void* stream) {
     
-#line 352 "src/kernels/cuda/verify_kernels.cu"
+#line 354 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -473,14 +475,14 @@ void map_ids(int32_t* ids, const int32_t* table, int n, void* stream) {
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; map_ids_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 1, 64, 0, (cudaStream_t) stream, ids, table, n)
-#line 352 "src/kernels/cuda/verify_kernels.cu"
+#line 354 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("map_ids");
 }
 
 void row_top_prob(const float* logits, int n_rows, int n_vocab, const int32_t* ids, float* probs, void* stream) {
     
-#line 357 "src/kernels/cuda/verify_kernels.cu"
+#line 359 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -488,7 +490,7 @@ void row_top_prob(const float* logits, int n_rows, int n_vocab, const int32_t* i
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; row_top_prob_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( n_rows, 1024, 0, (cudaStream_t) stream, logits, n_vocab, ids, probs)
-#line 357 "src/kernels/cuda/verify_kernels.cu"
+#line 359 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("row_top_prob");
 }
@@ -509,7 +511,7 @@ __global__ void window_ids_kernel(uint8_t* _sycl_dyn, ::strata::sycl_compat::lau
 
 void window_ids(int32_t* steps, int n, int window, int32_t* ids, int64_t ids_stride, void* stream) {
     
-#line 376 "src/kernels/cuda/verify_kernels.cu"
+#line 378 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -517,14 +519,14 @@ void window_ids(int32_t* steps, int n, int window, int32_t* ids, int64_t ids_str
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; window_ids_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( dim3(8, (unsigned) n), 256, 0, (cudaStream_t) stream, steps, window, ids, (long long) ids_stride)
-#line 376 "src/kernels/cuda/verify_kernels.cu"
+#line 378 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("window_ids");
 }
 
 void dense_steps(const int32_t* cells, int n, int32_t* steps, void* stream) {
     
-#line 381 "src/kernels/cuda/verify_kernels.cu"
+#line 383 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -532,7 +534,7 @@ void dense_steps(const int32_t* cells, int n, int32_t* steps, void* stream) {
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; dense_steps_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 1, 64, 0, (cudaStream_t) stream, cells, n, steps)
-#line 381 "src/kernels/cuda/verify_kernels.cu"
+#line 383 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("dense_steps");
 }
@@ -544,7 +546,7 @@ void gdn_conv_l2_multi(const float* history, const float* qkv, const float* conv
         std::exit(1);
     }
     
-#line 391 "src/kernels/cuda/verify_kernels.cu"
+#line 393 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -552,14 +554,14 @@ void gdn_conv_l2_multi(const float* history, const float* qkv, const float* conv
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; gdn_conv_l2_multi_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( dim3((unsigned) (channels / S), (unsigned) n_tok), S, 0, (cudaStream_t) stream, history, qkv, conv_w, h, channels, qk_heads, eps, t_begin)
-#line 392 "src/kernels/cuda/verify_kernels.cu"
+#line 394 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("gdn_conv_l2_multi");
 }
 
 void gdn_conv_commit(float* history, const float* qkv, int channels, const int32_t* n_keep, void* stream) {
     
-#line 397 "src/kernels/cuda/verify_kernels.cu"
+#line 399 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -568,7 +570,7 @@ void gdn_conv_commit(float* history, const float* qkv, int channels, const int32
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; gdn_conv_commit_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( (unsigned) ((channels + 255) / 256), 256, 0, (cudaStream_t) stream, history, qkv,
                                                                                                  channels, n_keep)
-#line 398 "src/kernels/cuda/verify_kernels.cu"
+#line 400 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("gdn_conv_commit");
 }
@@ -580,7 +582,7 @@ void gdn_ab_multi(const float* x, const uint16_t* w_alpha, const uint16_t* w_bet
         std::exit(1);
     }
     
-#line 408 "src/kernels/cuda/verify_kernels.cu"
+#line 410 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -588,7 +590,7 @@ void gdn_ab_multi(const float* x, const uint16_t* w_alpha, const uint16_t* w_bet
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; gdn_ab_multi_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( (unsigned) ((2 * h_v + 7) / 8), 256, 0, (cudaStream_t) stream, x, w_alpha, w_beta, dt, ssm_a, gate, beta, n_embd, h_v, n_tok)
-#line 409 "src/kernels/cuda/verify_kernels.cu"
+#line 411 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("gdn_ab_multi");
 }
@@ -602,7 +604,7 @@ void gdn_step_norm_multi(float* state, const float* h, int conv_channels, const 
         std::exit(1);
     }
     
-#line 421 "src/kernels/cuda/verify_kernels.cu"
+#line 423 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -610,14 +612,18 @@ void gdn_step_norm_multi(float* state, const float* h, int conv_channels, const 
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; gdn_step_norm_multi_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( (unsigned) h_v, dim3(S, RG), 0, (cudaStream_t) stream, state, h, conv_channels, gate, beta, z, gamma, eps, y, h_k, h_v, n_tok, n_keep, t_out_begin)
-#line 422 "src/kernels/cuda/verify_kernels.cu"
+#line 424 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("gdn_step_norm_multi");
 }
 
 namespace {
+// The flag read is strata_flag_read (include/strata/kernels/flag.hpp): a volatile load under CUDA/HIP, and a
+// SYSTEM-scope atomic load under SYCL, because a poll loop over DEVICE flag memory has to be read in a way the
+// device's own cache does not answer from a stale line (measured, M5b: a volatile poll of a device word saw
+// only the last value of a burst, the system-scope atomic saw all of them).
 __global__ void wait_flag_ge_kernel(uint8_t* _sycl_dyn, ::strata::sycl_compat::launch_shape _sycl_shape, const volatile uint32_t* flag, uint32_t value) {
-    while (*flag < value) strata_spin_pause();
+    while (strata_flag_read(flag) < value) strata_spin_pause();
     __threadfence_system();
 }
 }  // namespace
@@ -665,8 +671,10 @@ __global__ void resident_plan_kernel(uint8_t* _sycl_dyn, ::strata::sycl_compat::
     *skip = ring;
 }
 __global__ void wait_flag_ge_or_kernel(uint8_t* _sycl_dyn, ::strata::sycl_compat::launch_shape _sycl_shape, const volatile uint32_t* flag, uint32_t value, const volatile uint32_t* skip) {
-    if (*skip == value) return;
-    while (*flag < value) strata_spin_pause();
+    if (*skip == value) return;   // `skip` is DEVICE memory written by resident_plan_kernel on this stream: the
+                                  // plain volatile read is the right spelling for it (and the read that matters
+                                  // for correctness, the flag, goes through strata_flag_read below)
+    while (strata_flag_read(flag) < value) strata_spin_pause();
     __threadfence_system();
 }
 __global__ void copy_i32_unless_kernel(uint8_t* _sycl_dyn, ::strata::sycl_compat::launch_shape _sycl_shape, int32_t* __restrict__ dst, const volatile int32_t* src, int n,
@@ -686,7 +694,7 @@ void resident_plan(const int32_t* ids, int n_entries, int k, const int32_t* res_
                    const uint8_t* cache_base, const unsigned long long* slot_off, long long blob, int32_t* plan,
                    long long capx, uint32_t* skip, uint32_t ring, void* stream) {
     
-#line 496 "src/kernels/cuda/verify_kernels.cu"
+#line 504 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -695,13 +703,13 @@ void resident_plan(const int32_t* ids, int n_entries, int k, const int32_t* res_
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; resident_plan_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 1, 1, 0, (cudaStream_t) stream, ids, n_entries, k, res_layer, n_expert, cache_base, slot_off,
                                                              blob, plan, capx, skip, ring)
-#line 497 "src/kernels/cuda/verify_kernels.cu"
+#line 505 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("resident_plan");
 }
 void wait_flag_ge_or(const uint32_t* flag, uint32_t value, const uint32_t* skip, void* stream) {
     
-#line 501 "src/kernels/cuda/verify_kernels.cu"
+#line 509 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -709,7 +717,7 @@ void wait_flag_ge_or(const uint32_t* flag, uint32_t value, const uint32_t* skip,
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; wait_flag_ge_or_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 1, 1, 0, (cudaStream_t) stream, flag, value, skip)
-#line 501 "src/kernels/cuda/verify_kernels.cu"
+#line 509 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("wait_flag_ge_or");
 }
@@ -717,7 +725,7 @@ void copy_i32_from_mapped_unless(int32_t* dst, const int32_t* src, long long n, 
                                  void* stream) {
     if (n <= 0) return;
     
-#line 507 "src/kernels/cuda/verify_kernels.cu"
+#line 515 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -725,7 +733,7 @@ void copy_i32_from_mapped_unless(int32_t* dst, const int32_t* src, long long n, 
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; copy_i32_unless_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 1, 128, 0, (cudaStream_t) stream, dst, (const volatile int32_t*) src, (int) n, skip, value)
-#line 507 "src/kernels/cuda/verify_kernels.cu"
+#line 515 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("copy_i32_from_mapped_unless");
 }
@@ -735,7 +743,7 @@ void copy_or_zero_from_mapped(float* dst, const float* src, long long n, const u
     const long long n4 = n / 4;
     const int blocks = (int) ((n4 + 255) / 256 < 64 ? (n4 + 255) / 256 : 64);
     
-#line 515 "src/kernels/cuda/verify_kernels.cu"
+#line 523 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -744,14 +752,14 @@ void copy_or_zero_from_mapped(float* dst, const float* src, long long n, const u
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; copy_or_zero_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( blocks, 256, 0, (cudaStream_t) stream, (float4*) dst, (const volatile float4*) src, n4, skip,
                                                                     value)
-#line 516 "src/kernels/cuda/verify_kernels.cu"
+#line 524 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("copy_or_zero_from_mapped");
 }
 
 void wait_flag_ge(const uint32_t* flag, uint32_t value, void* stream) {
     
-#line 521 "src/kernels/cuda/verify_kernels.cu"
+#line 529 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -759,7 +767,7 @@ void wait_flag_ge(const uint32_t* flag, uint32_t value, void* stream) {
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; wait_flag_ge_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 1, 1, 0, (cudaStream_t) stream, flag, value)
-#line 521 "src/kernels/cuda/verify_kernels.cu"
+#line 529 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("wait_flag_ge");
 }
@@ -768,7 +776,7 @@ void embedding_gather_dev(const uint8_t* codes, const float* scales, const float
                           int n_tok, int64_t n, int code_bits, int code_bias, int group_elems, uint64_t row_codes,
                           uint64_t row_groups, float* out, void* stream) {
     
-#line 528 "src/kernels/cuda/verify_kernels.cu"
+#line 536 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -777,14 +785,14 @@ void embedding_gather_dev(const uint8_t* codes, const float* scales, const float
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; embedding_gather_dev_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( dim3((unsigned) ((n + 255) / 256), (unsigned) n_tok), 256, 0, (cudaStream_t) stream, codes, scales, offsets, tokens, n, code_bits, code_bias,
                                                            group_elems, row_codes, row_groups, out)
-#line 530 "src/kernels/cuda/verify_kernels.cu"
+#line 538 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("embedding_gather_dev");
 }
 
 void broadcast_streams(const float* x, float* R, int64_t n_embd, int hc, int n_tok, void* stream) {
     
-#line 535 "src/kernels/cuda/verify_kernels.cu"
+#line 543 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -792,7 +800,7 @@ void broadcast_streams(const float* x, float* R, int64_t n_embd, int hc, int n_t
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; broadcast_streams_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( dim3((unsigned) ((n_embd * hc + 255) / 256), (unsigned) n_tok), 256, 0, (cudaStream_t) stream, x, R, n_embd, hc)
-#line 536 "src/kernels/cuda/verify_kernels.cu"
+#line 544 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("broadcast_streams");
 }
@@ -800,7 +808,7 @@ void broadcast_streams(const float* x, float* R, int64_t n_embd, int hc, int n_t
 void copy_indexed(float* dst, const float* src, int64_t stride, const int32_t* index, int64_t n, void* stream) {
     const unsigned blocks = (unsigned) ((n + 255) / 256 < 64 ? (n + 255) / 256 : 64);
     
-#line 542 "src/kernels/cuda/verify_kernels.cu"
+#line 550 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -808,7 +816,7 @@ void copy_indexed(float* dst, const float* src, int64_t stride, const int32_t* i
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; copy_indexed_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( blocks, 256, 0, (cudaStream_t) stream, dst, src, stride, index, n)
-#line 542 "src/kernels/cuda/verify_kernels.cu"
+#line 550 "src/kernels/cuda/verify_kernels.cu"
 ;
     check("copy_indexed");
 }
@@ -832,7 +840,7 @@ namespace { __global__ void gpu_stamp_kernel(uint8_t* _sycl_dyn, ::strata::sycl_
 } }
 void gpu_stamp(unsigned long long* buf, int i, void* stream) {
     
-#line 564 "src/kernels/cuda/verify_kernels.cu"
+#line 572 "src/kernels/cuda/verify_kernels.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -840,7 +848,7 @@ void gpu_stamp(unsigned long long* buf, int i, void* stream) {
                                    _sycl_stream,
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; gpu_stamp_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( 1, 1, 0, (cudaStream_t) stream, buf, i)
-#line 564 "src/kernels/cuda/verify_kernels.cu"
+#line 572 "src/kernels/cuda/verify_kernels.cu"
 ;
 }
 

@@ -7,6 +7,8 @@
 
 #include <cuda_runtime.h>
 
+#include "strata/kernels/flag.hpp"   // strata_flag_read: the flag word's read spelling per backend (M5b)
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -212,8 +214,8 @@ __global__ void doorbell_ring_kernel(uint32_t* seq) {
 }
 
 __global__ void doorbell_wait_kernel(const volatile uint32_t* flag, const volatile uint32_t* seq) {
-    const uint32_t want = *seq;
-    while (*flag != want) strata_spin_pause();
+    const uint32_t want = strata_flag_read(seq);
+    while (strata_flag_read(flag) != want) strata_spin_pause();
     __threadfence_system();
 }
 
