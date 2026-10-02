@@ -242,6 +242,27 @@ inline unsigned atomicCAS(unsigned* p, unsigned compare, unsigned val) {
     a.compare_exchange_strong(compare, val);
     return compare;
 }
+template <typename T>
+inline T atomicOr(T* p, T v) {
+    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device,
+                     sycl::access::address_space::global_space>
+        a(*p);
+    return a.fetch_or(v);
+}
+template <typename T>
+inline T atomicAnd(T* p, T v) {
+    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device,
+                     sycl::access::address_space::global_space>
+        a(*p);
+    return a.fetch_and(v);
+}
+template <typename T>
+inline T atomicMin(T* p, T v) {
+    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device,
+                     sycl::access::address_space::global_space>
+        a(*p);
+    return a.fetch_min(v);
+}
 
 // ---------------------------------------------------------------------------
 // Cache hints and backoff.
@@ -275,6 +296,64 @@ inline float fminf_(float a, float b) { return sycl::fmin(a, b); }
 inline float fmaxf_(float a, float b) { return sycl::fmax(a, b); }
 inline float fabsf_(float a) { return sycl::fabs(a); }
 inline float __hadd_scalar(float a, float b) { return a + b; }
+
+// ---------------------------------------------------------------------------
+// The remaining device math CUDA declares in <device_functions.h>/<cuda_runtime.h>.  Each is the IEEE
+// operation CUDA documents for its name; SYCL's non-native spellings are the same roundings (M2 measured the
+// parity tests that depend on them - elementwise/quantize_act compare bitwise against a CPU reference).
+// ---------------------------------------------------------------------------
+inline float __fadd_rn(float a, float b) { return a + b; }
+inline float __fsub_rn(float a, float b) { return a - b; }
+inline float __fmul_rn(float a, float b) { return a * b; }
+inline float __fdiv_rn(float a, float b) { return a / b; }
+inline float __fsqrt_rn(float a) { return sycl::sqrt(a); }
+inline float __fmaf_rz(float a, float b, float c) { return sycl::fma(a, b, c); }
+inline int __float2int_rn(float a) { return (int) sycl::rint(a); }
+inline int __float2int_rz(float a) { return (int) sycl::trunc(a); }
+inline int __float2int_rd(float a) { return (int) sycl::floor(a); }
+inline int __float2int_ru(float a) { return (int) sycl::ceil(a); }
+inline unsigned __float2uint_rn(float a) { return (unsigned) sycl::rint(a); }
+inline unsigned __float2uint_rz(float a) { return (unsigned) sycl::trunc(a); }
+inline unsigned __float2uint_rd(float a) { return (unsigned) sycl::floor(a); }
+inline unsigned __float2uint_ru(float a) { return (unsigned) sycl::ceil(a); }
+inline float __int2float_rn(int a) { return (float) a; }
+inline float __int2float_rz(int a) { return (float) a; }
+inline float __uint2float_rn(unsigned a) { return (float) a; }
+inline float __uint2float_rz(unsigned a) { return (float) a; }
+inline double __double2int_rn(double a) { return sycl::rint(a); }
+inline float __double2float_rn(double a) { return (float) a; }
+inline float __exp10f(float x) { return sycl::native::exp10(x); }
+inline float __log2f(float x) { return sycl::native::log2(x); }
+inline float __log10f(float x) { return sycl::native::log10(x); }
+inline float __tanf(float x) { return sycl::tan(x); }
+inline float __asinf(float x) { return sycl::asin(x); }
+inline float __acosf(float x) { return sycl::acos(x); }
+inline float __atan2f(float y, float x) { return sycl::atan2(y, x); }
+inline float __fpowf(float x, float y) { return sycl::pow(x, y); }
+inline float __fsqrtf_rz(float x) { return sycl::sqrt(x); }
+
+// The double-precision spellings (__dadd_rn/__dmul_rn/__ddiv_rn/__dsqrt_rn are used by the sampler's
+// probability math, which is computed in double and compared bitwise in sampler_parity).
+inline double __dadd_rn(double a, double b) { return a + b; }
+inline double __dsub_rn(double a, double b) { return a - b; }
+inline double __dmul_rn(double a, double b) { return a * b; }
+inline double __ddiv_rn(double a, double b) { return a / b; }
+inline double __dsqrt_rn(double a) { return sycl::sqrt(a); }
+inline double __drcp_rn(double a) { return 1.0 / a; }
+inline double __fma_rn(double a, double b, double c) { return sycl::fma(a, b, c); }
+
+/// The CUDA device spelling of these two is what the kernels call, and neither has a DPC++ device wrapper:
+/// `rsqrtf` is a GNU extension glibc declares for the host only, and `__isnanf` comes from glibc's
+/// bits/mathcalls.h.  The transform renames the call sites to these (RENAMES in tools/sycl/syclify.py).
+inline float isnanf_dev(float x) { return sycl::isnan(x) ? 1 : 0; }
+inline int isinff_dev(float x) { return sycl::isinf(x) ? 1 : 0; }
+
+/// The three fences.  CUDA's __threadfence() is a DEVICE-scope release/acquire fence, __threadfence_block()
+/// a work-group one, and __threadfence_system() a SYSTEM-scope one - which is the one the host<->device
+/// doorbell ring needs (PLAN.md Risk 8, measured by tests/sycl/handoff.cpp).
+inline void threadfence() { sycl::atomic_fence(sycl::memory_order::acq_rel, sycl::memory_scope::device); }
+inline void threadfence_block() { sycl::atomic_fence(sycl::memory_order::acq_rel, sycl::memory_scope::work_group); }
+inline void threadfence_system() { sycl::atomic_fence(sycl::memory_order::acq_rel, sycl::memory_scope::system); }
 
 /// The B70's sub-group is 32 lanes, so "wave" reads as the sub-group here.
 inline unsigned warp_size_lanes() { return (unsigned) this_item().get_sub_group().get_local_range().get(0); }
@@ -328,3 +407,31 @@ inline unsigned warp_size_lanes() { return (unsigned) this_item().get_sub_group(
 #define __saturatef(x) (::strata::sycl_compat::saturatef((x)))
 #define __fmaf_rn(a, b, c) (::strata::sycl_compat::fmaf_rn((a), (b), (c)))
 #define __laneid() (::strata::sycl_compat::lane_id())
+
+// M2 additions: the round-to-nearest/literal-rounding float ops, the float<->int conversions, and the three
+// fences.  None of these names is declared by glibc's <math.h> (unlike __expf/__logf/__sinf/__cosf/__powf,
+// which are renamed at the call site instead - see the RENAMES table in tools/sycl/syclify.py), so a macro is
+// safe and keeps the kernel text unchanged.
+#define __fadd_rn(a, b) (::strata::sycl_compat::__fadd_rn((a), (b)))
+#define __fsub_rn(a, b) (::strata::sycl_compat::__fsub_rn((a), (b)))
+#define __fmul_rn(a, b) (::strata::sycl_compat::__fmul_rn((a), (b)))
+#define __fdiv_rn(a, b) (::strata::sycl_compat::__fdiv_rn((a), (b)))
+#define __fsqrt_rn(a) (::strata::sycl_compat::__fsqrt_rn((a)))
+#define __fmaf_rz(a, b, c) (::strata::sycl_compat::__fmaf_rz((a), (b), (c)))
+#define __float2int_rn(a) (::strata::sycl_compat::__float2int_rn((a)))
+#define __float2int_rz(a) (::strata::sycl_compat::__float2int_rz((a)))
+#define __float2int_rd(a) (::strata::sycl_compat::__float2int_rd((a)))
+#define __float2int_ru(a) (::strata::sycl_compat::__float2int_ru((a)))
+#define __float2uint_rn(a) (::strata::sycl_compat::__float2uint_rn((a)))
+#define __float2uint_rz(a) (::strata::sycl_compat::__float2uint_rz((a)))
+#define __float2uint_rd(a) (::strata::sycl_compat::__float2uint_rd((a)))
+#define __float2uint_ru(a) (::strata::sycl_compat::__float2uint_ru((a)))
+#define __int2float_rn(a) (::strata::sycl_compat::__int2float_rn((a)))
+#define __int2float_rz(a) (::strata::sycl_compat::__int2float_rz((a)))
+#define __uint2float_rn(a) (::strata::sycl_compat::__uint2float_rn((a)))
+#define __uint2float_rz(a) (::strata::sycl_compat::__uint2float_rz((a)))
+#define __double2float_rn(a) (::strata::sycl_compat::__double2float_rn((a)))
+#define __threadfence() (::strata::sycl_compat::threadfence())
+#define __threadfence_block() (::strata::sycl_compat::threadfence_block())
+#define __threadfence_system() (::strata::sycl_compat::threadfence_system())
+#define __umulhi(a, b) ((unsigned) (((unsigned long long) (unsigned) (a) * (unsigned long long) (unsigned) (b)) >> 32))

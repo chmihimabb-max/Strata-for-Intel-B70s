@@ -38,7 +38,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
+#if defined(__CUDACC__) || defined(__HIPCC__) || defined(STRATA_USE_SYCL)
 #define STRATA_COUPLED_HD __host__ __device__
 #else
 #define STRATA_COUPLED_HD

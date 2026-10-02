@@ -153,14 +153,83 @@ def split_top_commas(expr: str):
 IDENT_BACK = re.compile(r"[A-Za-z0-9_:<>]*$")
 
 
+def kernel_name_back(text: str, end: int):
+    """Start and end offsets of the kernel name immediately to the left of `end`.
+
+    A plain `[A-Za-z0-9_:<>]*` scan is not enough: the tree launches templated kernels whose argument list
+    contains a COMMA - `mmvq_multi_kernel<TY, 1><<<...>>>` (iq_kernels.cu:1303), `s_gemv_kernel<T, WARP>`
+    and friends - and the naive scan stopped at the comma, produced the name `1`, and left
+    `mmvq_multi_kernel<TY, ` in the output.  This walks template argument lists backwards with nesting, then
+    the identifier before them.
+    """
+    i = end
+    while i > 0 and text[i - 1] in " \t\r\n":
+        i -= 1
+    j = i
+    while j > 0:
+        c = text[j - 1]
+        if c == ">":
+            depth, k = 0, j
+            while k > 0:
+                k -= 1
+                if text[k] == ">":
+                    depth += 1
+                elif text[k] == "<":
+                    depth -= 1
+                    if depth == 0:
+                        break
+            if k <= 0 or depth != 0:
+                break
+            j = k
+        elif c.isalnum() or c == "_" or c == ":":
+            j -= 1
+        else:
+            break
+    return j, i
+
+
 class TransformError(Exception):
     pass
 
 
-def rewrite_launches(text: str, spans, file_hash: int, rel_path: str, stats: dict) -> str:
+def macro_continuation_spans(text: str):
+    """Spans of `#define` bodies (including their backslash continuations)."""
+    spans = []
+    i = 0
+    while True:
+        j = text.find("#define", i)
+        if j < 0:
+            break
+        k = text.rfind("\n", 0, j)
+        if text[k + 1:j].strip() != "":
+            i = j + 7
+            continue
+        end = text.find("\n", j)
+        while end >= 0 and text[end - 1] == "\\":
+            nxt = text.find("\n", end + 1)
+            if nxt < 0:
+                end = len(text)
+                break
+            end = nxt
+        if end < 0:
+            end = len(text)
+        spans.append((j, end))
+        i = max(end, j + 7)
+    return spans
+
+
+def rewrite_launches(text: str, spans, file_hash: int, rel_path: str, stats: dict,
+                     const_args: str = "") -> str:
+    """Rewrite every `name<<<...>>>(...)` into an immediately-invoked lambda + launcher call.
+
+    `const_args` is the trailing argument list (leading ", " included) for the runtime-filled `__constant__`
+    tables of this TU: it is appended at the host call site AND fixed into the kernel call inside the lambda,
+    matching the parameter declaration `append_kernel_params` adds to the kernel's own signature.
+    """
     out = []
     cursor = 0
     search = 0
+    macro_spans = macro_continuation_spans(text)
     while True:
         lstart = text.find("<<<", search)
         if lstart < 0:
@@ -168,12 +237,11 @@ def rewrite_launches(text: str, spans, file_hash: int, rel_path: str, stats: dic
         search = lstart + 3
         if in_spans(lstart, spans):
             continue
+        in_macro = any(s <= lstart < e for s, e in macro_spans)
 
         # the kernel name, immediately to the left of <<<
-        head = text[:lstart]
-        m = IDENT_BACK.search(head)
-        name = m.group(0) if m else ""
-        name_start = lstart - len(name)
+        name_start, name_end = kernel_name_back(text, lstart)
+        name = text[name_start:name_end]
         if not name:
             raise TransformError(f"{rel_path}:{line_of(text, lstart)}: '<<<' with no kernel name to its left")
 
@@ -210,6 +278,38 @@ def rewrite_launches(text: str, spans, file_hash: int, rel_path: str, stats: dic
         after = line + text.count("\n", name_start, pend + 1)
         args_clean = args.strip()
         extra = f", {args_clean}" if args_clean else ""
+        # The dynamic shared-memory base travels as the kernel's FIRST parameter (PLAN.md D3): the launcher
+        # hands it to the kernel lambda as `_sycl_dyn`, and the kernel FUNCTION - which is where an
+        # `extern __shared__` declaration lives - receives it here.  Every kernel gets it, so every launch
+        # passes it, whether or not that kernel uses dynamic shared memory (nullptr when smem == 0).
+        #
+        # NO kernel-name tag: `launch()` submits an unnamed kernel.  A launch inside a function template or a
+        # `#define` body is instantiated several times with different lambdas under one source position, and a
+        # named kernel would then be defined several times under one name (measured; probe12).
+        #
+        # The constants arrive through the SAME parameter pack as the ordinary arguments (they are appended at
+        # the host call site), so the kernel call must NOT name them a second time - that would evaluate a
+        # host expression (the USM handle's .dev) inside device code.
+        kwargs = "_sycl_args..." if (args_clean or const_args) else ""
+        call = f"{name}(_sycl_dyn{', ' if kwargs else ''}{kwargs})"
+        host_args = f"{extra}{const_args}"
+        if in_macro:
+            # A launch inside a `#define` body: the replacement has to stay on ONE logical line, so this form
+            # carries no `#line` markers and no newlines (they would end the macro definition and break every
+            # following line).  dequant_bf16.cu:206 is the site that proved it.
+            stats["macro_launches"] += 1
+            out.append(text[cursor:name_start])
+            out.append(
+                "[](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) "
+                "{ ::strata::sycl_compat::launch(::strata::sycl_compat::cfg(_sycl_grid, _sycl_block, _sycl_smem), "
+                "_sycl_stream, [=](sycl::nd_item<3> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; "
+                "(void) _sycl_dyn; "
+                f"{call}; }}); }}"
+                f"( {grid}, {block}, {smem}, {stream}{host_args})")
+            stats["launches"] += 1
+            cursor = pend + 1
+            search = cursor
+            continue
         # An immediately-invoked lambda, not a bare `[=]` kernel lambda:
         #   * DPC++ refuses an IMPLICIT capture of `this` in a kernel ("implicit capture of 'this' is not
         #     allowed for kernel functions" - measured on src/core/device.cu's poison launch, whose argument
@@ -221,11 +321,11 @@ def rewrite_launches(text: str, spans, file_hash: int, rel_path: str, stats: dic
         out.append(
             f'\n#line {line} "{rel_path}"\n'
             f"[](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {{\n"
-            f"    ::strata::sycl_compat::launch<::strata::sycl_compat::kernel_name<{file_hash}ull, {line}>>(\n"
-            f"        ::strata::sycl_compat::cfg(_sycl_grid, _sycl_block, _sycl_smem), _sycl_stream,\n"
+            f"    ::strata::sycl_compat::launch(::strata::sycl_compat::cfg(_sycl_grid, _sycl_block, _sycl_smem),\n"
+            f"                                   _sycl_stream,\n"
             f"        [=](sycl::nd_item<3> _sycl_item, uint8_t* _sycl_dyn) {{ (void) _sycl_item; (void) _sycl_dyn; "
-            f"{name}(_sycl_args...); }});\n"
-            f"}}( {grid}, {block}, {smem}, {stream}{extra})"
+            f"{call}; }});\n"
+            f"}}( {grid}, {block}, {smem}, {stream}{host_args})"
             f'\n#line {after} "{rel_path}"\n'
         )
         stats["launches"] += 1
@@ -347,16 +447,323 @@ def rewrite_shared(text: str, spans, rel_path: str, stats: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
+# rule 2b: dynamic shared memory (D3) and `__constant__` tables (PLAN.md §1.3(c))
+#
+# `extern __shared__ T name[];`  ->  `T* name = reinterpret_cast<T*>(_sycl_dyn);`
+#   The launcher already allocates the dynamic extent as a `local_accessor<uint8_t,1>` and hands the base
+#   pointer to the kernel lambda as `_sycl_dyn` (cuda_runtime.h's `launch`), so the only missing piece was
+#   this rewrite.  CUDA's rule that several `extern __shared__` declarations in one kernel all alias that
+#   same base is preserved (every one of them starts at offset 0), and the 20 sites in the tree are all
+#   inside kernel bodies.
+#
+# `__constant__ T name[N] = {...};`   ->  `constexpr T name[N] = {...};`
+# `__constant__ T name[N][M];`        ->  a `const_storage` handle on the host + a by-value `const_ref2d`
+#                                         parameter appended to every kernel in the TU and every launch site,
+#                                         under the array's OWN NAME so no kernel text changes.
+#   Measured in probe/probe10_const.cpp: DPC++ device code reads a constexpr global fine, and sycl::
+#   device_global cannot carry a host-filled table in 2026.1 (host `.get()` throws).
+# ---------------------------------------------------------------------------
+
+EXTERN_SHARED = re.compile(r"\bextern\s+__shared__\s*((?:__align__\s*\([^)]*\)\s*)*)")
+CONSTANT_START = re.compile(r"\b__constant__\s*((?:__align__\s*\([^)]*\)\s*)*)")
+DECLARATOR = re.compile(r"([*&]*)\s*([A-Za-z_]\w*)\s*((?:\[[^\]]*\]\s*)*)")
+
+
+def rewrite_extern_shared(text: str, spans, rel_path: str, stats: dict) -> str:
+    """`extern __shared__ T name[];` -> a pointer into the launcher's dynamic local memory."""
+    def expand(m: re.Match) -> str:
+        attrs = m.group(1).strip()
+        body_end = _shared_decl_end(text, m.end())
+        if body_end < 0:
+            raise TransformError(f"{rel_path}:{line_of(text, m.start())}: unterminated extern __shared__")
+        body = text[m.end():body_end]
+        base, declarators = split_type_and_declarators(body)
+        base = (attrs + " " + base).strip()
+        if not base or not declarators:
+            raise TransformError(f"{rel_path}:{line_of(text, m.start())}: cannot parse extern __shared__ "
+                                 f"'{body.strip()}'")
+        line = line_of(text, m.start())
+        after = line + text.count("\n", m.start(), body_end)
+        pieces = [f'\n#line {line} "{rel_path}"\n']
+        for d in split_top_commas(declarators):
+            dm = DECLARATOR.fullmatch(d.strip())
+            if not dm or dm.group(3) != "[]":
+                raise TransformError(
+                    f"{rel_path}:{line_of(text, m.start())}: extern __shared__ declarator '{d.strip()}' is "
+                    f"not the empty-extent array form; the transform only handles `T name[]`")
+            name = dm.group(2)
+            pieces.append(f"{base}* {name} = reinterpret_cast<{base}*>(_sycl_dyn);")
+            stats["extern_shared"] += 1
+        pieces.append(f'\n#line {after} "{rel_path}"\n')
+        return "".join(pieces)
+
+    out, cursor = [], 0
+    for m in EXTERN_SHARED.finditer(text):
+        if in_spans(m.start(), spans):
+            continue
+        out.append(text[cursor:m.start()])
+        out.append(expand(m))
+        cursor = _shared_decl_end(text, m.end()) + 1
+    out.append(text[cursor:])
+    return "".join(out)
+
+
+class ConstantPlan:
+    """What the `__constant__` declarations of one translation unit became."""
+
+    def __init__(self):
+        self.runtime = []      # [{'name', 'base', 'dims': int, 'stride'}] - the runtime-filled ones
+
+    def kernel_params(self) -> str:
+        """The parameter declarations appended to every kernel in the TU."""
+        out = []
+        for c in self.runtime:
+            if c["dims"] == 1:
+                out.append(f"::strata::sycl_compat::const_ref1d<{c['base']}> {c['name']}")
+            else:
+                out.append(f"::strata::sycl_compat::const_ref2d<{c['base']}, {c['stride']}> {c['name']}")
+        return ", ".join(out)
+
+    def launch_args(self) -> str:
+        """The argument expressions appended at every launch site (host side, evaluated per call)."""
+        out = []
+        for c in self.runtime:
+            if c["dims"] == 1:
+                out.append(f"::strata::sycl_compat::const_ref1d<{c['base']}>{{_strata_ct_{c['name']}.dev}}")
+            else:
+                out.append(f"::strata::sycl_compat::const_ref2d<{c['base']}, {c['stride']}>"
+                           f"{{_strata_ct_{c['name']}.dev}}")
+        return (", " + ", ".join(out)) if out else ""
+
+
+def rewrite_constants(text: str, spans, rel_path: str, stats: dict):
+    """Rewrite the `__constant__` declarations.  Returns (text, ConstantPlan)."""
+    plan = ConstantPlan()
+
+    def parse_dims(dims: str):
+        parts = re.findall(r"\[([^\]]*)\]", dims)
+        vals = []
+        for p in parts:
+            p = p.strip()
+            vals.append(int(p) if p.isdigit() else p)
+        return vals
+
+    def expand(m: re.Match) -> str:
+        attrs = m.group(1).strip()
+        body_end = _shared_decl_end(text, m.end())
+        if body_end < 0:
+            raise TransformError(f"{rel_path}:{line_of(text, m.start())}: unterminated __constant__")
+        body = text[m.end():body_end]
+        # split the initializer off at the first '=' that is not inside brackets/parens
+        depth, cut = 0, -1
+        for i, ch in enumerate(body):
+            if ch in "([{":
+                depth += 1
+            elif ch in ")]}":
+                depth -= 1
+            elif ch == "=" and depth == 0:
+                cut = i
+                break
+        decl = body[:cut] if cut >= 0 else body
+        init = body[cut + 1:] if cut >= 0 else None
+        base, declarators = split_type_and_declarators(decl)
+        base = (attrs + " " + base).strip()
+        dm = DECLARATOR.fullmatch(declarators.strip()) if declarators else None
+        if not base or not dm or not dm.group(3):
+            raise TransformError(f"{rel_path}:{line_of(text, m.start())}: cannot parse __constant__ "
+                                 f"'{body.strip()}'")
+        name = dm.group(2)
+        dims = parse_dims(dm.group(3))
+        line = line_of(text, m.start())
+        after = line + text.count("\n", m.start(), body_end)
+        if init is not None:
+            # static initializer -> constexpr (measured: device code reads it, probe10)
+            stats["constant_constexpr"] += 1
+            return (f'\n#line {line} "{rel_path}"\n'
+                    f"constexpr {base} {name}{dm.group(3).strip()} ={init};"
+                    f'\n#line {after} "{rel_path}"\n')
+        if len(dims) == 1:
+            stride = 1
+        elif len(dims) == 2:
+            stride = dims[1]
+        else:
+            raise TransformError(
+                f"{rel_path}:{line_of(text, m.start())}: a runtime-filled __constant__ with {len(dims)} "
+                f"dimensions is not handled; the shim has const_ref1d/const_ref2d (PLAN.md §1.3(c))")
+        if not isinstance(stride, int):
+            raise TransformError(f"{rel_path}:{line_of(text, m.start())}: __constant__ {name} has a non-"
+                                 f"constant inner extent '{dims[-1]}', which a device view cannot stride")
+        plan.runtime.append({"name": name, "base": base, "dims": len(dims), "stride": stride})
+        stats["constant_runtime"] += 1
+        return (f'\n#line {line} "{rel_path}"\n'
+                f"static ::strata::sycl_compat::const_storage<{base}> _strata_ct_{name};"
+                f'\n#line {after} "{rel_path}"\n')
+
+    out, cursor = [], 0
+    for m in CONSTANT_START.finditer(text):
+        if in_spans(m.start(), spans):
+            continue
+        out.append(text[cursor:m.start()])
+        out.append(expand(m))
+        cursor = _shared_decl_end(text, m.end()) + 1
+    out.append(text[cursor:])
+    text = "".join(out)
+
+    # The host-side fill names the constant; after the declaration rewrite the name only exists as a kernel
+    # parameter, so cudaMemcpyToSymbol's first argument has to move to the storage handle.
+    for c in plan.runtime:
+        pattern = re.compile(r"\bcudaMemcpyToSymbol\s*\(\s*" + re.escape(c["name"]) + r"\s*,")
+        text, n = pattern.subn(f"cudaMemcpyToSymbol(_strata_ct_{c['name']},", text)
+        stats["symbol_copies"] += n
+        if n == 0:
+            raise TransformError(
+                f"{rel_path}: __constant__ {c['name']} has no initializer and no cudaMemcpyToSymbol site; "
+                f"nothing would ever fill it")
+    return text, plan
+
+
+GLOBAL_START = re.compile(r"\b__global__")
+
+# File-scope `__device__` VARIABLES with a static initializer: DPC++ refuses a non-const global in device code
+# ("SYCL kernel cannot use a non-const global variable", native_mmvq.cu:420 - `__device__ __align__(4) int8_t
+# iq4nl_values[16] = {...}`).  A read-only table becomes `constexpr`, exactly like a statically initialized
+# `__constant__` (measured in probe10).  Only declarations that are clearly a VARIABLE with an array extent and
+# an initializer are touched - a function definition (no `[` dims, or a `(` before the `=`) is left alone.
+DEVICE_GLOBAL = re.compile(r"\b__device__\s+((?:__align__\s*\([^)]*\)\s*)*)")
+
+# Attributes that sit BETWEEN `__global__` and the parameter list - recognised by kernel_params_open, which
+# steps over them together with their parentheses.
+GLOBAL_ATTRS = re.compile(r"\s*(?:__launch_bounds__|__align__|__attribute__)")
+
+
+def kernel_params_open(text: str, after_global: int):
+    """Index of the `(` that opens the parameter list of the `__global__` function at `after_global`.
+
+    Attributes between `__global__` and the parameter list must be stepped over: `__launch_bounds__` is a
+    macro that expands to nothing, so an injected parameter inside it disappears silently - which is how
+    iq_kernels.cu's `__global__ void __launch_bounds__(128) mmvq_kernel(...)`, sampler.cu's
+    `__global__ void __launch_bounds__(1024)\nsampler_one_block_kernel(...)` and kv_stream.cu's
+    `__launch_bounds__(RT)` kept their old signature.  The attribute is recognised by the word immediately
+    before the `(`, so a return type or a line break in between does not matter.
+    """
+    p = after_global
+    while True:
+        i = text.find("(", p)
+        if i < 0:
+            return -1
+        j = i
+        while j > 0 and text[j - 1] in " \t\r\n":
+            j -= 1
+        k = j
+        while k > 0 and (text[k - 1].isalnum() or text[k - 1] == "_"):
+            k -= 1
+        if text[k:j] in ("__launch_bounds__", "__align__", "__attribute__"):
+            close = match_delim(text, i, "(", ")")
+            if close < 0:
+                return -1
+            p = close + 1
+            continue
+        return i
+
+
+def rewrite_device_globals(text: str, spans, rel_path: str, stats: dict) -> str:
+    """`__device__ T name[N] = {...};` (file scope) -> `constexpr T name[N] = {...};`."""
+    def expand(m: re.Match) -> str:
+        attrs = m.group(1).strip()
+        body_end = _shared_decl_end(text, m.end())
+        if body_end < 0:
+            return m.group(0)
+        body = text[m.end():body_end]
+        if "(" in body or "=" not in body or "[" not in body:
+            return m.group(0)          # a function definition or a scalar; not this rule's business
+        decl, _, init = body.partition("=")
+        base, declarators = split_type_and_declarators(decl)
+        dm = DECLARATOR.fullmatch(declarators.strip()) if declarators else None
+        if not base or not dm or not dm.group(3):
+            return m.group(0)
+        base = (attrs + " " + base).strip()
+        line = line_of(text, m.start())
+        after = line + text.count("\n", m.start(), body_end)
+        stats["device_globals"] += 1
+        return (f'\n#line {line} "{rel_path}"\n'
+                f"constexpr {base} {dm.group(2)}{dm.group(3).strip()} ={init};"
+                f'\n#line {after} "{rel_path}"\n')
+
+    out, cursor = [], 0
+    for m in DEVICE_GLOBAL.finditer(text):
+        if in_spans(m.start(), spans):
+            continue
+        repl = expand(m)
+        if repl == m.group(0):
+            continue
+        out.append(text[cursor:m.start()])
+        out.append(repl)
+        cursor = _shared_decl_end(text, m.end()) + 1
+    out.append(text[cursor:])
+    return "".join(out)
+
+
+def inject_dyn_param(text: str, spans, rel_path: str, stats: dict) -> str:
+    """Prepend `uint8_t* _sycl_dyn` to the parameter list of every `__global__` function (PLAN.md D3).
+
+    The dynamic shared-memory base has to reach the KERNEL FUNCTION, not just the lambda at the launch site:
+    `extern __shared__` is declared inside the kernel body, and the body is a function of its own.  Every
+    kernel therefore takes it first, and every launch passes the launcher's `_sycl_dyn` there - nullptr when
+    the launch asked for no dynamic shared memory, which is exactly CUDA's behaviour.
+    """
+    out, cursor = [], 0
+    for m in GLOBAL_START.finditer(text):
+        if in_spans(m.start(), spans):
+            continue
+        p = kernel_params_open(text, m.end())
+        if p < 0:
+            continue
+        close = match_delim(text, p, "(", ")")
+        if close < 0:
+            continue
+        inner = text[p + 1:close].strip()
+        repl = "uint8_t* _sycl_dyn" if inner in ("", "void") else f"uint8_t* _sycl_dyn, {inner}"
+        out.append(text[cursor:p + 1])
+        out.append(repl)
+        cursor = close
+        stats["kernels_dyn_param"] += 1
+    out.append(text[cursor:])
+    return "".join(out)
+
+
+def append_kernel_params(text: str, spans, rel_path: str, params: str, stats: dict) -> str:
+    """Append `params` to the parameter list of every `__global__` function in the TU.
+
+    The constants are threaded through the kernel's own parameter list (PLAN.md §1.3(c)), so every kernel in
+    the file has to receive them - including kernels that do not read the table, whose parameter is simply
+    unused.  An empty parameter list (`foo()`) is replaced rather than extended, so the result is never
+    `foo(, x)`.
+    """
+    out, cursor = [], 0
+    for m in GLOBAL_START.finditer(text):
+        if in_spans(m.start(), spans):
+            continue
+        p = kernel_params_open(text, m.end())
+        if p < 0:
+            continue
+        close = match_delim(text, p, "(", ")")
+        if close < 0:
+            continue
+        inner = text[p + 1:close].strip()
+        repl = params if inner in ("", "void") else f"{inner}, {params}"
+        out.append(text[cursor:p + 1])
+        out.append(repl if inner in ("", "void") else " " + repl)
+        cursor = close
+        stats["kernel_params_extended"] += 1
+    out.append(text[cursor:])
+    return "".join(out)
+
+
+# ---------------------------------------------------------------------------
 # refusals
 # ---------------------------------------------------------------------------
 
 REFUSALS = [
-    (re.compile(r"\bextern\s+__shared__"),
-     "extern __shared__ (dynamic shared memory) is not rewritten yet: it needs the launcher to inject the "
-     "base pointer as a leading kernel parameter (PLAN.md D3, M2)"),
-    (re.compile(r"\b__constant__"),
-     "__constant__ is not rewritten yet: it becomes a USM buffer threaded through the kernel's parameter list "
-     "together with its cudaMemcpyToSymbol sites (PLAN.md §1.3(c), M2)"),
     (re.compile(r"(__asm__|\basm\s*\(|asm\s+volatile)"),
      "inline PTX assembler: this is one of the 5 hand-ported files (PLAN.md §2.3).  Risk 7 is a shim that "
      "compiles the CUDA asm under SYCL; the transform refuses the file instead"),
@@ -370,15 +777,17 @@ def check_refusals(text: str, spans, rel_path: str, *, post_shared: bool = False
                 continue
             raise TransformError(f"{rel_path}:{line_of(text, m.start())}: {why}")
     if post_shared:
-        # Anything the two __shared__ patterns did not rewrite - a multi-declarator line such as
-        # `__shared__ float a[32], b[32];`, or an empty-dimension form - is refused here rather than left in
-        # the output, where `__shared__` is not defined and would fail with an unrelated message.
-        for m in re.finditer(r"__shared__", text):
-            if in_spans(m.start(), spans):
-                continue
-            raise TransformError(
-                f"{rel_path}:{line_of(text, m.start())}: a __shared__ declaration the transform does not "
-                f"handle (multi-declarator or empty-dimension form); rewrite it by hand or extend syclify.py")
+        # Anything the __shared__ / extern __shared__ / __constant__ patterns did not rewrite is refused here
+        # rather than left in the output, where the token is undefined and would fail with an unrelated
+        # message.  This is the check that makes a silently-skipped declaration impossible.
+        for token, why in (("__shared__", "a __shared__ declaration the transform does not handle "
+                                          "(multi-declarator or empty-dimension form)"),
+                           ("__constant__", "a __constant__ declaration the transform does not handle")):
+            for m in re.finditer(re.escape(token), text):
+                if in_spans(m.start(), spans):
+                    continue
+                raise TransformError(f"{rel_path}:{line_of(text, m.start())}: {why}; rewrite it by hand or "
+                                     f"extend syclify.py")
 
 
 # ---------------------------------------------------------------------------
@@ -396,6 +805,12 @@ RENAMES = [
     ("__sinf", "sinf_fast"),
     ("__cosf", "cosf_fast"),
     ("__powf", "powf_fast"),
+    # M2: glibc declares `rsqrtf` (a GNU extension, not a C standard function) so DPC++ has no device
+    # wrapper for it either - a kernel calling it fails with "SYCL kernel cannot call an undefined function
+    # without SYCL_EXTERNAL attribute" (elementwise.cu:108, native_gr_norm.cu:72).  `__isnanf` is the same
+    # case (bits/mathcalls.h expands __isnanf from isnan): native_router.cu:70.
+    ("rsqrtf", "rsqrtf_fast"),
+    ("__isnanf", "isnanf_dev"),
 ]
 
 
@@ -464,17 +879,32 @@ def main(argv=None) -> int:
     spans = opaque_spans(original)
     check_refusals(original, spans, rel)
 
-    stats = {"launches": 0, "shared_arrays": 0, "shared_scalars": 0, "renames": 0}
-    text = rewrite_launches(original, spans, fnv1a(rel), rel, stats)
+    stats = {"launches": 0, "shared_arrays": 0, "shared_scalars": 0, "renames": 0,
+             "extern_shared": 0, "constant_constexpr": 0, "constant_runtime": 0,
+             "symbol_copies": 0, "kernel_params_extended": 0, "kernels_dyn_param": 0,
+             "macro_launches": 0, "device_globals": 0}
+    text, plan = rewrite_constants(original, spans, rel, stats)
+    text = rewrite_launches(text, opaque_spans(text), fnv1a(rel), rel, stats,
+                            const_args=plan.launch_args())
     text = rewrite_renames(text, opaque_spans(text), stats)
-    text = rewrite_shared(text, opaque_spans(text), rel, stats)
+    text = rewrite_device_globals(text, opaque_spans(text), rel, stats)
+    text = rewrite_extern_shared(text, opaque_spans(text), rel, stats)   # before the static __shared__ rule:
+    text = rewrite_shared(text, opaque_spans(text), rel, stats)          # its pattern also matches `__shared__`
+    text = inject_dyn_param(text, opaque_spans(text), rel, stats)
+    if plan.runtime:
+        text = append_kernel_params(text, opaque_spans(text), rel, plan.kernel_params(), stats)
     check_refusals(text, opaque_spans(text), rel, post_shared=True)
 
     header = (
         f"// GENERATED by tools/sycl/syclify.py from {rel} - DO NOT EDIT.\n"
         f"// The source is the .cu; this file is a mechanical translation (see the tool's docstring).\n"
         f"// rewritten: {stats['launches']} launch site(s), {stats['shared_arrays']} shared array(s), "
-        f"{stats['shared_scalars']} shared scalar(s), {stats['renames']} fast-math rename(s)\n"
+        f"{stats['shared_scalars']} shared scalar(s), {stats['renames']} fast-math rename(s), "
+        f"{stats['extern_shared']} extern __shared__ base(s), "
+        f"{stats['constant_constexpr']} static __constant__ -> constexpr, "
+        f"{stats['constant_runtime']} runtime __constant__ threaded as a kernel parameter "
+        f"({stats['kernel_params_extended']} kernel signature(s) extended, "
+        f"{stats['symbol_copies']} cudaMemcpyToSymbol site(s))\n"
         f"#line 1 \"{rel}\"\n"
     )
     os.makedirs(os.path.dirname(os.path.abspath(a.output)) or ".", exist_ok=True)
@@ -485,7 +915,9 @@ def main(argv=None) -> int:
     if not a.quiet:
         print(f"syclify: {rel} -> {os.path.relpath(a.output, repo_root)} "
               f"({stats['launches']} launches, {stats['shared_arrays']} shared arrays, "
-              f"{stats['shared_scalars']} shared scalars, {stats['renames']} renames)")
+              f"{stats['shared_scalars']} shared scalars, {stats['renames']} renames, "
+              f"{stats['extern_shared']} extern shared, "
+              f"{stats['constant_constexpr']}+{stats['constant_runtime']} constants)")
     return 0
 
 

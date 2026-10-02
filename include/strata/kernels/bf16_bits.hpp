@@ -19,7 +19,7 @@
 #include <cstdint>
 #include <cstring>
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
+#if defined(__CUDACC__) || defined(__HIPCC__) || defined(STRATA_USE_SYCL)
 #define STRATA_BF16_HD __host__ __device__
 #else
 #define STRATA_BF16_HD

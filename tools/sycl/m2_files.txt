@@ -1,0 +1,31 @@
+# tools/sycl/m2_files.txt - the .cu files M2 (card t_6f4e9d6c) must get building + parity-green.
+# PLAN.md section 2 numbers in the comments.  The parity tests that need them are in parentheses.
+native_mmvq          # 1  mmvq_multi_parity
+iq_kernels           # 2  iq_parity, iq_multi_parity
+s2_expert_grouped    # 3  s2_expert_grouped_parity
+s_gemv               # 10 s_gemv_parity, s_gemv_q8k_parity
+router_top10         # 15 router_top10_parity
+elementwise          # 18 elementwise_parity
+quantize_act         # 19 quantize_act_parity
+kv_stream            # 22 kv_stream_parity
+dequant_bf16         # 23 dequant_bf16_test
+gdn                  # 24 gdn_parity
+kv_q4                # 26 kv_q4_parity
+native_bf16          # 32 bf16_gemv_parity
+cvec                 # 33 cvec_parity
+fused_gdn            # 34 gdn_parity
+s2_gemv_fast         # 35
+bf16_gemv            # 37 bf16_gemv_parity
+kv_q8                # 40 kv_q8_parity
+native_gdn           # 43 gdn_parity
+native_gr_norm       # 45
+s2_gemv_q8           # 46 s2_gemv_q8_parity
+s2_gemv_quads        # 47 s2_gemv_parity
+native_moe           # 48
+s2_gemv              # 49 s2_gemv_parity
+dequant_s2           # 50 dequant_s2_parity
+# also required by the M2 acceptance list (not in the card's file list, but their parity tests are):
+sampler              # 6  sampler_parity
+native_router        # 42 router_top10_parity
+rope                 # 38 rope_parity
+native_rope          # 36 rope_parity

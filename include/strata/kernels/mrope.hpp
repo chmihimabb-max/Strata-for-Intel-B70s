@@ -42,7 +42,11 @@ void rope_table_release(const float* cos_tab);
 /// kernels compute the angle exactly as before).
 RopeTab rope_table_for(const RopeScaling& scaling);
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
+// STRATA_USE_SYCL joins the list in M2: the guard means "a device compilation, where __host__/__device__ and
+// the device-only helpers below are meaningful", and the SYCL build has exactly the same need (the compat
+// header defines __host__/__device__ as empty macros).  Without it mrope_pos/rope_tab_cs do not exist and
+// rope.cu/native_rope.cu fail with "use of undeclared identifier 'mrope_pos'".
+#if defined(__CUDACC__) || defined(__HIPCC__) || defined(STRATA_USE_SYCL)
 /// ggml rope_multi, is_imrope, sections {11, 11, 10, 0}: sector = pair % 32; sector % 3 == 1 -> h (sector < 33),
 /// == 2 -> w (sector < 30), == 0 -> t (sector < 33).  For pairs 0..31 all three bounds hold, so it is pair % 3.
 __device__ __forceinline__ int mrope_pos(const int32_t* tab, int pos, int pair) {

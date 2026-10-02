@@ -28,6 +28,11 @@
 // return a specific, documented error so the engine's own degrade paths run instead of a silent no-op.
 #include <sycl/sycl.hpp>
 
+// CUDA's builtin vector types (float2/float4/int2/uint4/char4/... and the make_* constructors) live in
+// their own header: cuda_fp16.h needs them too (__half22float2 returns a float2), and the kernels include
+// <cuda_fp16.h> themselves (M2).  CUDA's <cuda_runtime.h> pulls <vector_types.h> in the same way.
+#include "vector_types.h"
+
 // <cuda_runtime.h> pulls CUDA's device math in; kernels in the tree call fmaf/expf/logf/sqrtf without
 // including anything themselves (cvec.cu:66 is `fmaf` with only <stdexcept> beside it).  DPC++ ships
 // sycl/stl_wrappers/cmath exactly so <cmath> stays usable from device code.
@@ -99,9 +104,18 @@ inline launch_config cfg(const G& g, const B& b, unsigned long long smem = 0) {
     return launch_config{dim3(g), dim3(b), smem};
 }
 
-/// One distinct type per launch site, so DPC++ has a unique kernel name for each.  (File, Line) is unique
-/// within a translation unit by construction; the file's FNV-1a hash keeps two files' line 42 apart.
-template <unsigned long long File, unsigned Line>
+/// A launch site's name, kept for the reader and for the M1 core TUs that already emit one.
+///
+/// **M2 measured that the launcher must NOT use it as the `parallel_for` kernel name.**  A launch inside a
+/// function TEMPLATE (native_mmvq.cu:1052's `native_mmvq_multi_kernel<F, NCOLS, NW, 2>`, iq_kernels.cu's
+/// `launch_mmvq<TY>`) is instantiated several times with different lambdas but the SAME (file, line), and a
+/// launch inside a `#define` body (dequant_bf16.cu:206's `STRATA_DQ`) is expanded several times at ONE line:
+/// naming the kernel after the source position therefore produces several different kernels under one name
+/// ("definition with same mangled name as another definition").  `probe/probe12_unnamed_kernel.cpp` measured
+/// that this DPC++ (2026.1) with `-fsycl-device-code-split=per_kernel` accepts and RUNS unnamed kernel
+/// lambdas, including two instantiations of one template, so `launch()` below uses an unnamed kernel and the
+/// whole collision class disappears.
+template <unsigned long long File, unsigned Line, unsigned Ord = 0>
 struct kernel_name {};
 
 namespace detail {
@@ -289,8 +303,63 @@ inline void sync_all() {
     for (sycl::queue* q : backend().streams) q->wait_and_throw();
 }
 
+// ===========================================================================
+// `__constant__` tables (PLAN.md §1.3(c), M2).
+//
+// `__constant__` has no SYCL spelling.  Two cases exist in the tree and they need different emulations:
+//
+//   * a table with a STATIC initializer (`__constant__ int8_t kv_iq4nl[16] = {...}`, dequant_bf16.cu:33,
+//     s_gemv.cu:32) becomes `constexpr`, which the transform emits.  MEASURED (probe/probe10_const.cpp, card
+//     0): DPC++ device code reads a constexpr global and gets the right bytes.
+//   * a table filled at RUNTIME by cudaMemcpyToSymbol (`__constant__ float c_codes[256][4]`,
+//     s2_gemv_fast.cu:44 with :59) cannot be constexpr - the bytes are not known until the host copies them.
+//     It becomes a device USM block owned by `const_storage` on the host, and the kernels that read it get a
+//     by-value handle (`const_ref1d`/`const_ref2d`) carrying the ARRAY'S OWN NAME, appended to their
+//     parameter list by the transform - which is why the kernel body needs no rewriting at all.
+//
+// A `sycl::device_global` was measured for this and rejected: in oneAPI 2026.1 the host-side `.get()` throws
+// ("get() is not supported on host device"), so a host-filled table cannot go through it.
+// ===========================================================================
+template <class T>
+struct const_storage {
+    T* dev = nullptr;
+    size_t count = 0;
+    /// cudaMemcpyToSymbol's semantics: allocate on first use, then copy H2D and WAIT (CUDA's is synchronous
+    /// for the default stream).
+    cudaError_t upload(const void* src, size_t bytes, size_t offset = 0) {
+        init_backend();
+        if (dev == nullptr) {
+            dev = sycl::malloc_device<T>(bytes / sizeof(T) + (offset / sizeof(T)) + 1, default_queue());
+            if (dev == nullptr) return cudaErrorMemoryAllocation;
+            count = bytes / sizeof(T);
+        }
+        default_queue().memcpy(reinterpret_cast<unsigned char*>(dev) + offset, src, bytes).wait();
+        return cudaSuccess;
+    }
+};
+
+/// 1-D view of a const_storage block, usable as `t[i]` in device code.
+template <class T>
+struct const_ref1d {
+    const T* p = nullptr;
+    const T& operator[](long long i) const { return p[i]; }
+};
+template <class T, long long S1>
+struct const_row {
+    const T* p = nullptr;
+    const T& operator[](long long j) const { return p[j]; }
+};
+/// 2-D view, usable as `t[i][j]` in device code.
+template <class T, long long S1>
+struct const_ref2d {
+    const T* p = nullptr;
+    const_row<T, S1> operator[](long long i) const { return const_row<T, S1>{p + i * S1}; }
+};
+
 // ---- the launcher ---------------------------------------------------------
-template <class Tag, class Fn>
+// Unnamed kernel lambdas on purpose - see the measurement note on `kernel_name` above.  The tag parameter is
+// gone: the transform no longer emits one, and the device compiler names the kernel after the lambda itself.
+template <class Fn>
 inline void launch(const launch_config& c, cudaStream_t stream, Fn fn) {
     sycl::queue& q = *queue_for(reinterpret_cast<void*>(stream));
     const sycl::range<3> global{c.grid.x * c.block.x, c.grid.y * c.block.y, c.grid.z * c.block.z};
@@ -298,19 +367,15 @@ inline void launch(const launch_config& c, cudaStream_t stream, Fn fn) {
     if (c.smem != 0) {
         q.submit([=](sycl::handler& h) {
             sycl::local_accessor<uint8_t, 1> dyn{sycl::range<1>(c.smem), h};
-            h.parallel_for<detail::kernel_name_dynamic<Tag>>(sycl::nd_range<3>{global, local},
-                                                             [=](sycl::nd_item<3> item) {
-                                                                 fn(item, const_cast<uint8_t*>(
-                                                                              dyn.get_multi_ptr<
-                                                                                  sycl::access::decorated::no>()
-                                                                                  .get()));
-                                                             });
+            h.parallel_for(sycl::nd_range<3>{global, local}, [=](sycl::nd_item<3> item) {
+                fn(item, const_cast<uint8_t*>(
+                             dyn.get_multi_ptr<sycl::access::decorated::no>().get()));
+            });
         });
     } else {
         q.submit([=](sycl::handler& h) {
-            h.parallel_for<detail::kernel_name_static<Tag>>(
-                sycl::nd_range<3>{global, local},
-                [=](sycl::nd_item<3> item) { fn(item, static_cast<uint8_t*>(nullptr)); });
+            h.parallel_for(sycl::nd_range<3>{global, local},
+                           [=](sycl::nd_item<3> item) { fn(item, static_cast<uint8_t*>(nullptr)); });
         });
     }
 }
@@ -836,6 +901,33 @@ using strata::sycl_compat::cudaStream_t;
 using strata::sycl_compat::cudaSuccess;
 using strata::sycl_compat::dim3;
 
+// Explicit overloads rather than a template: a `template <class T> min(T,T)` in the global namespace would
+// also capture HOST calls in the same translation unit that meant std::min.  These are the CUDA overloads.
+inline signed char min(signed char a, signed char b) { return a < b ? a : b; }
+inline unsigned char min(unsigned char a, unsigned char b) { return a < b ? a : b; }
+inline short min(short a, short b) { return a < b ? a : b; }
+inline unsigned short min(unsigned short a, unsigned short b) { return a < b ? a : b; }
+inline int min(int a, int b) { return a < b ? a : b; }
+inline unsigned min(unsigned a, unsigned b) { return a < b ? a : b; }
+inline long min(long a, long b) { return a < b ? a : b; }
+inline unsigned long min(unsigned long a, unsigned long b) { return a < b ? a : b; }
+inline long long min(long long a, long long b) { return a < b ? a : b; }
+inline unsigned long long min(unsigned long long a, unsigned long long b) { return a < b ? a : b; }
+inline float min(float a, float b) { return a < b ? a : b; }
+inline double min(double a, double b) { return a < b ? a : b; }
+inline signed char max(signed char a, signed char b) { return a > b ? a : b; }
+inline unsigned char max(unsigned char a, unsigned char b) { return a > b ? a : b; }
+inline short max(short a, short b) { return a > b ? a : b; }
+inline unsigned short max(unsigned short a, unsigned short b) { return a > b ? a : b; }
+inline int max(int a, int b) { return a > b ? a : b; }
+inline unsigned max(unsigned a, unsigned b) { return a > b ? a : b; }
+inline long max(long a, long b) { return a > b ? a : b; }
+inline unsigned long max(unsigned long a, unsigned long b) { return a > b ? a : b; }
+inline long long max(long long a, long long b) { return a > b ? a : b; }
+inline unsigned long long max(unsigned long long a, unsigned long long b) { return a > b ? a : b; }
+inline float max(float a, float b) { return a > b ? a : b; }
+inline double max(double a, double b) { return a > b ? a : b; }
+
 // ===========================================================================
 // The macro surface the kernels are written against.
 // ===========================================================================
@@ -854,9 +946,26 @@ using strata::sycl_compat::dim3;
 #define __syncthreads() (::strata::sycl_compat::syncthreads())
 #define __syncwarp(...) (::strata::sycl_compat::syncwarp())
 
-// cudaMemcpyToSymbol has no SYCL equivalent: thread the buffer in as a kernel argument instead (PLAN.md
-// §1.3(c)).  Defined so a file that mentions it fails where it is used, with a readable reason.
-#define cudaMemcpyToSymbol(...) \
-    (::strata::sycl_compat::cudaErrorNotSupported)
+// cudaMemcpyToSymbol has no SYCL equivalent.  The transform rewrites its first argument to the const_storage
+// handle the `__constant__` declaration became (PLAN.md §1.3(c)); this overload is that target.
+template <class T>
+inline cudaError_t cudaMemcpyToSymbol(::strata::sycl_compat::const_storage<T>& storage, const void* src,
+                                      size_t bytes, size_t offset = 0) {
+    return storage.upload(src, bytes, offset);
+}
 
 #include "intrinsics.hpp"
+
+// ---------------------------------------------------------------------------
+// CUDA's atomics are GLOBAL device functions and kernel text calls them unqualified:
+// `atomicCAS(&slot, 0, 1)` (kv_stream.cu:102), `atomicOr(...)` (sampler.cu).  ADL cannot reach into
+// strata::sycl_compat for a builtin argument type, so the names are introduced here - after intrinsics.hpp,
+// which defines them.
+// ---------------------------------------------------------------------------
+using strata::sycl_compat::atomicAdd;
+using strata::sycl_compat::atomicAnd;
+using strata::sycl_compat::atomicCAS;
+using strata::sycl_compat::atomicExch;
+using strata::sycl_compat::atomicMax;
+using strata::sycl_compat::atomicMin;
+using strata::sycl_compat::atomicOr;

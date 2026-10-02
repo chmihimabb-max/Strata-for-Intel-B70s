@@ -9,19 +9,25 @@
 
 #include <cstdint>
 
+#include "vector_types.h"   // CUDA's float2/float4/int2/... - __half22float2 returns one of those
+
 using __half = sycl::half;
 
-struct float2 {
-    float x = 0.0f, y = 0.0f;
-};
-
-/// CUDA's __half2: two halves, .x and .y as members (sycl::vec spells them .x()/.y()).
-struct __half2 {
+/// CUDA's __half2: two halves, .x and .y as members (sycl::vec spells them .x()/.y()), 4-byte aligned as
+/// CUDA declares it.  The alignment is load-bearing: native_mmvq.cu:103 static_asserts
+/// `alignof(Q5KBlock) == 4`, which holds on CUDA only because the block's `half2 dm` member is 4-aligned.
+struct alignas(4) __half2 {
     sycl::half x;
     sycl::half y;
     __half2() = default;
     __half2(sycl::half a, sycl::half b) : x(a), y(b) {}
 };
+static_assert(sizeof(__half2) == 4 && alignof(__half2) == 4, "CUDA's __half2 layout");
+
+// CUDA also spells these without the leading underscores, and ggml-common.h (included by iq_kernels.cu)
+// uses the short spelling.
+using half = __half;
+using half2 = __half2;
 
 inline __half __float2half(float f) { return sycl::half(f); }
 inline __half __float2half_rn(float f) { return sycl::half(f); }   // SYCL's software conversion is RN
@@ -41,6 +47,20 @@ inline __half __ushort_as_half(unsigned short u) { return sycl::bit_cast<sycl::h
 
 inline float2 __half22float2(__half2 h) { return float2{(float) h.x, (float) h.y}; }
 inline float2 __half2float2(__half2 h) { return __half22float2(h); }
+
+inline __half2 make_half2(__half a, __half b) { return __half2{a, b}; }
+inline __half2 __float22half2_rn(float2 f) { return __half2{sycl::half(f.x), sycl::half(f.y)}; }
+inline __half2 __hsub2(__half2 a, __half2 b) {
+    return __half2{sycl::half((float) a.x - (float) b.x), sycl::half((float) a.y - (float) b.y)};
+}
+/// __half2 as the 32-bit word CUDA packs it into (x in the low half).
+inline unsigned __half2_as_uint(__half2 h) {
+    return (unsigned) __half_as_ushort(h.x) | ((unsigned) __half_as_ushort(h.y) << 16);
+}
+inline __half2 __uint_as_half2(unsigned u) {
+    return __half2{__ushort_as_half((unsigned short) (u & 0xFFFFu)),
+                   __ushort_as_half((unsigned short) (u >> 16))};
+}
 
 inline __half2 __hmul2(__half2 a, __half2 b) {
     return __half2{sycl::half((float) a.x * (float) b.x), sycl::half((float) a.y * (float) b.y)};

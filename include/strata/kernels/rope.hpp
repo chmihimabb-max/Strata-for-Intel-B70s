@@ -18,7 +18,8 @@
 
 #include "strata/kernels/rope_scaling.hpp"
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
+// M2: the SYCL build needs the same device branch (see mrope.hpp for why STRATA_USE_SYCL is in this list).
+#if defined(__CUDACC__) || defined(__HIPCC__) || defined(STRATA_USE_SYCL)
 #define STRATA_ROPE_HD __host__ __device__
 #else
 #define STRATA_ROPE_HD

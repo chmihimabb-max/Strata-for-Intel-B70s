@@ -37,7 +37,7 @@
 
 #include <cmath>
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
+#if defined(__CUDACC__) || defined(__HIPCC__) || defined(STRATA_USE_SYCL)
 #define STRATA_ROPE_SCALING_HD __host__ __device__
 #else
 #define STRATA_ROPE_SCALING_HD
