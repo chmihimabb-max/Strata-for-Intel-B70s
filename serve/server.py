@@ -667,6 +667,15 @@ def child_env(cfg: dict) -> dict:
     elif cfg.get("backend") == "sycl":          # Intel XPU: the engine reads ZE_AFFINITY_MASK, not the CUDA variables
         if sycl_visible(cfg):
             env["ZE_AFFINITY_MASK"] = ",".join(str(i) for i in sycl_visible(cfg))
+        # S2 (card t_4644839b): the DPC++ runtime JIT-compiles each program unit of the device image the FIRST time
+        # one of its kernels is launched, and without SYCL_CACHE_PERSISTENT it keeps that in memory only - so every
+        # new engine process pays all of it again, on the user's first prompt.  Measured on the W4A16 pack, card 0:
+        # the QSA prompt-attention unit alone is 12.9 s of the first batched prompt chunk's 16.1 s (the same 165
+        # tokens read warm in 1.5 s), the next unit 1.7 s and the other 27 ~1 s together.  With the persistent cache
+        # on, the same cold prompt in a NEW process reads in 1.85 s (87-89 tok/s) and the run writes 30 units /
+        # 58.3 MB into SYCL_CACHE_DIR (the runtime's default is ~/.cache/libsycl_cache).  A value already in the
+        # environment or in the config's own "env" (applied below) still wins, so it can be turned back off.
+        env["SYCL_CACHE_PERSISTENT"] = env.get("SYCL_CACHE_PERSISTENT", "1")
     elif gpu_list(cfg):                              # issue #51: the GPU(s) to run on, numbered as nvidia-smi does; CUDA's
         env["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"      # own default order (fastest first) can number the cards otherwise
         env["CUDA_VISIBLE_DEVICES"] = ",".join(str(i) for i in gpu_list(cfg))

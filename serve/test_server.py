@@ -576,6 +576,23 @@ class GpuChoice(unittest.TestCase):
         plain = child_env({"backend": "sycl"})           # no choice: both cards stay visible, as the engine defaults
         self.assertEqual(plain.get("ZE_AFFINITY_MASK"), os.environ.get("ZE_AFFINITY_MASK"))
 
+    def test_sycl_persistent_kernel_cache(self):
+        """S2 (card t_4644839b): the SYCL engine's first batched prompt chunk pays the DPC++ JIT compile of the
+        prompt path (~16.1 s against 1.5 s warm for the same 165 tokens), so the server turns the persistent program
+        cache on for the engine; an explicit value in the environment or in the config's "env" still wins, and no
+        other backend is touched."""
+        from serve.server import child_env
+        clean = {k: v for k, v in os.environ.items() if k != "SYCL_CACHE_PERSISTENT"}
+        with mock.patch.dict(os.environ, clean, clear=True):
+            self.assertEqual(child_env({"backend": "sycl", "gpu": 0})["SYCL_CACHE_PERSISTENT"], "1")
+            self.assertNotIn("SYCL_CACHE_PERSISTENT", child_env({"backend": "hip", "gpu": 0}))
+            self.assertNotIn("SYCL_CACHE_PERSISTENT", child_env({"gpu": 0}))          # CUDA: unchanged
+            with mock.patch.dict(os.environ, {"SYCL_CACHE_PERSISTENT": "0"}, clear=False):
+                self.assertEqual(child_env({"backend": "sycl"})["SYCL_CACHE_PERSISTENT"], "0")
+        # the config's own "env" is applied last and decides on its own
+        self.assertEqual(child_env({"backend": "sycl", "env": {"SYCL_CACHE_PERSISTENT": "0"}})["SYCL_CACHE_PERSISTENT"],
+                         "0")
+
 
 class RecordingPrompt(MockEngine):
     def generate(self, ids, max_new, sampling, cancel, embeddings=None):
