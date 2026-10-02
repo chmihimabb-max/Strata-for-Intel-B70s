@@ -583,7 +583,37 @@ inline cudaError_t cudaMemcpy2DAsync(void* dst, size_t dpitch, const void* src, 
     return cudaSuccess;
 }
 
-/// SYCL has no driver-side free-memory query (Risk 10), so the shim accounts for what it handed out itself.
+/// Risk 10, SETTLED for this backend (M5c, card t_d8f8eca1): where the DEVICE reports its own free memory, that
+/// figure is the one the engine budgets from.  The accounting below cannot see the driver's own footprint.
+///
+/// MEASURED on card 0 (Arc Pro B70, `probe/probe_m5c_vram.cpp`, plan-evidence/m5c-vram.log): on an idle card the
+/// accounting reads 31.89 GiB free while UR_DEVICE_INFO_GLOBAL_MEM_FREE - what
+/// `sycl::ext::intel::info::device::free_memory` returns on this part, `info/ext_intel_device_traits.def:28` -
+/// says 31.25 GiB.  The 0.65 GiB between them is the driver's own (the L0 context, the page tables for tens of
+/// GiB of USM, the kernel modules, the command streams): no `cudaMalloc` in this process ever asked for it, and
+/// the gap is CONSTANT as the footprint grows (measured at 5, 15, 25 and 30 GiB).
+///
+/// THE CONSEQUENCE, measured (`logs/m5c-cache{10000,9900,9800,9700,9500}.log`): `--expert-cache auto` sized the
+/// cache from 26.55 GiB of claimed free space, so the process' footprint ended 0.6 GiB past what it believed was
+/// free; the driver paged, and the verify window's tail - a 248,320-block mmvq launch, the biggest single launch
+/// of the run - never finished (`logs/m5b-probe8.log`, UR_RESULT_ERROR_DEVICE_LOST).  One cache slot is
+/// 2,764,800 B, the cliff is between 9,900 slots (finished) and 10,000 (hung), and the difference is 264 MiB of
+/// TRUE headroom.  Two further things the accounting cannot do: it never goes back up (`cudaFree` does not
+/// decrement `device_bytes`, so a long-lived process under-reports free space), and it cannot see another
+/// process' allocations on the same card.
+inline bool device_free_bytes(size_t& out) {
+    init_backend();
+    backend_state& b = backend();
+    try {
+        sycl::device& d = b.devices[(size_t) b.current];
+        if (!d.has(sycl::aspect::ext_intel_free_memory)) return false;
+        out = (size_t) d.get_info<sycl::ext::intel::info::device::free_memory>();
+        return true;
+    } catch (...) {
+        return false;   // an extension query: a device without it keeps the accounting below
+    }
+}
+
 inline cudaError_t cudaMemGetInfo(size_t* free_bytes, size_t* total_bytes) {
     init_backend();
     backend_state& b = backend();
@@ -593,7 +623,11 @@ inline cudaError_t cudaMemGetInfo(size_t* free_bytes, size_t* total_bytes) {
     }
     const size_t total = b.devices[(size_t) b.current].get_info<sycl::info::device::global_mem_size>();
     if (total_bytes) *total_bytes = total;
-    if (free_bytes) *free_bytes = total > b.device_bytes ? total - b.device_bytes : 0;
+    if (free_bytes) {
+        size_t driver_free = 0;
+        *free_bytes = device_free_bytes(driver_free) ? driver_free
+                                                     : (total > b.device_bytes ? total - b.device_bytes : 0);
+    }
     return cudaSuccess;
 }
 

@@ -1246,9 +1246,25 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
         ms_tail += ms_since(ts);
         progress_at("verify window: waiting for the expert copies", (int64_t) T);
         cudaStreamSynchronize(copy_);
-        if (cudaStreamQuery(cs_) != cudaSuccess) {
-            err = "verify: the window's tail reported an error";
-            return false;
+        // M5c: NOT a bare `cudaStreamQuery`.  Under this backend's compat layer a query SUBMITS a fresh barrier
+        // and reports not-ready until that barrier executes, so the single check this line used to do failed the
+        // window every time the loop above had just exited cleanly - measured on the M5c sweep: every window that
+        // DID finish on the GPU died here with "the tail reported an error"
+        // (logs/m5c-cache{2000,6000,8000,9000}.log), which is a false negative, not a diagnosis.  Give the
+        // barrier a bounded moment instead, and if it still has not completed say the tail did not finish: a
+        // query that is not ready is not an error.
+        {
+            const Clock::time_point tq = Clock::now();
+            cudaError_t q = cudaErrorNotReady;
+            for (;;) {
+                q = cudaStreamQuery(cs_);
+                if (q == cudaSuccess || ms_since(tq) >= 5000) break;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            if (q != cudaSuccess) {
+                err = "verify: the window's tail did not finish (the last layer's combine or the head)";
+                return false;
+            }
         }
     } else {
         const cudaError_t se = cudaStreamSynchronize(cs_);
