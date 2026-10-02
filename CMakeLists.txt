@@ -818,6 +818,105 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP OR STRATA_ENABLE_SYCL)
     target_link_libraries(dequant_s2_parity PRIVATE strata_kernels ${_strata_gpu_runtime_target})
     add_test(NAME dequant_s2_parity COMMAND dequant_s2_parity --selftest)
     set_tests_properties(dequant_s2_parity PROPERTIES TIMEOUT 300)
+
+    # ---- M2: the decode hot path (PLAN.md §5 M2, card t_6f4e9d6c) ------------------------------------
+    # The same harnesses the CUDA/HIP builds register (CMakeLists.txt:537-719), now built against the SYCL
+    # runtime.  They are the acceptance list of the M2 card, so they are all compile-and-run, none skipped.
+    #
+    # Arithmetic contract: elementwise.cu and quantize_act.cu must NOT be contracted into FMAs, exactly as on
+    # HIP (CMakeLists.txt:354-359).  The property has to be set on the GENERATED TU, not the .cu: under SYCL
+    # the file that is compiled is ${STRATA_SYCL_GEN_DIR}/<name>.cpp, and a property on the .cu would be a
+    # silent no-op - which is the kind of silent difference this project keeps re-learning.
+    if(TARGET strata_sycl_runtime)
+      set_source_files_properties("${STRATA_SYCL_GEN_DIR}/elementwise.cpp" "${STRATA_SYCL_GEN_DIR}/quantize_act.cpp"
+        PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+    endif()
+
+    # `--selftest` variants
+    foreach(_t IN ITEMS s2_gemv_parity s2_gemv_q8_parity s_gemv_parity s_gemv_q8k_parity router_top10_parity
+                         rope_parity bf16_gemv_parity elementwise_parity quantize_act_parity
+                         s2_expert_grouped_parity)
+      add_executable(${_t} src/kernels/${_t}.cpp)
+      target_include_directories(${_t} PRIVATE ${_strata_gpu_include_directories})
+      target_link_libraries(${_t} PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+      add_test(NAME ${_t} COMMAND ${_t} --selftest)
+      set_tests_properties(${_t} PROPERTIES TIMEOUT 300)
+    endforeach()
+
+    # no-argument variants (they run their own comparison and exit non-zero on a mismatch)
+    foreach(_t IN ITEMS mmvq_multi_parity iq_multi_parity kv_q8_parity kv_q4_parity kv_stream_parity)
+      add_executable(${_t} src/kernels/${_t}.cpp)
+      target_include_directories(${_t} PRIVATE ${_strata_gpu_include_directories})
+      target_link_libraries(${_t} PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+      add_test(NAME ${_t} COMMAND ${_t})
+      set_tests_properties(${_t} PROPERTIES TIMEOUT 300)
+    endforeach()
+
+    # the three sampled paths of the same fixtures: the default kernel, the one-block kernel and the
+    # 0.1.20 kernel (PLAN.md §2 #6).  The environment variables are the engine's own switches.
+    add_executable(sampler_parity src/kernels/sampler_parity.cpp)
+    target_include_directories(sampler_parity PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(sampler_parity PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+    add_test(NAME sampler_parity COMMAND sampler_parity --selftest)
+    set_tests_properties(sampler_parity PROPERTIES ENVIRONMENT "STRATA_OLD_SAMPLER=0;STRATA_SAMPLER_ONE_BLOCK=0")
+    add_test(NAME sampler_parity_one_block COMMAND sampler_parity --selftest)
+    set_tests_properties(sampler_parity_one_block PROPERTIES ENVIRONMENT "STRATA_OLD_SAMPLER=0;STRATA_SAMPLER_ONE_BLOCK=1")
+    add_test(NAME sampler_parity_old COMMAND sampler_parity --selftest)
+    set_tests_properties(sampler_parity_old PROPERTIES ENVIRONMENT "STRATA_OLD_SAMPLER=1;STRATA_SAMPLER_ONE_BLOCK=0")
+
+    # ---- Risk 8: the host<->device handoff ring, ported to tests/sycl/ (PLAN.md Risk 8) ----------------
+    # tests/hip/handoff.cpp minus its graph half (D7: no stream capture before M6).  100 rounds with the
+    # producer deliberately late, plus the device->host ring direction measured with NO driver call in the
+    # poll loop.
+    add_executable(sycl_handoff_test tests/sycl/handoff.cpp)
+    target_include_directories(sycl_handoff_test PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(sycl_handoff_test PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+    add_test(NAME sycl_handoff_test COMMAND sycl_handoff_test)
+    set_tests_properties(sycl_handoff_test PROPERTIES TIMEOUT 300 SKIP_RETURN_CODE 77)
+
+    add_executable(sycl_mapped_alias_test tests/sycl/mapped_alias.cpp)
+    target_include_directories(sycl_mapped_alias_test PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(sycl_mapped_alias_test PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+    add_test(NAME sycl_mapped_alias_test COMMAND sycl_mapped_alias_test)
+    set_tests_properties(sycl_mapped_alias_test PROPERTIES TIMEOUT 300 SKIP_RETURN_CODE 77)
+
+    # iq_parity's fixtures are GENERATED (tools/iq_fixture.py needs python3 + numpy and the vendored gguf-py)
+    # - the same rule as the CUDA/HIP registration above, repeated here because that block is skipped on this
+    # backend and CTest fixtures cannot be declared in a branch that is not taken.
+    add_executable(iq_parity src/kernels/iq_parity.cpp)
+    target_include_directories(iq_parity PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(iq_parity PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+    # The interpreter probe the CUDA/HIP block runs above (CMakeLists.txt:557-582) has to be repeated here:
+    # that block is NOT executed on this backend, so neither _iq_candidates nor _iq_python is set here.
+    set(_iq_candidates "")
+    if(Python3_Interpreter_FOUND)
+      list(APPEND _iq_candidates ${Python3_EXECUTABLE})
+    endif()
+    list(APPEND _iq_candidates "${CMAKE_CURRENT_SOURCE_DIR}/.venv/bin/python"
+                               "${CMAKE_CURRENT_SOURCE_DIR}/.venv/Scripts/python.exe"
+                               /usr/bin/python3
+                               python3)
+    set(_iq_python "")
+    foreach(_cand IN LISTS _iq_candidates)
+      if(_cand STREQUAL "")
+        continue()
+      endif()
+      execute_process(COMMAND ${_cand} -c "import numpy" OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE _iq_probe)
+      if(_iq_probe EQUAL 0)
+        set(_iq_python "${_cand}")
+        break()
+      endif()
+    endforeach()
+    if(NOT _iq_python STREQUAL "")
+      add_test(NAME iq_parity_fixtures
+               COMMAND ${_iq_python} ${CMAKE_CURRENT_SOURCE_DIR}/tools/iq_fixture.py
+                       --out ${CMAKE_CURRENT_BINARY_DIR}/iq_fixture)
+      set_tests_properties(iq_parity_fixtures PROPERTIES FIXTURES_SETUP iq_fixture_data SKIP_RETURN_CODE 3)
+      add_test(NAME iq_parity COMMAND iq_parity ${CMAKE_CURRENT_BINARY_DIR}/iq_fixture)
+      set_tests_properties(iq_parity PROPERTIES FIXTURES_REQUIRED iq_fixture_data SKIP_RETURN_CODE 3 TIMEOUT 300)
+    else()
+      message(STATUS "STRATA tests: no python3 with numpy - the SYCL iq_parity fixtures are not registered")
+    endif()
   endif()
 endif()
 

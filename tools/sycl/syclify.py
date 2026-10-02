@@ -287,11 +287,15 @@ def rewrite_launches(text: str, spans, file_hash: int, rel_path: str, stats: dic
         # `#define` body is instantiated several times with different lambdas under one source position, and a
         # named kernel would then be defined several times under one name (measured; probe12).
         #
+        # The launch SHAPE is computed once, in the host lambda body, and captured by the kernel lambda: the
+        # kernel needs it for threadIdx/blockIdx/blockDim/gridDim (the launcher submits a 1-D nd_range so that
+        # the sub-group equals CUDA's warp - see the note on `this_item()` in cuda_runtime.h).
+        #
         # The constants arrive through the SAME parameter pack as the ordinary arguments (they are appended at
         # the host call site), so the kernel call must NOT name them a second time - that would evaluate a
         # host expression (the USM handle's .dev) inside device code.
         kwargs = "_sycl_args..." if (args_clean or const_args) else ""
-        call = f"{name}(_sycl_dyn{', ' if kwargs else ''}{kwargs})"
+        call = f"{name}(_sycl_dyn, _sycl_shape{', ' if kwargs else ''}{kwargs})"
         host_args = f"{extra}{const_args}"
         if in_macro:
             # A launch inside a `#define` body: the replacement has to stay on ONE logical line, so this form
@@ -301,8 +305,10 @@ def rewrite_launches(text: str, spans, file_hash: int, rel_path: str, stats: dic
             out.append(text[cursor:name_start])
             out.append(
                 "[](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) "
-                "{ ::strata::sycl_compat::launch(::strata::sycl_compat::cfg(_sycl_grid, _sycl_block, _sycl_smem), "
-                "_sycl_stream, [=](sycl::nd_item<3> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; "
+                "{ const ::strata::sycl_compat::launch_shape _sycl_shape = "
+                "::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block); "
+                "::strata::sycl_compat::launch(::strata::sycl_compat::cfg(_sycl_grid, _sycl_block, _sycl_smem), "
+                "_sycl_stream, [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; "
                 "(void) _sycl_dyn; "
                 f"{call}; }}); }}"
                 f"( {grid}, {block}, {smem}, {stream}{host_args})")
@@ -321,9 +327,11 @@ def rewrite_launches(text: str, spans, file_hash: int, rel_path: str, stats: dic
         out.append(
             f'\n#line {line} "{rel_path}"\n'
             f"[](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {{\n"
+            f"    const ::strata::sycl_compat::launch_shape _sycl_shape =\n"
+            f"        ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);\n"
             f"    ::strata::sycl_compat::launch(::strata::sycl_compat::cfg(_sycl_grid, _sycl_block, _sycl_smem),\n"
             f"                                   _sycl_stream,\n"
-            f"        [=](sycl::nd_item<3> _sycl_item, uint8_t* _sycl_dyn) {{ (void) _sycl_item; (void) _sycl_dyn; "
+            f"        [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) {{ (void) _sycl_item; (void) _sycl_dyn; "
             f"{call}; }});\n"
             f"}}( {grid}, {block}, {smem}, {stream}{host_args})"
             f'\n#line {after} "{rel_path}"\n'
@@ -703,6 +711,147 @@ def rewrite_device_globals(text: str, spans, rel_path: str, stats: dict) -> str:
     return "".join(out)
 
 
+DEVICE_FN = re.compile(r"\b__device__\s+(?!.*\b__global__)")
+COORD_MACROS = ("threadIdx", "blockIdx", "blockDim", "gridDim")
+
+
+def _fn_def_extent(text: str, at: int):
+    """(name, params_open, params_close, body_end) for the function definition whose `(` is at `at`."""
+    close = match_delim(text, at, "(", ")")
+    if close < 0:
+        return None
+    # the name is the identifier before the '('
+    j = at
+    while j > 0 and text[j - 1] in " \t\r\n":
+        j -= 1
+    k = j
+    while k > 0 and (text[k - 1].isalnum() or text[k - 1] == "_"):
+        k -= 1
+    name = text[k:j]
+    brace = text.find("{", close)
+    if not name or brace < 0:
+        return None
+    # the body must open right after the parameter list (allow an attribute/const/noexcept in between)
+    between = text[close + 1:brace]
+    if between.strip().strip(";").strip() not in ("", "const", "noexcept"):
+        return None
+    depth, i = 0, brace
+    while i < len(text):
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return name, at, close, i
+        i += 1
+    return None
+
+
+def inject_shape_into_device_helpers(text: str, spans, rel_path: str, stats: dict) -> str:
+    """`__device__` helpers that use threadIdx/blockIdx/blockDim/gridDim take the launch shape too.
+
+    `threadIdx` and friends are macros over `_sycl_shape`, which normally lives in the KERNEL's parameter list
+    (injected by inject_dyn_param).  A `__device__` helper is compiled on its own, so it needs its own copy:
+    the parameter is added under the same name and every call site inside the TU passes it on.  Helpers that
+    (transitively) call an affected helper are affected too, so the parameter always has a value to forward.
+    Sites that only use `threadIdx.x` in a 1-D launch do not need this, but they get it anyway when they appear
+    in the same function - the alternative is a second, subtler rule).
+    """
+    affected = set()
+    for m in re.finditer(r"\b__device__\b", text):
+        if in_spans(m.start(), spans) or not text.startswith("__device__", m.start()):
+            continue
+        p = text.find("(", m.end())
+        if p < 0:
+            continue
+        ext = _fn_def_extent(text, p)
+        if ext is None:
+            continue
+        name, _, _, body_end = ext
+        body = text[ext[2]:body_end]
+        if any(c in body for c in COORD_MACROS):
+            affected.add(name)
+    if not affected:
+        return text
+    # fixpoint: a helper that calls an affected helper needs the shape to pass on
+    for _ in range(4):
+        grew = False
+        for m in re.finditer(r"\b__device__\b", text):
+            if in_spans(m.start(), spans):
+                continue
+            p = text.find("(", m.end())
+            if p < 0:
+                continue
+            ext = _fn_def_extent(text, p)
+            if ext is None:
+                continue
+            name, _, _, body_end = ext
+            if name in affected:
+                continue
+            body = text[ext[2]:body_end]
+            if any(re.search(r"\b" + re.escape(a) + r"\s*\(", body) for a in affected):
+                affected.add(name)
+                grew = True
+        if not grew:
+            break
+
+    # 1. add the parameter to each affected definition
+    out, cursor = [], 0
+    defs = []
+    for m in re.finditer(r"\b__device__\b", text):
+        if in_spans(m.start(), spans):
+            continue
+        p = text.find("(", m.end())
+        if p < 0:
+            continue
+        ext = _fn_def_extent(text, p)
+        if ext is None or ext[0] not in affected:
+            continue
+        defs.append(ext)
+    for name, popen, pclose, _ in defs:
+        inner = text[popen + 1:pclose].strip()
+        repl = ("const ::strata::sycl_compat::launch_shape& _sycl_shape"
+                if inner in ("", "void")
+                else f"const ::strata::sycl_compat::launch_shape& _sycl_shape, {inner}")
+        out.append(text[cursor:popen + 1])
+        out.append(repl)
+        cursor = pclose
+        stats["shape_helpers"] += 1
+    out.append(text[cursor:])
+    text = "".join(out)
+    spans = opaque_spans(text)
+
+    # 2. pass it at every call site (the definitions were already rewritten, so they no longer match a call)
+    def_starts = set()
+    for m in re.finditer(r"\b__device__\b", text):
+        if in_spans(m.start(), spans):
+            continue
+        p = text.find("(", m.end())
+        if p >= 0:
+            ext = _fn_def_extent(text, p)
+            if ext is not None and ext[0] in affected:
+                def_starts.add(ext[1])
+    out, cursor = [], 0
+    matches = []
+    for name in affected:
+        # the call may carry an explicit template argument list (`sampled_tail_warp<true>(...)`)
+        call_re = r"\b" + re.escape(name) + r"\s*(?:<[^<>]*(?:<[^<>]*>[^<>]*)*>)?\s*\("
+        for m in re.finditer(call_re, text):
+            if in_spans(m.start(), spans) or (m.end() - 1) in def_starts:
+                continue
+            matches.append(m)
+    matches.sort(key=lambda mm: mm.start())
+    for m in matches:
+        if m.start() < cursor:
+            continue
+        out.append(text[cursor:m.end()])
+        out.append("_sycl_shape, ")
+        cursor = m.end()
+        stats["shape_callsites"] += 1
+    out.append(text[cursor:])
+    return "".join(out)
+
+
 def inject_dyn_param(text: str, spans, rel_path: str, stats: dict) -> str:
     """Prepend `uint8_t* _sycl_dyn` to the parameter list of every `__global__` function (PLAN.md D3).
 
@@ -722,7 +871,9 @@ def inject_dyn_param(text: str, spans, rel_path: str, stats: dict) -> str:
         if close < 0:
             continue
         inner = text[p + 1:close].strip()
-        repl = "uint8_t* _sycl_dyn" if inner in ("", "void") else f"uint8_t* _sycl_dyn, {inner}"
+        repl = ("uint8_t* _sycl_dyn, ::strata::sycl_compat::launch_shape _sycl_shape"
+                if inner in ("", "void")
+                else f"uint8_t* _sycl_dyn, ::strata::sycl_compat::launch_shape _sycl_shape, {inner}")
         out.append(text[cursor:p + 1])
         out.append(repl)
         cursor = close
@@ -882,7 +1033,7 @@ def main(argv=None) -> int:
     stats = {"launches": 0, "shared_arrays": 0, "shared_scalars": 0, "renames": 0,
              "extern_shared": 0, "constant_constexpr": 0, "constant_runtime": 0,
              "symbol_copies": 0, "kernel_params_extended": 0, "kernels_dyn_param": 0,
-             "macro_launches": 0, "device_globals": 0}
+             "macro_launches": 0, "device_globals": 0, "shape_helpers": 0, "shape_callsites": 0}
     text, plan = rewrite_constants(original, spans, rel, stats)
     text = rewrite_launches(text, opaque_spans(text), fnv1a(rel), rel, stats,
                             const_args=plan.launch_args())
@@ -891,6 +1042,7 @@ def main(argv=None) -> int:
     text = rewrite_extern_shared(text, opaque_spans(text), rel, stats)   # before the static __shared__ rule:
     text = rewrite_shared(text, opaque_spans(text), rel, stats)          # its pattern also matches `__shared__`
     text = inject_dyn_param(text, opaque_spans(text), rel, stats)
+    text = inject_shape_into_device_helpers(text, opaque_spans(text), rel, stats)
     if plan.runtime:
         text = append_kernel_params(text, opaque_spans(text), rel, plan.kernel_params(), stats)
     check_refusals(text, opaque_spans(text), rel, post_shared=True)

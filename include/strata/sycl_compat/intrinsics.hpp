@@ -140,6 +140,13 @@ inline int segment_base(int lane, int width) {
     return (lane / w) * w;
 }
 
+/// Shuffles whose value type is narrower than 32 bits go through a uint32_t.
+///
+/// MEASURED (M2): `sycl::select_from_group` on a `uint8_t` returns 0 on this backend, so
+/// `__shfl_down_sync(mask, qc, 16)` in kv_q4.cu's Q4_0 quantizer produced `byte = qc | (0 << 4)` - the high
+/// nibble of every packed byte was zero and 15584 of the Q4_0 blocks differed from the host quantizer
+/// (kv_q4_parity), with the same shape of failure in the streamed q4_0 attention.  Widening the value to a
+/// 32-bit word for the exchange keeps the caller's type and the CUDA semantics.
 template <typename T>
 inline T shfl_xor_sync(uint32_t mask, T value, int lane_mask, int width = 32) {
     require_full_mask(mask);
@@ -149,6 +156,10 @@ inline T shfl_xor_sync(uint32_t mask, T value, int lane_mask, int width = 32) {
     const int w = width <= 0 ? n : (width < n ? width : n);
     const int base = segment_base(lane, w);
     const int src = base + (((lane - base) ^ lane_mask) & (w - 1));
+    if constexpr (sizeof(T) < sizeof(uint32_t)) {
+        const uint32_t got = sycl::select_from_group(sg, (uint32_t) value, (uint32_t) (src % n));
+        return (T) got;
+    }
     return sycl::select_from_group(sg, value, (uint32_t) (src % n));
 }
 template <typename T>
@@ -161,6 +172,10 @@ inline T shfl_down_sync(uint32_t mask, T value, unsigned delta, int width = 32) 
     const int base = segment_base(lane, w);
     const int src = (lane - base) + (int) delta;
     if (src >= w) return value;   // CUDA returns the caller's own value when the source is out of range
+    if constexpr (sizeof(T) < sizeof(uint32_t)) {
+        const uint32_t got = sycl::select_from_group(sg, (uint32_t) value, (uint32_t) ((base + src) % n));
+        return (T) got;
+    }
     return sycl::select_from_group(sg, value, (uint32_t) ((base + src) % n));
 }
 template <typename T>
@@ -173,6 +188,10 @@ inline T shfl_up_sync(uint32_t mask, T value, unsigned delta, int width = 32) {
     const int base = segment_base(lane, w);
     const int src = (lane - base) - (int) delta;
     if (src < 0) return value;
+    if constexpr (sizeof(T) < sizeof(uint32_t)) {
+        const uint32_t got = sycl::select_from_group(sg, (uint32_t) value, (uint32_t) ((base + src) % n));
+        return (T) got;
+    }
     return sycl::select_from_group(sg, value, (uint32_t) ((base + src) % n));
 }
 template <typename T>
@@ -184,6 +203,10 @@ inline T shfl_sync(uint32_t mask, T value, int source_lane, int width = 32) {
     const int w = width <= 0 ? n : (width < n ? width : n);
     const int base = segment_base(lane, w);
     const int src = base + ((source_lane % w) + w) % w;
+    if constexpr (sizeof(T) < sizeof(uint32_t)) {
+        const uint32_t got = sycl::select_from_group(sg, (uint32_t) value, (uint32_t) (src % n));
+        return (T) got;
+    }
     return sycl::select_from_group(sg, value, (uint32_t) (src % n));
 }
 
@@ -206,61 +229,53 @@ inline unsigned activemask() {
 
 // ---------------------------------------------------------------------------
 // Atomics: DEVICE scope, relaxed, as CUDA's are.  See the file comment.
+//
+// NO EXPLICIT ADDRESS SPACE, i.e. sycl::atomic_ref's default `generic_space`.  That is not a style choice:
+// the kernels apply these to GLOBAL memory (kv_stream's page table, sampler's hit masks) AND to SHARED memory
+// (`atomicAdd(&s_nmiss, 1)` in kv_stream.cu:103/107, where `s_nmiss` is a static __shared__ int that the
+// transform turns into a local-address-space object).  `address_space::global_space` forced an
+// `addrspacecast local -> global`, which llvm-spirv refuses outright ("Invalid SPIR-V module: Casts from
+// private/local/global address space are allowed only to generic") - measured on kv_stream_parity, whose
+// link failed until this changed.  A generic-space atomic_ref is legal for both.
 // ---------------------------------------------------------------------------
 template <typename T>
 inline T atomicAdd(T* p, T v) {
-    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device,
-                     sycl::access::address_space::global_space>
-        a(*p);
+    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device> a(*p);
     return a.fetch_add(v);
 }
 template <typename T>
 inline T atomicExch(T* p, T v) {
-    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device,
-                     sycl::access::address_space::global_space>
-        a(*p);
+    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device> a(*p);
     return a.exchange(v);
 }
 template <typename T>
 inline T atomicMax(T* p, T v) {
-    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device,
-                     sycl::access::address_space::global_space>
-        a(*p);
+    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device> a(*p);
     return a.fetch_max(v);
 }
 inline int atomicCAS(int* p, int compare, int val) {
-    sycl::atomic_ref<int, sycl::memory_order::relaxed, sycl::memory_scope::device,
-                     sycl::access::address_space::global_space>
-        a(*p);
+    sycl::atomic_ref<int, sycl::memory_order::relaxed, sycl::memory_scope::device> a(*p);
     a.compare_exchange_strong(compare, val);   // compare is updated to the value actually read
     return compare;                            // CUDA's atomicCAS returns the old value
 }
 inline unsigned atomicCAS(unsigned* p, unsigned compare, unsigned val) {
-    sycl::atomic_ref<unsigned, sycl::memory_order::relaxed, sycl::memory_scope::device,
-                     sycl::access::address_space::global_space>
-        a(*p);
+    sycl::atomic_ref<unsigned, sycl::memory_order::relaxed, sycl::memory_scope::device> a(*p);
     a.compare_exchange_strong(compare, val);
     return compare;
 }
 template <typename T>
 inline T atomicOr(T* p, T v) {
-    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device,
-                     sycl::access::address_space::global_space>
-        a(*p);
+    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device> a(*p);
     return a.fetch_or(v);
 }
 template <typename T>
 inline T atomicAnd(T* p, T v) {
-    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device,
-                     sycl::access::address_space::global_space>
-        a(*p);
+    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device> a(*p);
     return a.fetch_and(v);
 }
 template <typename T>
 inline T atomicMin(T* p, T v) {
-    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device,
-                     sycl::access::address_space::global_space>
-        a(*p);
+    sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device> a(*p);
     return a.fetch_min(v);
 }
 
@@ -431,6 +446,14 @@ inline unsigned warp_size_lanes() { return (unsigned) this_item().get_sub_group(
 #define __uint2float_rn(a) (::strata::sycl_compat::__uint2float_rn((a)))
 #define __uint2float_rz(a) (::strata::sycl_compat::__uint2float_rz((a)))
 #define __double2float_rn(a) (::strata::sycl_compat::__double2float_rn((a)))
+// the double-precision spellings (qsa.cu's attention math)
+#define __dadd_rn(a, b) (::strata::sycl_compat::__dadd_rn((a), (b)))
+#define __dsub_rn(a, b) (::strata::sycl_compat::__dsub_rn((a), (b)))
+#define __dmul_rn(a, b) (::strata::sycl_compat::__dmul_rn((a), (b)))
+#define __ddiv_rn(a, b) (::strata::sycl_compat::__ddiv_rn((a), (b)))
+#define __dsqrt_rn(a) (::strata::sycl_compat::__dsqrt_rn((a)))
+#define __drcp_rn(a) (::strata::sycl_compat::__drcp_rn((a)))
+#define __fma_rn(a, b, c) (::strata::sycl_compat::__fma_rn((a), (b), (c)))
 #define __threadfence() (::strata::sycl_compat::threadfence())
 #define __threadfence_block() (::strata::sycl_compat::threadfence_block())
 #define __threadfence_system() (::strata::sycl_compat::threadfence_system())

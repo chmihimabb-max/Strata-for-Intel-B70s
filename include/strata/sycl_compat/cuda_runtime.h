@@ -65,24 +65,45 @@ struct dim3 {
 
 /// The work item of the kernel this thread is inside.  Reachable from any function a kernel calls, which is
 /// the property the whole port rests on.
-inline auto this_item() { return sycl::ext::oneapi::this_work_item::get_nd_item<3>(); }
+///
+/// A 1-D nd_range, deliberately.  M2 measured that with a MULTI-DIMENSIONAL nd_range the physical
+/// sub-group's lanes do NOT correspond to the CUDA warp an engine kernel assumes: for a `{32, 4}` local range
+/// `get_sub_group().get_local_linear_id()` returns `(y + 4x) mod 32`, i.e. repeated and non-monotonic values
+/// (probe/probe16_shfl_2d.cpp), so every shuffle silently exchanged with the wrong work-item - fwht256 (2 of
+/// its butterflies are shuffles) came out 248 of 256 elements wrong (probe/probe15_fwht_stages.cpp) and
+/// mmvq/iq multi-token kernels produced non-finite output.  With a 1-D nd_range the sub-group IS 32
+/// consecutive work-items, which is exactly CUDA's warp over the linearized thread index, and the CUDA
+/// coordinates are reconstructed from `launch_shape` (see thread_idx below).
+inline auto this_item() { return sycl::ext::oneapi::this_work_item::get_nd_item<1>(); }
 
-inline dim3 thread_idx() {
-    const auto it = this_item();
-    return dim3(it.get_local_id(0), it.get_local_id(1), it.get_local_id(2));
+/// The block/grid extents of the launch this work item belongs to.  The transform passes it as the second
+/// kernel parameter (after the dynamic shared-memory base), evaluated at the HOST call site, and the
+/// coordinate accessors below divide the 1-D local/group index by it.
+struct launch_shape {
+    unsigned gx = 1, gy = 1, gz = 1;
+    unsigned bx = 1, by = 1, bz = 1;
+};
+
+inline launch_shape thread_shape(const launch_shape& s) { return s; }
+
+/// threadIdx / blockIdx / blockDim / gridDim, from the 1-D work-item index and the launch's extents.
+inline dim3 thread_idx(const launch_shape& s) {
+    const unsigned lid = (unsigned) this_item().get_local_id(0);
+    const unsigned bx = s.bx ? s.bx : 1u, by = s.by ? s.by : 1u;
+    return dim3(lid % bx, (lid / bx) % by, lid / (bx * by));
 }
-inline dim3 block_idx() {
-    const auto it = this_item();
-    return dim3(it.get_group(0), it.get_group(1), it.get_group(2));
+inline dim3 block_idx(const launch_shape& s) {
+    const unsigned gid = (unsigned) this_item().get_group(0);
+    const unsigned gx = s.gx ? s.gx : 1u, gy = s.gy ? s.gy : 1u;
+    return dim3(gid % gx, (gid / gx) % gy, gid / (gx * gy));
 }
-inline dim3 block_dim() {
-    const auto it = this_item();
-    return dim3(it.get_local_range(0), it.get_local_range(1), it.get_local_range(2));
-}
-inline dim3 grid_dim() {
-    const auto it = this_item();
-    return dim3(it.get_group_range(0), it.get_group_range(1), it.get_group_range(2));
-}
+inline dim3 block_dim(const launch_shape& s) { return dim3(s.bx, s.by, s.bz); }
+inline dim3 grid_dim(const launch_shape& s) { return dim3(s.gx, s.gy, s.gz); }
+
+/// The linear local id: with a 1-D nd_range this is both the CUDA linearized thread index and the position
+/// inside the sub-group, which is what makes the shuffles correct.
+inline unsigned local_linear_id() { return (unsigned) this_item().get_local_id(0); }
+inline unsigned group_linear_id() { return (unsigned) this_item().get_group(0); }
 
 /// The physical lane inside the sub-group.  The B70 reports sub_group_sizes {16, 32} (PLAN.md §10), NOT
 /// {8,16,32}: a kernel that needs a 32-wide logical warp has to say so - that is Risk 6, settled in M2.
@@ -219,6 +240,7 @@ struct cudaDeviceProp {
     int warpSize = 32;
     size_t sharedMemPerBlock = 0;
     size_t totalGlobalMem = 0;
+    int l2CacheSize = 0;   // M2: s2_expert_grouped_parity's bench sizes its blob cycle from this
     char gcnArchName[64] = {0};
 };
 
@@ -357,27 +379,41 @@ struct const_ref2d {
 };
 
 // ---- the launcher ---------------------------------------------------------
-// Unnamed kernel lambdas on purpose - see the measurement note on `kernel_name` above.  The tag parameter is
-// gone: the transform no longer emits one, and the device compiler names the kernel after the lambda itself.
+// Unnamed kernel lambdas on purpose - see the measurement note on `kernel_name` above.  ONE-DIMENSIONAL
+// nd_range on purpose too - see the measurement note on `this_item()`: it is what makes the sub-group equal
+// CUDA's warp.  The launcher flattens (grid, block) into a linear global/local size; the kernel reconstructs
+// threadIdx/blockIdx/blockDim/gridDim from the `launch_shape` the transform passes it.
 template <class Fn>
 inline void launch(const launch_config& c, cudaStream_t stream, Fn fn) {
     sycl::queue& q = *queue_for(reinterpret_cast<void*>(stream));
-    const sycl::range<3> global{c.grid.x * c.block.x, c.grid.y * c.block.y, c.grid.z * c.block.z};
-    const sycl::range<3> local{c.block.x, c.block.y, c.block.z};
+    const unsigned gx = c.grid.x ? c.grid.x : 1u, gy = c.grid.y ? c.grid.y : 1u, gz = c.grid.z ? c.grid.z : 1u;
+    const unsigned bx = c.block.x ? c.block.x : 1u, by = c.block.y ? c.block.y : 1u, bz = c.block.z ? c.block.z : 1u;
+    const size_t groups = size_t(gx) * gy * gz;
+    const size_t threads = size_t(bx) * by * bz;
+    const sycl::range<1> global{groups * threads};
+    const sycl::range<1> local{threads};
     if (c.smem != 0) {
         q.submit([=](sycl::handler& h) {
             sycl::local_accessor<uint8_t, 1> dyn{sycl::range<1>(c.smem), h};
-            h.parallel_for(sycl::nd_range<3>{global, local}, [=](sycl::nd_item<3> item) {
+            h.parallel_for(sycl::nd_range<1>{global, local}, [=](sycl::nd_item<1> item) {
                 fn(item, const_cast<uint8_t*>(
                              dyn.get_multi_ptr<sycl::access::decorated::no>().get()));
             });
         });
     } else {
         q.submit([=](sycl::handler& h) {
-            h.parallel_for(sycl::nd_range<3>{global, local},
-                           [=](sycl::nd_item<3> item) { fn(item, static_cast<uint8_t*>(nullptr)); });
+            h.parallel_for(sycl::nd_range<1>{global, local},
+                           [=](sycl::nd_item<1> item) { fn(item, static_cast<uint8_t*>(nullptr)); });
         });
     }
+}
+
+/// The `launch_shape` value the transform passes at every launch site, evaluated on the HOST from the grid and
+/// block expressions that stood between `<<<` and `>>>`.
+template <class G, class B>
+inline launch_shape shape_of(const G& g, const B& b) {
+    const dim3 gd = dim3(g), bd = dim3(b);
+    return launch_shape{gd.x, gd.y, gd.z, bd.x, bd.y, bd.z};
 }
 
 inline cudaStream_t default_stream() { return nullptr; }
@@ -619,7 +655,7 @@ inline cudaError_t cudaEventDestroy(cudaEvent_t ev) {
     delete ev;
     return cudaSuccess;
 }
-inline cudaError_t cudaEventRecord(cudaEvent_t ev, cudaStream_t s) {
+inline cudaError_t cudaEventRecord(cudaEvent_t ev, cudaStream_t s = nullptr) {
     ev->e = queue_for(reinterpret_cast<void*>(s))->ext_oneapi_submit_barrier();
     ev->recorded = true;
     return cudaSuccess;
@@ -690,6 +726,7 @@ inline cudaError_t cudaGetDeviceProperties(cudaDeviceProp* p, int ordinal) {
     p->multiProcessorCount = (int) d.get_info<sycl::info::device::max_compute_units>();
     p->sharedMemPerBlock = d.get_info<sycl::info::device::local_mem_size>();
     p->totalGlobalMem = d.get_info<sycl::info::device::global_mem_size>();
+    p->l2CacheSize = (int) d.get_info<sycl::info::device::global_mem_cache_size>();
     p->warpSize = (int) d.get_info<sycl::info::device::sub_group_sizes>().back();   // 32 on BMG-G31
     // There is no compute capability on an Intel GPU, and 12.0 here is NOT a claim about the device: it is
     // the value that keeps the CUDA-only ">= 7.5 at RUN time" gate in src/core/device.cu from rejecting every
@@ -939,10 +976,10 @@ inline double max(double a, double b) { return a > b ? a : b; }
 #define __align__(n) __attribute__((aligned(n)))
 #define __launch_bounds__(...)
 
-#define threadIdx (::strata::sycl_compat::thread_idx())
-#define blockIdx (::strata::sycl_compat::block_idx())
-#define blockDim (::strata::sycl_compat::block_dim())
-#define gridDim (::strata::sycl_compat::grid_dim())
+#define threadIdx (::strata::sycl_compat::thread_idx(_sycl_shape))
+#define blockIdx (::strata::sycl_compat::block_idx(_sycl_shape))
+#define blockDim (::strata::sycl_compat::block_dim(_sycl_shape))
+#define gridDim (::strata::sycl_compat::grid_dim(_sycl_shape))
 #define __syncthreads() (::strata::sycl_compat::syncthreads())
 #define __syncwarp(...) (::strata::sycl_compat::syncwarp())
 
