@@ -34,6 +34,10 @@ endif()
 
 option(STRATA_ENABLE_CUDA "Build the CUDA targets (Phase 2+)" OFF)
 option(STRATA_ENABLE_HIP "Build the HIP targets for wave32 AMD GPUs (gfx1100, gfx1201; gfx1030 unvalidated)" OFF)
+# SYCL (Intel XPU / oneAPI) is a THIRD backend, mutually exclusive with CUDA and HIP.  Unlike HIP it is not a
+# rename: the launch syntax has no C++ spelling, so every engine .cu is translated by tools/sycl/syclify.py
+# and the generated C++ is compiled with icpx -x c++.  Contract: cmake/sycl_backend.cmake and PLAN.md §4.
+option(STRATA_ENABLE_SYCL "Build the SYCL targets (Intel XPU / oneAPI Ar)" OFF)
 option(STRATA_PREFILL_MMQ "Build the optional GGML MMQ prefill path for HIP" OFF)
 # CUDA: MMQ prompt kernels for Q4_K / Q5_K / Q5_1 (Unsloth's UD-Q4_K_XL experts).  Off by default: the engine loads
 # every kernel when it starts (CUDA_MODULE_LOADING=EAGER), so these took ~5 MB of VRAM - 1-3 expert slots - from every
@@ -46,8 +50,17 @@ endif()
 if(STRATA_ENABLE_CUDA AND STRATA_ENABLE_HIP)
   message(FATAL_ERROR "STRATA_ENABLE_CUDA and STRATA_ENABLE_HIP are separate backends; enable only one")
 endif()
+# The SYCL backend is separate for the same reason CUDA and HIP are: one build, one runtime.  Mixing them
+# would put two copies of the CUDA-shaped surface (the HIP shim's macros and the SYCL shim's declarations)
+# into the same translation unit.
+if(STRATA_ENABLE_SYCL AND (STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP))
+  message(FATAL_ERROR "STRATA_ENABLE_SYCL is a separate backend; enable only one of CUDA/HIP/SYCL")
+endif()
 if(STRATA_ENABLE_HIP)
   include(cmake/hip_backend.cmake)
+endif()
+if(STRATA_ENABLE_SYCL)
+  include(cmake/sycl_backend.cmake)
 endif()
 # The test suite and the micro benchmarks live in tests/ and bench/micro/, which the published source leaves out.
 set(_strata_tests_default OFF)
@@ -115,6 +128,13 @@ elseif(STRATA_ENABLE_HIP)
   set(_strata_gpu_runtime_target strata_hip_runtime)
   set(_strata_gpu_blas_target roc::hipblas)
   set(_strata_gpu_include_directories ${STRATA_HIP_COMPAT_INCLUDE_DIR})
+elseif(STRATA_ENABLE_SYCL)
+  # strata_sycl_runtime is an INTERFACE target that carries the compat include dir, the force-include of the
+  # shim, STRATA_USE_SYCL and the icpx -fsycl flags (cmake/sycl_backend.cmake) - the analogue of
+  # strata_hip_runtime.  The BLAS target is oneMKL, which is what the prefill path (M4) will use.
+  set(_strata_gpu_runtime_target ${STRATA_SYCL_RUNTIME_TARGET})
+  set(_strata_gpu_blas_target ${STRATA_SYCL_BLAS_TARGET})
+  set(_strata_gpu_include_directories ${STRATA_SYCL_INCLUDE_DIRECTORIES})
 endif()
 
 # Warnings live on an INTERFACE target the project's own code links, NOT in add_compile_options: applied
@@ -178,8 +198,17 @@ target_link_libraries(strata-plan PRIVATE strata_plan)
 
 # ---- strata_core (GPU runtime) ---------------------------------------------
 # Only built when a GPU backend is on, so the Phase 1 targets keep working without a toolkit.
-if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
-  add_library(strata_core STATIC src/core/device.cu src/core/pinned.cu src/platform/memory.cpp src/core/graph.cpp src/core/weights.cpp
+if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP OR STRATA_ENABLE_SYCL)
+  # The backend-dependent .cu sources of the runtime core.  CUDA and HIP compile the .cu directly; SYCL
+  # compiles the translation units tools/sycl/syclify.py generated from the same UNMODIFIED files (PLAN.md D1),
+  # so src/core/device.cu and src/core/pinned.cu stay the single source of truth for the device and the
+  # pinned expert arena.
+  if(STRATA_ENABLE_SYCL)
+    set(_strata_core_gpu_sources ${STRATA_SYCL_CORE_TUS})
+  else()
+    set(_strata_core_gpu_sources src/core/device.cu src/core/pinned.cu)
+  endif()
+  add_library(strata_core STATIC ${_strata_core_gpu_sources} src/platform/memory.cpp src/core/graph.cpp src/core/weights.cpp
                                src/core/layout.cpp)
   target_include_directories(strata_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
   if(STRATA_ENABLE_CUDA AND STRATA_EXPERIMENTAL_SM60)
@@ -194,17 +223,22 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
   add_executable(strata-device src/core/device_main.cpp)
   target_link_libraries(strata-device PRIVATE strata_core)
 
+  # strata-load drives the expert arena through src/core/pinned.cu, which IS part of the SYCL backend; the two
+  # diagnostics below also exercise kernels the SYCL port has not translated yet (s_gemv_split_async,
+  # src/kernels/cuda/s_gemv.cu), so they are not part of the SYCL build until M2 lands that file.
   add_executable(strata-load src/core/load_main.cpp)
   target_link_libraries(strata-load PRIVATE strata_core strata_kernels)
 
-  add_executable(strata-concurrent src/core/concurrent_main.cpp)
-  target_include_directories(strata-concurrent PRIVATE ${_strata_gpu_include_directories})
-  target_link_libraries(strata-concurrent PRIVATE strata_core strata_kernels ${_strata_gpu_runtime_target})
+  if(NOT STRATA_ENABLE_SYCL)
+    add_executable(strata-concurrent src/core/concurrent_main.cpp)
+    target_include_directories(strata-concurrent PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(strata-concurrent PRIVATE strata_core strata_kernels ${_strata_gpu_runtime_target})
 
-  add_executable(strata-overlap src/core/overlap_main.cpp)
-  # a .cpp that calls cudaMemcpyAsync itself needs the toolkit headers and cudart explicitly
-  target_include_directories(strata-overlap PRIVATE ${_strata_gpu_include_directories})
-  target_link_libraries(strata-overlap PRIVATE strata_core strata_kernels ${_strata_gpu_runtime_target})
+    add_executable(strata-overlap src/core/overlap_main.cpp)
+    # a .cpp that calls cudaMemcpyAsync itself needs the toolkit headers and cudart explicitly
+    target_include_directories(strata-overlap PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(strata-overlap PRIVATE strata_core strata_kernels ${_strata_gpu_runtime_target})
+  endif()
 
   # The load test needs the 34 GB artifact, so it is registered ONLY where that artifact exists.  A test that
   # silently skips is a test that stops running; an absent registration is visible in the configure output.
@@ -220,7 +254,15 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
   # Naive first, each with a parity test against a reference that was itself validated against ggml.  The
   # kernels link `strata_artifact` for the scalar dequantizers, because using the VALIDATED scalar path as the
   # reference is the whole point - a kernel checked against another copy of itself proves nothing.
-  add_library(strata_kernels STATIC src/kernels/cuda/dequant_s2.cu src/kernels/cuda/s2_gemv.cu
+  # WHICH kernels are compiled is backend-dependent.  CUDA/HIP build the whole set below.  SYCL builds the
+  # M1 set (STRATA_SYCL_KERNELS in cmake/sycl_backend.cmake): compiling a .cu the port does not support yet
+  # would make the build fail for a reason that says nothing about what works.  PLAN.md §2 is the per-file
+  # worklist, and each M2..M5 card adds its files to that list.
+  if(STRATA_ENABLE_SYCL)
+    set(_strata_kernel_gpu_sources ${STRATA_SYCL_KERNEL_TUS})
+  else()
+    set(_strata_kernel_gpu_sources
+                          src/kernels/cuda/s2_gemv.cu
                           src/kernels/cuda/s_gemv.cu
                           src/kernels/cuda/s2_gemv_quads.cu
                           src/kernels/cuda/s2_gemv_fast.cu
@@ -229,7 +271,7 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
                           src/kernels/cuda/rope.cu
                           src/kernels/cuda/sampler.cu
                           src/kernels/cuda/s2_gemv_q8.cu
-    src/kernels/cuda/s2_expert_grouped.cu
+                          src/kernels/cuda/s2_expert_grouped.cu
                           src/kernels/cuda/shared_expert.cu
                           src/kernels/cuda/gr.cu
                           src/kernels/cuda/gdn.cu
@@ -263,6 +305,9 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
                           src/kernels/cuda/qsa_select.cu
                           src/kernels/cuda/verify_kernels.cu
                           src/kernels/cuda/iq_kernels.cu
+    )
+  endif()
+  add_library(strata_kernels STATIC ${_strata_kernel_gpu_sources}
                           src/kernels/ngram.cpp
                           src/ngram/ple_reader.cpp
                           src/platform/direct_file.cpp)
@@ -306,6 +351,12 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
     # FMA changes tie results. The embedding gather also relies on separately rounded operations.
     set_source_files_properties(src/kernels/cuda/elementwise.cu src/kernels/cuda/quantize_act.cu
       PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
+  elseif(STRATA_ENABLE_SYCL)
+    # The same arithmetic contract as HIP (PLAN.md §4.3): Q8_K's multiply and the magic-bias rounding are
+    # separately rounded operations, and contraction into an FMA changes tie results.  icpx contracts by
+    # default just as clang does, so the flag is needed here for the same reason.
+    set_source_files_properties(src/kernels/cuda/elementwise.cu src/kernels/cuda/quantize_act.cu
+      PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
   endif()
 
   set(STRATA_ORACLE_SOURCE_DIR "" CACHE PATH "Pinned llama.cpp source for independent CUDA parity tests")
@@ -333,6 +384,12 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
     endforeach()
   endif()
 
+  # ---- what is NOT part of the SYCL build yet (M2..M5) ----------------------------------------------
+  # Everything below needs kernels the SYCL port has not translated yet (PLAN.md §2), so it is skipped on
+  # this backend rather than made to fail for a reason that does not describe the port.  The M1 acceptance
+  # set - strata-device, the memory-layer tests and one GPU-free parity harness - is registered separately
+  # at the end of this block.
+  if(NOT STRATA_ENABLE_SYCL)
   # ---- strata_engine (P2.S5) -----------------------------------------------------
   # The COMPOSED layer lives here and not in `strata_core`, because it calls kernels and `strata_kernels`
   # already links `strata_core` - putting `gdn_layer` in core would make the two mutually dependent.  A third
@@ -732,6 +789,35 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
   # unconditionally: tests/ is added at the end of this file, but the flag has to be known before it runs.
   if(STRATA_ENABLE_CUDA)
     set(STRATA_CUDA_TESTS ON)
+  endif()
+  endif()   # NOT STRATA_ENABLE_SYCL
+
+  # ---- the SYCL M1 acceptance set (PLAN.md M1) ------------------------------------------------------
+  if(STRATA_ENABLE_SYCL)
+    enable_testing()
+    # 1. the device + memory layer: both B70s listed, the arena selftest, on whichever card ZE_AFFINITY_MASK
+    #    selects.  Named sycl_device_selftest exactly as the CUDA/HIP variants are named above.
+    add_test(NAME sycl_device_selftest COMMAND strata-device --selftest)
+    add_test(NAME sycl_device_list COMMAND strata-device --list-devices)
+    set_tests_properties(sycl_device_list PROPERTIES PASS_REGULAR_EXPRESSION "device 0:.*e223|device 0:")
+    # 2. the pinned/host-memory layer and the platform memory lock (CPU-only, no kernels)
+    add_executable(platform_memory_test src/platform/memory_test.cpp)
+    target_link_libraries(platform_memory_test PRIVATE strata_core)
+    add_test(NAME platform_memory_test COMMAND platform_memory_test)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      add_executable(pinned_shared_test src/core/pinned_shared_test.cpp)
+      target_link_libraries(pinned_shared_test PRIVATE strata_core)
+      add_test(NAME pinned_shared_test COMMAND pinned_shared_test)
+    endif()
+    # 3. one GPU-free parity harness, green under the new backend: this is what proves the harness itself is
+    #    wired (PLAN.md M1 exit).  dequant_s2.cu needs no GPU-specific kernel - one thread per block, no
+    #    shared memory, no shuffles - and its reference is the scalar dequantizer that
+    #    bench/micro/dequant_xcheck proved equal to ggml, so agreement here means something.
+    add_executable(dequant_s2_parity src/kernels/dequant_s2_parity.cpp)
+    target_include_directories(dequant_s2_parity PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(dequant_s2_parity PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+    add_test(NAME dequant_s2_parity COMMAND dequant_s2_parity --selftest)
+    set_tests_properties(dequant_s2_parity PROPERTIES TIMEOUT 300)
   endif()
 endif()
 

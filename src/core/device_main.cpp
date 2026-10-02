@@ -62,6 +62,11 @@ int main(int argc, char** argv) {
 #if defined(STRATA_USE_HIP)
         std::printf("  HIP arch            %s wave32 (compiled for %s)\n", d.arch.c_str(),
                     strata::core::compiled_gpu_archs());
+#elif defined(STRATA_USE_SYCL)
+        // No compute capability on an Intel GPU: report the SYCL backend's own arch string (bmg-g31), which is
+        // what the run-time check in src/core/device.cu gates on.
+        std::printf("  SYCL arch           %s (compiled for %s)\n", d.arch.c_str(),
+                    strata::core::compiled_gpu_archs());
 #else
         std::printf("  compute capability  %d.%d   (sm_%d%d)\n", d.cc_major, d.cc_minor, d.cc_major, d.cc_minor);
 #endif

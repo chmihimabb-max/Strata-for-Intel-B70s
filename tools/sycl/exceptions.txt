@@ -1,0 +1,14 @@
+# tools/sycl/exceptions.txt - the files tools/sycl/syclify.py must NOT translate.
+#
+# The single list of hand-ported files (PLAN.md D1, §2.3).  A name here means: commit a hand-written SYCL
+# source at src/kernels/sycl/<name>.cpp instead, and do not generate a translation unit from the .cu.  The
+# reason is always the same - the file contains inline PTX that has no mechanical translation - and the
+# transform refuses such a file outright (see REFUSALS in syclify.py), so this list cannot drift out of date
+# silently: forgetting to add a file here fails the build with the file and line named.
+#
+# These five are the 16 inline-asm sites of PLAN.md §2.3.
+fused_gr.cu            # 4 sites: cp.async.cg.shared.global + commit_group + wait_group
+qsa_prompt_attn.cu     # 6 sites: mma.sync f16 x3, cp.async x3
+qsa_select.cu          # 2 sites: cvt.rna.tf32.f32, mma.sync tf32
+verify_kernels.cu      # 1 site:  mov.u64 %0, %%globaltimer
+native_qsa_score.cu    # 3 sites: ldmatrix x2, mma.sync tf32

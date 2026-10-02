@@ -1,0 +1,122 @@
+# Opt-in SYCL (Intel XPU / oneAPI) configuration - the third Strata backend, alongside CUDA and HIP.
+#
+# Contract: ~/strata-xpu/PLAN.md §4.1.  The shape mirrors cmake/hip_backend.cmake, with one structural
+# difference that PLAN.md D1 fixes: HIP works through a pure rename because hipcc *is* a CUDA-like front end.
+# icpx is not - `kernel<<<grid, block, smem, stream>>>(args)` has no C++ spelling, and the tree has 284-321
+# such sites - so every engine `.cu` is TRANSLATED first (tools/sycl/syclify.py) and the generated C++ is what
+# gets compiled, as C++ with `-x c++` (measured: `icpx -fsycl -c x.cu` fails looking for libdevice).
+#
+# Configure with:  source /opt/intel/oneapi/setvars.sh && cmake -S . -B build-sycl \
+#                    -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=icpx -DSTRATA_ENABLE_SYCL=ON
+#
+# WHAT THIS BACKEND BUILDS TODAY (M1, card t_b1028685): the device/memory layer (`strata_core`),
+# `strata-device`, and the kernels the one GPU-free parity harness needs.  The rest of the 50 `.cu` files are
+# M2..M5 work and are listed per-file in PLAN.md §2; a `.cu` that is NOT in STRATA_SYCL_KERNELS below is
+# simply not compiled, which is deliberate - the alternative (compiling files the port does not yet support)
+# would produce a build whose failures say nothing about what works.
+
+# ---- compiler ---------------------------------------------------------------------------------------
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+  message(FATAL_ERROR
+    "STRATA_ENABLE_SYCL needs the Intel DPC++ compiler: configure with -DCMAKE_CXX_COMPILER=icpx after "
+    "`source /opt/intel/oneapi/setvars.sh` (CMAKE_CXX_COMPILER_ID is '${CMAKE_CXX_COMPILER_ID}').")
+endif()
+
+set(STRATA_SYCL_ARCHS "bmg-g31" CACHE STRING
+    "Strata SYCL target architecture(s): bmg-g31 = Intel Arc Pro B70 (BMG-G31, 8086:e223)")
+set(STRATA_SYCL_TARGETS "spir64" CACHE STRING "SYCL device targets passed to -fsycl-targets")
+
+set(STRATA_SYCL_COMPAT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/strata/sycl_compat")
+
+# IntelSYCL gives IntelSYCL::SYCL_CXX (the SYCL include dirs and the link flags); oneMKL gives
+# MKL::MKL_SYCL (MKLConfig.cmake:1044), which is `_strata_gpu_blas_target` for this backend.
+find_package(IntelSYCL REQUIRED)
+if(NOT TARGET MKL::MKL_SYCL)
+  find_package(MKL CONFIG QUIET)
+endif()
+if(TARGET MKL::MKL_SYCL)
+  set(STRATA_SYCL_MKL ON)
+else()
+  set(STRATA_SYCL_MKL OFF)
+  message(STATUS "Strata SYCL: oneMKL (MKL::MKL_SYCL) not found; the prefill GEMM path (M4) is unavailable")
+endif()
+
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+# ---- the runtime interface target -------------------------------------------------------------------
+add_library(strata_sycl_runtime INTERFACE)
+target_include_directories(strata_sycl_runtime BEFORE INTERFACE
+  "${STRATA_SYCL_COMPAT_INCLUDE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_definitions(strata_sycl_runtime INTERFACE
+  STRATA_USE_SYCL=1 "STRATA_SYCL_ARCHS=\"${STRATA_SYCL_ARCHS}\"")
+target_compile_options(strata_sycl_runtime INTERFACE
+  -fsycl
+  -fsycl-targets=${STRATA_SYCL_TARGETS}
+  -fno-sycl-rdc                              # no device function pointers across TUs; shorter link
+  -fsycl-device-code-split=per_kernel)       # the engine loads every kernel at startup
+# The compat cuda_runtime.h is force-included into every host and device source, exactly as the HIP target
+# force-includes its own (hip_backend.cmake:75-83).  A source that does not mention cudaMalloc still gets the
+# shim for the types it passes around.
+target_compile_options(strata_sycl_runtime INTERFACE
+  "-include" "${STRATA_SYCL_COMPAT_INCLUDE_DIR}/cuda_runtime.h")
+target_link_libraries(strata_sycl_runtime INTERFACE IntelSYCL::SYCL_CXX)
+if(STRATA_SYCL_MKL)
+  target_link_libraries(strata_sycl_runtime INTERFACE MKL::MKL_SYCL)
+endif()
+
+set(STRATA_SYCL_RUNTIME_TARGET strata_sycl_runtime)
+set(STRATA_SYCL_BLAS_TARGET MKL::MKL_SYCL)
+set(STRATA_SYCL_INCLUDE_DIRECTORIES "${STRATA_SYCL_COMPAT_INCLUDE_DIR}")
+
+# ---- the .cu -> .cpp translation --------------------------------------------------------------------
+set(STRATA_SYCL_GEN_DIR "${CMAKE_BINARY_DIR}/sycl")
+set(STRATA_SYCL_SYCLIFY "${CMAKE_CURRENT_SOURCE_DIR}/tools/sycl/syclify.py")
+set(STRATA_SYCL_EXCEPTIONS "${CMAKE_CURRENT_SOURCE_DIR}/tools/sycl/exceptions.txt")
+if(NOT EXISTS "${STRATA_SYCL_SYCLIFY}")
+  message(FATAL_ERROR "STRATA_ENABLE_SYCL needs ${STRATA_SYCL_SYCLIFY}")
+endif()
+
+# strata_sycl_generate(<source.cu> <out_var>): add the translation step and return the generated path.
+# The generated files carry their own #line markers, so a compile error names the ORIGINAL .cu and line.
+function(strata_sycl_generate cu out_var)
+  get_filename_component(_name "${cu}" NAME_WE)
+  set(_out "${STRATA_SYCL_GEN_DIR}/${_name}.cpp")
+  add_custom_command(
+    OUTPUT "${_out}"
+    COMMAND "${Python3_EXECUTABLE}" "${STRATA_SYCL_SYCLIFY}" "${cu}" "${_out}"
+            --exceptions "${STRATA_SYCL_EXCEPTIONS}" --repo-root "${CMAKE_SOURCE_DIR}"
+    DEPENDS "${cu}" "${STRATA_SYCL_SYCLIFY}" "${STRATA_SYCL_EXCEPTIONS}"
+    COMMENT "syclify ${_name}")
+  set(${out_var} "${_out}" PARENT_SCOPE)
+endfunction()
+
+# ---- the M1 target set ------------------------------------------------------------------------------
+# src/core/device.cu + src/core/pinned.cu are REUSED UNCHANGED (PLAN.md §4.1.5): the single source of truth
+# for the device and the pinned expert arena, translated like every other engine source.
+set(STRATA_SYCL_CORE_CU
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/core/device.cu"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/core/pinned.cu")
+set(_strata_sycl_core_tus "")
+foreach(_cu IN LISTS STRATA_SYCL_CORE_CU)
+  strata_sycl_generate("${_cu}" _gen)
+  list(APPEND _strata_sycl_core_tus "${_gen}")
+endforeach()
+set(STRATA_SYCL_CORE_TUS "${_strata_sycl_core_tus}")
+
+# The kernels this backend compiles TODAY.  Every one of them passes
+#   icpx -fsycl -x c++ -c  (tools/sycl/compile_survey.sh, evidence in M1's completion comment)
+# and the .cu is unmodified - only the generated TU is built.  dequant_s2.cu is the S2 decode
+# (src/kernels/dequant_s2_parity.cpp is the GPU-free parity harness the M1 acceptance names).
+set(STRATA_SYCL_KERNELS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/dequant_s2.cu"
+    CACHE STRING "Kernel .cu files this SYCL build compiles (M1 set; extend per PLAN.md §2 as M2..M5 land)")
+set(_strata_sycl_kernel_tus "")
+foreach(_cu IN LISTS STRATA_SYCL_KERNELS)
+  strata_sycl_generate("${_cu}" _gen)
+  list(APPEND _strata_sycl_kernel_tus "${_gen}")
+endforeach()
+set(STRATA_SYCL_KERNEL_TUS "${_strata_sycl_kernel_tus}" CACHE INTERNAL "")
+
+message(STATUS "Strata: SYCL enabled, arch ${STRATA_SYCL_ARCHS}, targets ${STRATA_SYCL_TARGETS} "
+               "(oneMKL: ${STRATA_SYCL_MKL}); ${_strata_sycl_kernel_tus}"
+               "kernel translation unit(s) - the rest of PLAN.md §2 is M2..M5 work")
