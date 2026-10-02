@@ -1083,6 +1083,25 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP OR STRATA_ENABLE_SYCL)
     target_include_directories(w4a16_pack_check PRIVATE ${_strata_gpu_include_directories})
     target_link_libraries(w4a16_pack_check PRIVATE strata_engine strata_kernels_cpu
                                                   ${_strata_gpu_runtime_target})
+
+    # ---- W2: the Q4_0 expert path on the Arc (card t_7e74bb89) -----------------------------------------
+    # The kernel itself is `Fmt<2>` in src/kernels/cuda/iq_kernels.cu (translated to
+    # ${STRATA_SYCL_GEN_DIR}/iq_kernels.cpp like every other file).  This is its harness: one expert of the real
+    # pack through the W1 oracle, the CPU miss, the grouped SYCL kernel (both Q4_0 correction conventions) and
+    # `native_q4_0_mmvq`.  Like the two W1 programs it needs a 68 GB artifact on disk, so it is NOT a ctest -
+    # it prints its own PASS/FAIL and exits non-zero.  See the card for the command.
+    add_executable(w4a16_expert_parity src/kernels/w4a16_expert_parity.cpp)
+    target_include_directories(w4a16_expert_parity PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(w4a16_expert_parity PRIVATE strata_kernels strata_kernels_cpu
+                                                    ${_strata_gpu_runtime_target})
+
+    # W2's decode-path measurement (the number that decides W4A16-PLAN.md DW3): the real MoE node shapes on
+    # card 0, the grouped Q4_0 kernel, the Q4_K anchor and the CPU AVX2 path.  Needs the pack for its weights,
+    # so it is not a ctest either.
+    add_executable(w4a16_gemv_bench bench/micro/w4a16_gemv_bench.cpp)
+    target_include_directories(w4a16_gemv_bench PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(w4a16_gemv_bench PRIVATE strata_kernels strata_kernels_cpu
+                                                 ${_strata_gpu_runtime_target})
   endif()
 endif()
 

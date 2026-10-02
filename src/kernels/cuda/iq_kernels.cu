@@ -295,7 +295,7 @@ __device__ __forceinline__ float vec_dot_iq4_xs_q8_1(const void* __restrict__ vb
 // Q4_K / Q5_K gate/up and Q5_1 / Q8_0 down: llama.cpp's vec_dot_*_q8_1 (vecdotq.cuh, VDR 2 each), transcribed; the
 // Q5_1 min term is the one departure (below).  Via eddoursul/Strata 8029fa9 (iq_dot.cuh) and #255 (Q8_0,
 // gopinath87607), which agree with llama.cpp and with each other.
-constexpr int VDR_Q4_K = 2, VDR_Q5_K = 2, VDR_Q5_1 = 2, VDR_Q8_0 = 2;
+constexpr int VDR_Q4_K = 2, VDR_Q5_K = 2, VDR_Q5_1 = 2, VDR_Q8_0 = 2, VDR_Q4_0 = 2;
 
 __device__ __forceinline__ float vec_dot_q4_K_q8_1_impl_vmmq(const int* __restrict__ v, const int* __restrict__ u,
                                                              const uint8_t* __restrict__ sc, const uint8_t* __restrict__ m,
@@ -442,6 +442,54 @@ __device__ __forceinline__ float vec_dot_q8_0_q8_1(const void* __restrict__ vbq,
     const float d8_0 = __half2float(bq8_0->d), d8_1 = __low2float(bq8_1->ds);
     return d8_0 * d8_1 * ((float) sumi);
 }
+// Q4_0 (ggml type 2) is the W4A16 expert blob's format (W4A16-PLAN.md DW2).  Its affine decode is
+// `w = d * (q - 8)` per 32 values, so the dot needs a correction term; there are TWO conventions in the
+// wild and this file implements BOTH, because they do not agree and the choice is a hit/miss-parity question:
+//
+//  * vec_dot_q4_0_q8_1 (Fmt<2>, the DEFAULT, used by every real pack): the correction is taken from the
+//    q8_1 codes themselves - `sumi - 8 * sumq`, with `sumq` a dp4a against 0x01010101.  This is EXACTLY
+//    ggml-cpu's `ggml_vec_dot_q4_0_q8_0` (`v0 = nibble - 8` before the multiply, quants.c:247): for a native
+//    pack the CPU pool computes the misses with that very function (cpu/native_expert.cpp reaches
+//    `ggml_get_type_cpu(vec_dot)`, and Q4_0 has no AVX-512/AVX2 multi-token kernel), so a GPU hit has to use
+//    the same arithmetic or a hit and a miss of the same expert differ (the R4.2h class of defect).
+//    This is the same deliberate departure from llama.cpp-CUDA the Q5_1 arm above already documents.
+//  * vec_dot_q4_0_pinned_q8_1 (Fmt<102>, TEST-ONLY, never in a pack): llama.cpp-CUDA's form, which uses the
+//    q8_1 block's stored `sum(x)` instead of `d8 * sum(q)` -
+//    `d4 * (sumi * ds.x - (8 * vdr / QI4_0) * ds.y)`, and which native_mmvq.cu's `small_q8_dot` transcribes.
+//    It is kept so the W4A16 parity test can MEASURE the two against each other and against the CPU miss; the
+//    deviation is not a rounding detail (measured: `scripts/w2_q40_correction_probe.py`, ~2.7e-02 relative on
+//    the real 2560-wide row shape), so nothing may claim they are interchangeable.
+__device__ __forceinline__ float vec_dot_q4_0_q8_1(const void* __restrict__ vbq, const block_q8_1* __restrict__ bq8_1,
+                                                   const int& kbx, const int& iqs) {
+    const block_q4_0* bq4_0 = (const block_q4_0*) vbq + kbx;
+    int sumi = 0, sumq = 0;
+#pragma unroll
+    for (int i = 0; i < VDR_Q4_0; ++i) {
+        const int v = get_int_b2(bq4_0->qs, iqs + i);
+        const int u0 = get_int_b4(bq8_1->qs, iqs + i), u1 = get_int_b4(bq8_1->qs, iqs + i + QI4_0);
+        sumi = ggml_cuda_dp4a((v >> 0) & 0x0F0F0F0F, u0, sumi);
+        sumi = ggml_cuda_dp4a((v >> 4) & 0x0F0F0F0F, u1, sumi);
+        sumq = ggml_cuda_dp4a(0x01010101, u1, ggml_cuda_dp4a(0x01010101, u0, sumq));
+    }
+    const float2 ds8f = __half22float2(bq8_1->ds);
+    return __half2float(bq4_0->d) * ds8f.x * (float) (sumi - 8 * sumq);
+}
+// The pinned llama.cpp-CUDA form of the same dot (vecdotq.cuh's vec_dot_q4_0_q8_1, "second part effectively
+// subtracts 8 from each quant value"); see the block comment above for why it is not the default.
+__device__ __forceinline__ float vec_dot_q4_0_pinned_q8_1(const void* __restrict__ vbq,
+                                                          const block_q8_1* __restrict__ bq8_1, const int& kbx,
+                                                          const int& iqs) {
+    const block_q4_0* bq4_0 = (const block_q4_0*) vbq + kbx;
+    int sumi = 0;
+#pragma unroll
+    for (int i = 0; i < VDR_Q4_0; ++i) {
+        const int v = get_int_b2(bq4_0->qs, iqs + i);
+        sumi = ggml_cuda_dp4a((v >> 0) & 0x0F0F0F0F, get_int_b4(bq8_1->qs, iqs + i), sumi);
+        sumi = ggml_cuda_dp4a((v >> 4) & 0x0F0F0F0F, get_int_b4(bq8_1->qs, iqs + i + QI4_0), sumi);
+    }
+    const float2 ds8f = __half22float2(bq8_1->ds);
+    return __half2float(bq4_0->d) * (sumi * ds8f.x - (8 * VDR_Q4_0 / QI4_0) * ds8f.y);
+}
 
 // ---------------------------------------------------------------- the formats
 // qk = values per block, ipb = dot calls per block (qi / vdr), step = the iqs stride between calls.
@@ -472,11 +520,20 @@ template<> struct Fmt<7> { static constexpr int qk = 32, ipb = QI5_1 / VDR_Q5_1,
     __device__ static float dot(const void* v, const block_q8_1* y, int kbx, int iqs) { return vec_dot_q5_1_q8_1(v, y, kbx, iqs); } };
 template<> struct Fmt<8> { static constexpr int qk = 32, ipb = QI8_0 / VDR_Q8_0, step = VDR_Q8_0;
     __device__ static float dot(const void* v, const block_q8_1* y, int kbx, int iqs) { return vec_dot_q8_0_q8_1(v, y, kbx, iqs); } };
+// ggml Q4_0 (type 2): the W4A16 expert blob's format (W4A16-PLAN.md DW2).  QI4_0 = 4 words per 32-value block,
+// VDR = 2, so two calls per block - the same decomposition native_mmvq.cu's Qi=4 small kernels use.
+template<> struct Fmt<2> { static constexpr int qk = 32, ipb = QI4_0 / VDR_Q4_0, step = VDR_Q4_0;
+    __device__ static float dot(const void* v, const block_q8_1* y, int kbx, int iqs) { return vec_dot_q4_0_q8_1(v, y, kbx, iqs); } };
+// The pinned llama.cpp-CUDA convention of the same dot, reachable ONLY by the parity test (see the block comment
+// at vec_dot_q4_0_q8_1).  It is never written into native_experts.txt: a pack says type 2.
+template<> struct Fmt<102> { static constexpr int qk = 32, ipb = QI4_0 / VDR_Q4_0, step = VDR_Q4_0;
+    __device__ static float dot(const void* v, const block_q8_1* y, int kbx, int iqs) { return vec_dot_q4_0_pinned_q8_1(v, y, kbx, iqs); } };
 
 // The formats of each role, one list each so a type cannot be in one switch and missing from another.  Every
 // entry is a kernel template for each CUDA architecture of the build, hence two lists rather than one.
-#define STRATA_GU_FMTS(X) X(16) X(17) X(18) X(21) X(22) X(23) X(29) X(42) X(12) X(13) X(8)
-#define STRATA_D_FMTS(X) X(20) X(23) X(42) X(7) X(8)
+// Q4_0 (2) is in BOTH roles: the W4A16 pack uses it for gate/up AND for down (W1-REPORT.md §2).
+#define STRATA_GU_FMTS(X) X(16) X(17) X(18) X(21) X(22) X(23) X(29) X(42) X(2) X(102) X(12) X(13) X(8)
+#define STRATA_D_FMTS(X) X(20) X(23) X(42) X(7) X(8) X(2) X(102)
 #define STRATA_MMVQ_FMTS(X) X(16) X(17) X(18) X(20) X(21) X(22) X(23) X(29) X(42) X(12) X(13) X(7) X(8)
 
 __device__ __forceinline__ float warp_sum(float v) {
@@ -1348,6 +1405,8 @@ size_t iq_row_bytes(int t, int64_t n) noexcept {
         case 13: return (size_t) (n / 256) * sizeof(block_q5_K);
         case 7: return (size_t) (n / 32) * sizeof(block_q5_1);
         case 8: return (size_t) (n / 32) * sizeof(block_q8_0);
+        case 2: return (size_t) (n / 32) * sizeof(block_q4_0);   // Q4_0, the W4A16 expert blob (DW2)
+        case 102: return (size_t) (n / 32) * sizeof(block_q4_0); // Q4_0, pinned correction (parity test only)
         case 30: return (size_t) n * 2;   // BF16: the token embedding only (iq_embed_rows, iq_dequant_f32)
         default: return 0;
     }
@@ -1416,8 +1475,13 @@ void iq_dequant_gu_f16(int t, const void* gate, const void* up, int64_t n_ff, in
 
 bool native_expert_supported(int gu_type, int d_type, int64_t n_embd, int64_t n_ff) noexcept {
     const int qg = gu_qk(gu_type), qd = d_qk(d_type);
-    return qg > 0 && qd > 0 && is_iq(gu_type) && is_iq(d_type) && n_embd % qg == 0 && n_ff % qd == 0 &&
-           n_embd % 256 == 0 && (n_ff * n_embd) % 256 == 0;
+    // Q4_0 (2) is a legal native EXPERT type but NOT an `is_iq` type: is_iq gates the dequantizing entry
+    // points (dq_dispatch has no Q4_0 arm, so admitting 2 there would leave `dst` unwritten and say nothing),
+    // while the grouped expert kernels read the blob directly and never dequantize a whole plane.
+    // 102 is the same format with the pinned llama.cpp-CUDA correction: parity-test-only (iq_kernels.hpp).
+    const auto expert_type = [](int t) { return is_iq(t) || t == 2 || t == 102; };
+    return qg > 0 && qd > 0 && expert_type(gu_type) && expert_type(d_type) && n_embd % qg == 0 &&
+           n_ff % qd == 0 && n_embd % 256 == 0 && (n_ff * n_embd) % 256 == 0;
 }
 
 NativeExpertLayout native_expert_layout(int gu_type, int d_type, int64_t n_embd, int64_t n_ff) {

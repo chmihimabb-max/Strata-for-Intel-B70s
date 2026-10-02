@@ -14,6 +14,12 @@ namespace strata::kernels {
 
 /// ggml type ids handled here.
 bool iq_supported(int ggml_type) noexcept;
+
+/// TEST-ONLY pseudo-type: ggml Q4_0 (2) with llama.cpp-CUDA's affine correction (`- 8 * sum(x)` out of the q8_1
+/// block) instead of the integer-exact `- 8 * sum(q)` this engine's Q4_0 dot uses to match ggml-cpu.  No pack
+/// ever says 102 - a W4A16 pack's native_experts.txt says 2 - and the only caller is the W4A16 parity test,
+/// which uses it to measure the two conventions against each other and against the CPU miss.
+inline constexpr int kQ4_0PinnedForm = 102;
 /// The token-embedding types iq_embed_rows and iq_dequant_f32 read: the i-quants above and BF16 (30).
 bool embed_type_supported(int ggml_type) noexcept;
 /// Bytes of one row of `n` values of `ggml_type` (n a multiple of the type's block).
