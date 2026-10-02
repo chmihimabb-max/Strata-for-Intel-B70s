@@ -1,0 +1,57 @@
+{
+ "tag": "kvfp16-spec4",
+ "oracle": "i2/llama-probs-merged120.json",
+ "engine": "i2/iq3s-spec4-kvfp16-out.txt",
+ "prompts": {
+  "capital": {
+   "prompt": "capital",
+   "compared": 40,
+   "first_divergence": null,
+   "oracle_top1_at_div": null,
+   "oracle_top2_at_div": null,
+   "margin_at_div": null,
+   "min_margin_among_agreed": 0.19137203693389893,
+   "median_margin_among_agreed": 5.496892987750471,
+   "engine_token_at_div": null,
+   "agreed_positions_with_margin_lt_div": 0
+  },
+  "chat-turn": {
+   "prompt": "chat-turn",
+   "compared": 3,
+   "first_divergence": 2,
+   "oracle_top1_at_div": 310,
+   "oracle_top2_at_div": 4087,
+   "margin_at_div": 0.07051277160644531,
+   "min_margin_among_agreed": 2.6686631068587303,
+   "median_margin_among_agreed": 9.91610537825909,
+   "engine_token_at_div": 4087,
+   "agreed_positions_with_margin_lt_div": 0
+  },
+  "code": {
+   "prompt": "code",
+   "compared": 40,
+   "first_divergence": null,
+   "oracle_top1_at_div": null,
+   "oracle_top2_at_div": null,
+   "margin_at_div": null,
+   "min_margin_among_agreed": 0.09628498554229736,
+   "median_margin_among_agreed": 7.99314503747155,
+   "engine_token_at_div": null,
+   "agreed_positions_with_margin_lt_div": 0
+  },
+  "bench": {
+   "prompt": "bench",
+   "compared": 116,
+   "first_divergence": 115,
+   "oracle_top1_at_div": 271,
+   "oracle_top2_at_div": 561,
+   "margin_at_div": 0.0050201416015625,
+   "min_margin_among_agreed": 0.10631942749023438,
+   "median_margin_among_agreed": 6.725210020435043,
+   "engine_token_at_div": 561,
+   "agreed_positions_with_margin_lt_div": 0
+  }
+ },
+ "total_compared": 199,
+ "total_agreed": 197
+}

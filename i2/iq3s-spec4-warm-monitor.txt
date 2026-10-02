@@ -1,0 +1,4 @@
+[monitor iq3s-spec4-warm] samples 82 over 83 s, root pid 716849
+[monitor iq3s-spec4-warm] peak card0 VRAM 25.52 GiB  card1 VRAM 30.91 GiB
+[monitor iq3s-spec4-warm] peak tree RSS 48.67 GiB  (max clients 2, procs 2)
+[monitor iq3s-spec4-warm] peak GTT card0 1.40 GiB  card1 1.40 GiB

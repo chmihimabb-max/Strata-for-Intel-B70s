@@ -1,0 +1,4 @@
+[monitor iq3s-spec4-kvfp16] samples 83 over 84 s, root pid 719142
+[monitor iq3s-spec4-kvfp16] peak card0 VRAM 25.54 GiB  card1 VRAM 30.94 GiB
+[monitor iq3s-spec4-kvfp16] peak tree RSS 48.65 GiB  (max clients 2, procs 2)
+[monitor iq3s-spec4-kvfp16] peak GTT card0 1.40 GiB  card1 1.40 GiB

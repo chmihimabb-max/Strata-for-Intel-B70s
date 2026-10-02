@@ -263,3 +263,63 @@ the block device** (50.29 GB of it the mapped experts, the rest PLE/embedding/he
 faults, takes 116 s against 77 s warm, and generates **the same tokens**. The RAM tier is the page cache
 (`--mmap-experts`: `arena_mib=0`), not a pinned expert arena.
 
+### Measured: the same-file oracle — llama.cpp-SYCL (`qwen4exp`) against our engine (2026-10-02)
+
+The W4A16/AD comparisons above are all *our* engine against *our* engine. The independent reference for this
+model family lives on this box: `~/llama.cpp-qwen4-exp` (leaf `dd3151b54`), which carries `qwen4exp.cpp` and a
+SYCL backend. It loads the **same upstream IQ3_S file** — no reprocessing, no pack:
+
+```
+build/bin/llama-server -m .../Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf \
+  -ngl 99 -ncmoe 0 -ot per_layer_token_embd=CPU -c 4096 -fa on -t 18 -ts 0.50,0.50 \
+  --parallel 1 -ub 2048 --jinja           # shard 2 (-00002-) is picked up as part 2 of the split
+```
+
+76 s to `model loaded`; **26,448.8 MiB on card 0 + 27,317.9 MiB on card 1** of 32,655 each (all 48 layers'
+experts plus the dense tier on the GPUs, the 28.8 GB PLE on the host through `-ot`). f16 KV only: the fork
+aborts this arch on any quantised KV (`qwen4exp.cpp:544`, `build_attn_qsa`).
+
+The two engines were then given **the same token ids** (from the oracle's own tokenizer; the chat prompts
+rendered by its own template) with greedy sampling on both sides — the oracle through
+`POST /completion` (`temperature 0, top_k 1, return_tokens`), ours through the serve protocol's
+`GEN <max_new> <id,id,...>`, which documents absent sampling keys as greedy with no penalties. So the file,
+the quant, the tokenizer, the template and the prompt are identical by construction, and the only structural
+difference left is that a native IQ pack must be served through `--spec` (verify windows), i.e. our stream is
+a spec-verified greedy stream. 376 generated tokens per engine arm:
+
+| prompt (ids) | first divergence | oracle id | engine id | the oracle's own top1-top2 margin there |
+|---|---|---|---|---|
+| `"The capital of France is"` (5) | **none, 40/40** | — | — | min margin among them 0.19 nats |
+| chat turn, 67 | **index 2** | 310 ` to` | 4087 ` answer` | **0.0705 nats (1.07:1)** |
+| code-ish chat turn, 70 | **none, 40/40** | — | — | min margin among them 0.096 nats |
+| 2,700-token nonce prompt, `--kv int8` | index 100 | 198 `\n` | 27255 ` RX` | 0.1063 nats (1.11:1) |
+| the same, `--kv fp16` | index 115 | 271 `\n\n` | 561 ` The` | **0.0050 nats (1.01:1)** |
+
+The 40 ids of the capital prompt are the ones card I1 recorded (`11751 13 561 6511 314 9564 369 …`), now
+reproduced a third time by our engine *and* by the independent implementation. Every disagreement sits at a
+position where the oracle's own two candidates were within 0.005-0.11 nats of each other, and the oracle's own
+resolution of one of them is not stable: at bench index 100 llama.cpp emits **198** (-0.6535, over 27255 at
+-0.7598) under `-ub 2048` and **27255** (-0.6773, over 198 at -0.7413) under `-ub 512`, on the same prompt.
+One disagreement is attributable outright — matching our KV to the fork's (fp16) makes our bench stream follow
+the oracle past index 100, so our `--kv int8` precision trade, not an unknown defect, produced that token. The
+one that remains (chat index 2, 0.0705 nats) appears in all four engine arms (spec 2/4, int8/fp16, cold/warm)
+and is a deterministic coin flip inside the oracle's own noise band. Comparable-token agreement: **182/184
+(98.91%)** with `--kv int8`, **197/199 (98.99%)** with `--kv fp16`.
+
+Perf on the same file at 4096 context, `~/flashnext-opt`'s protocol (nonce-prefixed 2,700-token prompt, 256
+usage-counted generated tokens, page-cache check measured, `0 reused` on both sides):
+
+| | our engine, `--kv int8` | our engine, `--kv fp16` | llama.cpp-SYCL |
+|---|---|---|---|
+| prefill | 257.1 / 257.7 / 258.1 tok/s (3 arms) | 239.6 | **439.7-452.8** (186.1 on the first request after load) |
+| decode, 256 tok | **20.2-21.2 tok/s** | 21.2 | 18.7-19.0 |
+| disk reads during a whole arm | 9.24 GB device (≈82% of the 50.29 GB expert tier from the page cache) | — | 0.8-1.14 GB device / 0.40-0.57 GB in-process per request after a full re-read of both shards |
+
+The oracle's prefill is **1.71-1.76× ours** (a finding, not smoothed over: we stream native IQ experts through
+the window path, it amortises the prompt with `-ub 2048`), and our decode is 8-13% faster *with* the caveat
+that ours runs speculative windows (110-185 drafts accepted per 256 tokens) and the oracle's is one forward
+pass per token — per-pass equivalence is not measured. Not validated: the W4A16 path (this is IQ3_S only),
+bit-exactness (different KV precision, different MoE/attention kernels), our own top-2 gap at the divergent
+positions (`--dump-logits` needs `generate` mode, and `--layer-split` is refused outside `--serve`, so the dump
+cannot be taken without moving expert work to the CPU pool), and 16K/32K. Full evidence: `I2-STATUS.md`, `i2/`.
+

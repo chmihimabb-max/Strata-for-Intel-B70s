@@ -1,0 +1,1 @@
+strata generate: --layer-split K[,K2..]|auto needs --serve, rising K from 2, and one distinct GPU per K in --split-device (1..1; or 0 with one K: the same GPU)

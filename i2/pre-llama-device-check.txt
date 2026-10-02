@@ -1,0 +1,42 @@
+==============================================================
+I2 device check  tag=pre-llama   2026-10-02T15:03:44-06:00
+-- engines that would hold a card --
+   none
+-- who holds the render nodes (fuser) --
+                     USER        PID ACCESS COMMAND
+/dev/dri/renderD128: michael    4359 F.... gnome-shell
+                     michael    4867 F...m Xwayland
+                     michael    5200 F...m ibus-x11
+                     michael    5201 F...m mutter-x11-fram
+                     michael   12379 F...m ptyxis
+                     michael   12722 F...m firefox
+                     michael   14495 F...m nautilus
+                     michael   37892 F...m gnome-text-edit
+                     michael   38552 F...m missioncenter
+/dev/dri/renderD129: michael   12379 F.... ptyxis
+                     michael   14495 F.... nautilus
+                     michael   37892 F.... gnome-text-edit
+                     michael   38552 F.... missioncenter
+-- per-process VRAM held right now, driver DRM fdinfo (m6_occupancy.py) --
+process                      card     VRAM MiB
+12379 ptyxis                 card0        59.8
+12722 firefox                card0       204.5
+14495 nautilus               card0        84.3
+37892 gnome-text-edit        card0        20.7
+38552 missioncenter          card0       102.9
+4359 gnome-shell             card0       404.0
+4867 Xwayland                card0         0.2
+5200 ibus-x11                card0         0.0
+5201 mutter-x11-fram         card0         0.1
+----------------------------------------------
+TOTAL on card0                           876.5 MiB
+TOTAL on card1                             0.0 MiB
+-- containers / other engines --
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+NAME    ID    SIZE    PROCESSOR    CONTEXT    UNTIL 
+-- load / memory / disk --
+0.66 0.94 0.97 1/1757 710529
+               total        used        free      shared  buff/cache   available
+Mem:             123           6          20           0          97         116
+/dev/nvme1n1p2  915G  698G  171G  81% /
+== end of the device check ==

@@ -1,0 +1,57 @@
+{
+ "tag": "ub2048-spec4",
+ "oracle": "i2/llama-probs-merged120.json",
+ "engine": "i2/iq3s-spec4-out.txt",
+ "prompts": {
+  "capital": {
+   "prompt": "capital",
+   "compared": 40,
+   "first_divergence": null,
+   "oracle_top1_at_div": null,
+   "oracle_top2_at_div": null,
+   "margin_at_div": null,
+   "min_margin_among_agreed": 0.19137203693389893,
+   "median_margin_among_agreed": 5.496892987750471,
+   "engine_token_at_div": null,
+   "agreed_positions_with_margin_lt_div": 0
+  },
+  "chat-turn": {
+   "prompt": "chat-turn",
+   "compared": 3,
+   "first_divergence": 2,
+   "oracle_top1_at_div": 310,
+   "oracle_top2_at_div": 4087,
+   "margin_at_div": 0.07051277160644531,
+   "min_margin_among_agreed": 2.6686631068587303,
+   "median_margin_among_agreed": 9.91610537825909,
+   "engine_token_at_div": 4087,
+   "agreed_positions_with_margin_lt_div": 0
+  },
+  "code": {
+   "prompt": "code",
+   "compared": 40,
+   "first_divergence": null,
+   "oracle_top1_at_div": null,
+   "oracle_top2_at_div": null,
+   "margin_at_div": null,
+   "min_margin_among_agreed": 0.09628498554229736,
+   "median_margin_among_agreed": 7.99314503747155,
+   "engine_token_at_div": null,
+   "agreed_positions_with_margin_lt_div": 0
+  },
+  "bench": {
+   "prompt": "bench",
+   "compared": 101,
+   "first_divergence": 100,
+   "oracle_top1_at_div": 198,
+   "oracle_top2_at_div": 27255,
+   "margin_at_div": 0.10631942749023438,
+   "min_margin_among_agreed": 0.2550505995750427,
+   "median_margin_among_agreed": 7.0448743720771745,
+   "engine_token_at_div": 27255,
+   "agreed_positions_with_margin_lt_div": 0
+  }
+ },
+ "total_compared": 184,
+ "total_agreed": 182
+}
