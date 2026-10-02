@@ -29,12 +29,33 @@ static_assert(sizeof(__half2) == 4 && alignof(__half2) == 4, "CUDA's __half2 lay
 using half = __half;
 using half2 = __half2;
 
+// ---- the f16 -> f32 conversion must NOT be foldable (MEASURED, M3 Risk: DPC++ at -O1/-O2 folds it) --------
+// `(float) sycl::half(x)` is a correct conversion at -O0 but at -O1 and -O2 the compiler folds the round trip
+// back to `x`, i.e. it optimises the f16 ROUNDING AWAY.  MEASURED with probe/probe26b_half_fold.cpp, which
+// prints `x - (float)(sycl::half(x))` for three values whose f16 rounding is not the identity:
+//   -O0: 0.0631714   -0.299805   -4.0431e-07      (correct)
+//   -O1: 0          0           0                 (folded)
+//   -O2: 0          0           0                 (folded)
+// Going through the 16-bit bit pattern is not folded at any level (same probe, `volatile` and `bit_cast`
+// columns).  This matters because the engine's kernels split an FP32 value into f16 hi + lo parts, e.g.
+// `lo = x - (float) __float2half_rn(x)` in qsa_prompt_attn.cu:134/457 - with the fold, lo is always exactly 0,
+// the correction term disappears and the kernel loses f16-level (4.9e-4 relative) accuracy.  MEASURED on the
+// SYCL portable prompt attention: its fp16-KV error against the FP64 reference was 1.54e-3 with the fold and
+// 1.5e-6 without it.
+inline float __half2float_opaque(__half h) {
+    // `volatile` is load-bearing.  MEASURED (probe/probe26b_half_fold.cpp, probe/probe26c_shim_half.cpp): a
+    // bare `(float) h` AND a plain bit_cast round trip are both folded back to the pre-conversion value at
+    // -O1/-O2 (residual exactly 0), while a volatile 16-bit store/load is not folded at any level.
+    volatile uint16_t bits = sycl::bit_cast<uint16_t>(h);
+    const uint16_t rounded = bits;
+    return (float) sycl::bit_cast<sycl::half>(rounded);
+}
 inline __half __float2half(float f) { return sycl::half(f); }
 inline __half __float2half_rn(float f) { return sycl::half(f); }   // SYCL's software conversion is RN
 inline __half __float2half_rz(float f) { return sycl::half(f); }
-inline float __half2float(__half h) { return (float) h; }
-inline float __low2float(__half2 h) { return (float) h.x; }
-inline float __high2float(__half2 h) { return (float) h.y; }
+inline float __half2float(__half h) { return __half2float_opaque(h); }
+inline float __low2float(__half2 h) { return __half2float_opaque(h.x); }
+inline float __high2float(__half2 h) { return __half2float_opaque(h.y); }
 
 inline __half2 __floats2half2_rn(float a, float b) { return __half2{sycl::half(a), sycl::half(b)}; }
 inline __half2 __halves2half2(__half a, __half b) { return __half2{a, b}; }
@@ -45,7 +66,9 @@ inline __half __high2half(__half2 h) { return h.y; }
 inline unsigned short __half_as_ushort(__half h) { return (unsigned short) sycl::bit_cast<uint16_t>(h); }
 inline __half __ushort_as_half(unsigned short u) { return sycl::bit_cast<sycl::half>(u); }
 
-inline float2 __half22float2(__half2 h) { return float2{(float) h.x, (float) h.y}; }
+inline float2 __half22float2(__half2 h) {
+    return float2{__half2float_opaque(h.x), __half2float_opaque(h.y)};
+}
 inline float2 __half2float2(__half2 h) { return __half22float2(h); }
 
 inline __half2 make_half2(__half a, __half b) { return __half2{a, b}; }

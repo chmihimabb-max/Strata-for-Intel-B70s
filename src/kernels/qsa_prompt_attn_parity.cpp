@@ -215,6 +215,25 @@ int main(int argc, char** argv) {
 #endif
     }
 #endif
+    // --selftest: the fast mode the M3 acceptance loop uses (PLAN.md §5 M3, card t_a44aa58f).  Same checks and
+    // the same printed lines, on a FIXED prompt fixture (mt19937 seeded 1234+fmt, shuffled page table, the cells
+    // selected by qsa_selection_width) at sizes that finish in a couple of minutes: ctx 1500 takes the
+    // every-cell-selected branch and ctx 2100 the identity-to-sparse edge.  The XMX gate is read from the
+    // environment by the kernel path itself, so the same binary serves both arms of the M3 evidence:
+    //   STRATA_SYCL_XMX=0 ./build-sycl/sycl_prompt_attn_parity --selftest   (portable)
+    //   STRATA_SYCL_XMX=1 ./build-sycl/sycl_prompt_attn_parity --selftest   (gate armed)
+    if (argc > 1 && std::strcmp(argv[1], "--selftest") == 0) {
+        int fails = 0;
+        std::printf("PROMPT A/B (fixed prompt, selftest): both attention paths run the SAME prompt fixture and are\n"
+                    "compared on the output the engine consumes - against an FP64 reference and against each other.\n"
+                    "The greedy next-token A/B is NOT RUN here: it needs a model pack and this box has none (the pack\n"
+                    "is PLAN.md §8 / M5 work), so this line names that limit rather than implying a model-level check.\n");
+        fails += run(1, 1500, 128, 2);   // int8 KV, every cell selected
+        fails += run(0, 1500, 128, 2);   // fp16 KV
+        fails += run(1, 2100, 128, 2);   // the identity-to-sparse edge
+        std::printf("FAILURES: %d\n", fails);
+        return fails;
+    }
     const int64_t ctx = argc > 1 ? std::atoll(argv[1]) : 32768;
     const int64_t nq = argc > 2 ? std::atoll(argv[2]) : 2048;
     const int reps = argc > 3 ? std::atoi(argv[3]) : 5;

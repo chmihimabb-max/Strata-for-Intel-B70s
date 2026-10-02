@@ -1,0 +1,22 @@
+# tools/sycl/m3_files.txt - the .cu files M3 (card t_a44aa58f) must get building + parity-green.
+# PLAN.md section 2 numbers in the comments.  The parity tests that need them are in parentheses.
+#
+# QSA family
+qsa                     # 8   qsa_parity  (already generated+compiled in M2 for kv_q8_parity)
+qsa_decode_attn         # 20  qsa_parity  (already generated+compiled in M2 for kv_stream_parity)
+native_qsa              # 41  qsa_parity
+native_qsa_indexer      # 21
+# mixers
+gdn                     # 24  gdn_parity   (M2)
+fused_gdn               # 34  gdn_parity   (M2)
+native_gdn              # 43  gdn_parity   (M2)
+native_gdn_preprocess   # 31
+gr                      # 13  gr_parity
+native_gr_norm          # 45  gr_parity    (M2)
+native_gr_postops       # 44  gr_parity
+# PLE / shared expert
+ple                     # 16  ple_parity, ple_q5_parity, ple_fp8_parity
+native_ple_postops      # 28
+shared_expert           # 17  shared_expert_parity
+# attention
+native_flash_attn       # 30

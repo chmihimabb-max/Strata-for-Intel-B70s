@@ -259,7 +259,8 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP OR STRATA_ENABLE_SYCL)
   # would make the build fail for a reason that says nothing about what works.  PLAN.md §2 is the per-file
   # worklist, and each M2..M5 card adds its files to that list.
   if(STRATA_ENABLE_SYCL)
-    set(_strata_kernel_gpu_sources ${STRATA_SYCL_KERNEL_TUS})
+    # the generated TUs from the untouched .cu files, plus the 5 committed hand ports of PLAN.md §2.3
+    set(_strata_kernel_gpu_sources ${STRATA_SYCL_KERNEL_TUS} ${STRATA_SYCL_HAND_TUS})
   else()
     set(_strata_kernel_gpu_sources
                           src/kernels/cuda/s2_gemv.cu
@@ -879,6 +880,103 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP OR STRATA_ENABLE_SYCL)
     target_link_libraries(sycl_mapped_alias_test PRIVATE strata_kernels ${_strata_gpu_runtime_target})
     add_test(NAME sycl_mapped_alias_test COMMAND sycl_mapped_alias_test)
     set_tests_properties(sycl_mapped_alias_test PROPERTIES TIMEOUT 300 SKIP_RETURN_CODE 77)
+
+    # ---- M3: attention & mixers (PLAN.md §5 M3, card t_a44aa58f) --------------------------------------
+    # The PLAN.md §5 M3 acceptance loop, registered exactly as the CUDA/HIP builds register the same programs
+    # (CMakeLists.txt:611-724, :1156-1165): `--selftest` where that build passes it, ple_parity with its two
+    # REQUIRED fixtures and a pinned working directory, dequant_bf16_test with the artifact library it links.
+    # A test that is not registered is a test that stops running - so the ones the M3 card names are all here.
+    foreach(_t IN ITEMS qsa_parity gdn_parity gr_parity shared_expert_parity cvec_parity)
+      add_executable(${_t} src/kernels/${_t}.cpp)
+      target_include_directories(${_t} PRIVATE ${_strata_gpu_include_directories})
+      target_link_libraries(${_t} PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+      add_test(NAME ${_t} COMMAND ${_t} --selftest)
+      set_tests_properties(${_t} PROPERTIES TIMEOUT 600)
+    endforeach()
+
+    # no-argument variants (they run their own comparison and exit non-zero on a mismatch)
+    foreach(_t IN ITEMS kv_hybrid_parity)
+      add_executable(${_t} src/kernels/${_t}.cpp)
+      target_include_directories(${_t} PRIVATE ${_strata_gpu_include_directories})
+      target_link_libraries(${_t} PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+      add_test(NAME ${_t} COMMAND ${_t})
+      set_tests_properties(${_t} PROPERTIES TIMEOUT 600)
+    endforeach()
+
+    # the PLE kernel vs the pack, the original GGUF and the ggml capture: the fixtures are REQUIRED inputs, and
+    # the working directory is the source tree because the test resolves them relative to the pack.
+    # NOTE ON THE FOUR FIXTURE-GATED TESTS BELOW: the CUDA/HIP builds register them unconditionally because the
+    # machine that runs those builds has the model artifacts.  This box does not - measured for M3: no *.gguf
+    # larger than 100 MiB exists anywhere under $HOME (the HF cache holds only empty model repos) and the Q2_0
+    # GSQ-RCO shard ple_parity's default path names is absent - and this project's rule is that a test whose
+    # REQUIRED input is missing is NOT REGISTERED, with the reason in the configure output, never registered and
+    # silently skipped.  Each branch below names the exact file it is waiting for.
+    set(STRATA_PLE_FIXTURE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bench/micro" CACHE PATH
+        "Directory containing required ple_in.bin and ple_out.bin parity fixtures")
+    if(EXISTS "${STRATA_PLE_FIXTURE_DIR}/ple_in.bin" AND EXISTS "${STRATA_PLE_FIXTURE_DIR}/ple_out.bin")
+      add_executable(ple_parity src/kernels/ple_parity.cpp)
+      target_include_directories(ple_parity PRIVATE ${_strata_gpu_include_directories})
+      target_link_libraries(ple_parity PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+      add_test(NAME ple_parity COMMAND ple_parity --selftest
+        --in "${STRATA_PLE_FIXTURE_DIR}/ple_in.bin" --out "${STRATA_PLE_FIXTURE_DIR}/ple_out.bin"
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+      set_tests_properties(ple_parity PROPERTIES TIMEOUT 600)
+    else()
+      message(STATUS "STRATA tests (SYCL M3): ple_parity NOT registered - it needs the Q2_0 GSQ-RCO GGUF "
+                     "(src/kernels/ple_parity.cpp:256) and ${STRATA_PLE_FIXTURE_DIR}/ple_in.bin|ple_out.bin")
+    endif()
+    set(STRATA_PLE_TABLE_DEFAULT "${CMAKE_CURRENT_SOURCE_DIR}/../../Q2_0/Qwen3.8-Flash-Next-GSQC-RCO-Q2_0-00002-of-00002.gguf"
+        CACHE PATH "The Q2_0 GSQ-RCO shard the PLE parity tests need")
+    set(STRATA_PLE_FP8_TABLE "${CMAKE_CURRENT_SOURCE_DIR}/../../Q2_0/ple-fp8.gguf" CACHE PATH
+        "The FP8 PLE table produced by tools/ple_fp8_pack.py")
+
+    # the device dequantizers vs the artifact's CPU ones (the same program the CUDA/HIP blocks build at :1177).
+    # It takes a model SHARD as its argument, so it needs a real pack: not registered here (see the note above).
+    set(STRATA_M3_SHARD "" CACHE FILEPATH "A GGUF shard for dequant_bf16_test (absent - that test is not registered)")
+    if(EXISTS "${STRATA_M3_SHARD}")
+      add_executable(dequant_bf16_test src/kernels/dequant_bf16_test.cpp)
+      target_include_directories(dequant_bf16_test PRIVATE ${_strata_gpu_include_directories})
+      target_link_libraries(dequant_bf16_test PRIVATE strata_kernels strata_artifact ${_strata_gpu_runtime_target})
+      add_test(NAME dequant_bf16_test COMMAND dequant_bf16_test "${STRATA_M3_SHARD}")
+      set_tests_properties(dequant_bf16_test PROPERTIES TIMEOUT 600)
+    else()
+      message(STATUS "STRATA tests (SYCL M3): dequant_bf16_test NOT registered - it needs a GGUF shard "
+                     "(usage: dequant_bf16_test SHARD.gguf); no *.gguf > 100 MiB exists on this box")
+    endif()
+
+    # the Q5 PLE projection and the FP8 PLE table: the CUDA build registers these only under STRATA_ENABLE_CUDA
+    # (:1156-1165) and both need real checkpoint files, so the same rule applies here.
+    if(TARGET ggml-base AND EXISTS "${STRATA_PLE_TABLE_DEFAULT}")
+      add_executable(ple_q5_parity src/kernels/ple_q5_parity.cpp)
+      target_include_directories(ple_q5_parity PRIVATE ${_strata_gpu_include_directories})
+      target_link_libraries(ple_q5_parity PRIVATE strata_kernels strata_artifact ggml-base
+                                                 ${_strata_gpu_runtime_target})
+      add_test(NAME ple_q5_parity COMMAND ple_q5_parity)
+      set_tests_properties(ple_q5_parity PROPERTIES TIMEOUT 600)
+    else()
+      message(STATUS "STRATA tests (SYCL M3): ple_q5_parity NOT registered - it needs the OrcaRouter Q4_K_S files "
+                     "and ${STRATA_PLE_TABLE_DEFAULT} (absent)")
+    endif()
+    if(EXISTS "${STRATA_PLE_FP8_TABLE}")
+      add_executable(ple_fp8_parity src/kernels/ple_fp8_parity.cpp)
+      target_include_directories(ple_fp8_parity PRIVATE ${_strata_gpu_include_directories})
+      target_link_libraries(ple_fp8_parity PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+      add_test(NAME ple_fp8_parity COMMAND ple_fp8_parity "${STRATA_PLE_FP8_TABLE}"
+               "${STRATA_PLE_FIXTURE_DIR}/ple_out.bin")
+      set_tests_properties(ple_fp8_parity PROPERTIES TIMEOUT 600)
+    else()
+      message(STATUS "STRATA tests (SYCL M3): ple_fp8_parity NOT registered - it needs the FP8 PLE table "
+                     "${STRATA_PLE_FP8_TABLE} (usage: ple_fp8_parity <ple-fp8.gguf> <reference.bin>)")
+    endif()
+
+    # ---- the M3 files' own new tests (PLAN.md §2 "+NEW") -----------------------------------------------
+    # qsa_prompt_attn_parity is the program the M3 acceptance names twice (STRATA_SYCL_XMX=1 and 0); it is the
+    # same source the CUDA build uses (:318-321, registered as a ctest only under STRATA_PARITY_PROMPT_ATTN).
+    add_executable(sycl_prompt_attn_parity src/kernels/qsa_prompt_attn_parity.cpp)
+    target_include_directories(sycl_prompt_attn_parity PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(sycl_prompt_attn_parity PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+    add_test(NAME sycl_prompt_attn_parity COMMAND sycl_prompt_attn_parity --selftest)
+    set_tests_properties(sycl_prompt_attn_parity PROPERTIES TIMEOUT 900)
 
     # iq_parity's fixtures are GENERATED (tools/iq_fixture.py needs python3 + numpy and the vendored gguf-py)
     # - the same rule as the CUDA/HIP registration above, repeated here because that block is skipped on this

@@ -54,6 +54,16 @@ target_compile_options(strata_sycl_runtime INTERFACE
   -fsycl-targets=${STRATA_SYCL_TARGETS}
   -fno-sycl-rdc                              # no device function pointers across TUs; shorter link
   -fsycl-device-code-split=per_kernel)       # the engine loads every kernel at startup
+# THE SUB-GROUP SIZE IS PINNED TO 32, and this is a CORRECTNESS requirement, not a performance one.
+# MEASURED (M3, probe/probe24_pa_fp16.cpp + the hand-port canary): the B70 reports sub_group_sizes {16, 32}
+# (M2, PLAN.md §10) and DPC++ picks per kernel.  A kernel under register pressure got an EFFECTIVE 16-wide
+# sub-group while `get_sub_group().get_local_range()` still reported 32, and then
+#   sycl::select_from_group(sg, mine, 20)  returned the caller's OWN value instead of lane 20's
+# (probe24's dbg xchk line: lane 0, mine=1, asked for lane 20 and 31, got 1 for both).  Every CUDA `__shfl_*`
+# with a source lane >= 16 therefore silently exchanged with the wrong work-item, which is the same class of
+# defect M2 fixed for the 2-D nd_range (PROBE16) - the 1-D launch is necessary but NOT sufficient.  With this
+# flag the sub-group is 32 for every kernel in the port; the parity tests are what prove it.
+target_compile_options(strata_sycl_runtime INTERFACE -fsycl-default-sub-group-size=32)
 # The compat cuda_runtime.h is force-included into every host and device source, exactly as the HIP target
 # force-includes its own (hip_backend.cmake:75-83).  A source that does not mention cudaMalloc still gets the
 # shim for the types it passes around.
@@ -146,7 +156,19 @@ set(STRATA_SYCL_KERNELS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/qsa.cu"                  # 8 (M3; kv_q8_parity needs it)
     # qsa_decode_attn.cu is the other M3 file kv_stream_parity links against (qsa_decode_attn_batch,
     # qsa_decode_attn.cu), which is the whole point of that test: streamed vs resident attention.
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/qsa_decode_attn.cu")     # 20 (M3; kv_stream_parity needs it)
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/qsa_decode_attn.cu"     # 20 (M3; kv_stream_parity needs it)
+    # M3 set: attention & mixers (PLAN.md §5 M3, card t_a44aa58f) - the QSA family, the mixers'
+    # remaining files, the PLE/shared-expert paths and flash attention.  All 15 M3 .cu files translate
+    # and compile: plan-evidence/M3-check-r1.txt (15 OK / 0 FAIL / 0 refused).
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/native_qsa.cu"          # 41 qsa_parity
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/native_qsa_indexer.cu"  # 21 qsa_parity
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/native_gdn_preprocess.cu" # 31
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/gr.cu"                  # 13 gr_parity
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/native_gr_postops.cu"   # 44 gr_parity
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/ple.cu"                 # 16 ple_parity, ple_q5_parity, ple_fp8_parity
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/native_ple_postops.cu"  # 28
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/shared_expert.cu"       # 17 shared_expert_parity
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/native_flash_attn.cu")  # 30
 
 set(_strata_sycl_kernel_tus "")
 foreach(_cu IN LISTS STRATA_SYCL_KERNELS)
@@ -154,6 +176,30 @@ foreach(_cu IN LISTS STRATA_SYCL_KERNELS)
   list(APPEND _strata_sycl_kernel_tus "${_gen}")
 endforeach()
 set(STRATA_SYCL_KERNEL_TUS "${_strata_sycl_kernel_tus}" CACHE INTERNAL "")
+
+# ---- the 5 hand ports (PLAN.md §2.3, Risk 7) --------------------------------------------------------
+# These are the files that carry the 16 inline-PTX sites.  tools/sycl/syclify.py REFUSES any file containing
+# `asm` (that refusal is what keeps this list honest), so each one has a hand-ported SYCL source committed at
+# src/kernels/sycl/<name>.cpp, built here as an ordinary source file.  Nothing is generated at build time for
+# them: what is reviewed is what is compiled.  Rebuild one with
+#   tools/sycl/handport.py <name>          # from the UNMODIFIED .cu + tools/sycl/handport/<name>.py
+# and compile the whole set with tools/sycl/handport_check.sh.
+#
+# Risk 7 is the reason they are not "translated then patched": the guard the CUDA sources use,
+# `#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 800`, is TRUE when __CUDA_ARCH__ is undefined - i.e. under
+# SYCL - so a transform that keeps the asm text can silently compile it.  Measured: 0 surviving asm tokens in
+# every generated TU and in every hand port (plan-evidence/M3-risk7-asm.txt).
+set(STRATA_SYCL_HAND_PORTS
+    fused_gr            # 4  cp.async.cg.shared.global + commit_group + wait_group 1/0
+    qsa_prompt_attn     # 6  mma.sync f16 x3, cp.async x3
+    qsa_select          # 2  cvt.rna.tf32.f32, mma.sync tf32
+    verify_kernels      # 1  mov.u64 %0, %%globaltimer
+    native_qsa_score)   # 3  ldmatrix x2, mma.sync tf32
+set(_strata_sycl_hand_tus "")
+foreach(_hp IN LISTS STRATA_SYCL_HAND_PORTS)
+  list(APPEND _strata_sycl_hand_tus "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/sycl/${_hp}.cpp")
+endforeach()
+set(STRATA_SYCL_HAND_TUS "${_strata_sycl_hand_tus}" CACHE INTERNAL "")
 
 # The arithmetic contract of PLAN.md §4.3, on the GENERATED translation units.  The same two files get
 # `-ffp-contract=off` on CUDA and HIP (CMakeLists.txt:307-312, :350-359), because Q8_K's separately-rounded

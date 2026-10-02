@@ -45,6 +45,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <functional>   // stream capture records each submission as a std::function<void()> (PLAN.md §1.3(b))
 
 // ===========================================================================
 // Device-visible surface.
@@ -186,6 +187,8 @@ constexpr cudaError_t cudaErrorMemoryAllocation = 2;
 constexpr cudaError_t cudaErrorNotReady = 34;
 constexpr cudaError_t cudaErrorNotSupported = 801;
 constexpr cudaError_t cudaErrorStreamCaptureUnsupported = 900;
+constexpr cudaError_t cudaErrorStreamCaptureImplicit = 901;      // nested capture (CUDA: 901)
+constexpr cudaError_t cudaErrorStreamCaptureInvalidated = 902;   // EndCapture without BeginCapture (CUDA: 902)
 constexpr cudaError_t cudaErrorUnknown = 999;
 
 // The sticky error cell (D5).  Only a failing shim entry point writes it, so a later success cannot erase an
@@ -253,6 +256,7 @@ struct cudaFuncAttributes {
 enum cudaFuncAttribute { cudaFuncAttributeMaxDynamicSharedMemorySize = 8 };
 enum cudaDeviceAttr {
     cudaDevAttrMaxSharedMemoryPerBlockOptin = 97,
+    cudaDevAttrMaxSharedMemoryPerBlock = 8,
     cudaDevAttrMultiProcessorCount = 16,
     cudaDevAttrClockRate = 13,
     cudaDevAttrComputeCapabilityMajor = 75,
@@ -378,13 +382,53 @@ struct const_ref2d {
     const_row<T, S1> operator[](long long i) const { return const_row<T, S1>{p + i * S1}; }
 };
 
+// ---- stream capture: the capture contract, implemented (PLAN.md §1.3(b), D7) ------------------------
+// WHAT THIS IS, and what it is not.  The engine funnels every kernel launch, copy and memset through this shim
+// (D2), so a record mode IS the capture contract: while a capture is open the launcher appends a closure
+// instead of submitting, EndCapture hands the list to a graph, and GraphLaunch replays it in order.  Argument
+// semantics are CUDA's: the closure holds the kernel's arguments by value (baked at capture time) while the
+// buffers are re-read on every replay - which is exactly what the graph tests in gr_parity/qsa_parity/
+// shared_expert_parity assert (they change a host option between capture and replay and require the captured
+// kernel choice, and they rewrite the buffers and require the new payloads).
+//
+// The STREAM a node replays on is the one cudaGraphLaunch is given, NOT the one the node was captured from.
+// That is CUDA's rule and it is load-bearing here: qsa_parity captures on a temporary stream, DESTROYS that
+// stream, and replays on the default one.  A closure that remembered the capture stream therefore called into
+// a freed sycl::queue - MEASURED as a hang in that test's capture section (M3), which is why the recorded
+// node takes its stream as an argument.
+//
+// WHAT IT IS NOT: no graph object reaches the driver, so there is no upload, no cross-node scheduling and the
+// order is the recording order; a recorded operation must touch device memory only, as CUDA requires.  The
+// engine's own graph path (src/core/graph.cpp, GraphRegistry) is NOT enabled by this - --no-capture stays the
+// default for M1..M5 (D7) and M6 owns the engine-side interception layer.
+inline bool& capture_flag() {
+    static bool f = false;
+    return f;
+}
+inline std::vector<std::function<void(cudaStream_t)>>& capture_nodes() {
+    static std::vector<std::function<void(cudaStream_t)>> v;
+    return v;
+}
+inline bool capture_active() { return capture_flag(); }
+inline void capture_append(std::function<void(cudaStream_t)> fn) { capture_nodes().push_back(std::move(fn)); }
+
 // ---- the launcher ---------------------------------------------------------
 // Unnamed kernel lambdas on purpose - see the measurement note on `kernel_name` above.  ONE-DIMENSIONAL
 // nd_range on purpose too - see the measurement note on `this_item()`: it is what makes the sub-group equal
 // CUDA's warp.  The launcher flattens (grid, block) into a linear global/local size; the kernel reconstructs
 // threadIdx/blockIdx/blockDim/gridDim from the `launch_shape` the transform passes it.
+//
+// THE CAPTURE HOOK (PLAN.md §1.3(b)): while a stream's capture is open, the launcher does not submit - it
+// APPENDS the submission to the capture's node list as a closure.  That is what makes `cudaGraphLaunch` below
+// a real replay with CUDA's semantics rather than a stub, and it is why every engine operation has to funnel
+// through here (D2).  Argument semantics are CUDA's: the closure holds the kernel's arguments by value (baked
+// at capture time) and the buffers it reads and writes are re-read on every replay.
 template <class Fn>
 inline void launch(const launch_config& c, cudaStream_t stream, Fn fn) {
+    if (capture_active()) {
+        capture_append([c, fn](cudaStream_t s) { launch(c, s, fn); });   // replayed on the LAUNCH's stream
+        return;
+    }
     sycl::queue& q = *queue_for(reinterpret_cast<void*>(stream));
     const unsigned gx = c.grid.x ? c.grid.x : 1u, gy = c.grid.y ? c.grid.y : 1u, gz = c.grid.z ? c.grid.z : 1u;
     const unsigned bx = c.block.x ? c.block.x : 1u, by = c.block.y ? c.block.y : 1u, bz = c.block.z ? c.block.z : 1u;
@@ -459,6 +503,10 @@ inline cudaError_t cudaMemset(void* p, int value, size_t bytes) {
     return cudaSuccess;
 }
 inline cudaError_t cudaMemsetAsync(void* p, int value, size_t bytes, cudaStream_t s) {
+    if (capture_active()) {   // recorded, not submitted: replayed by cudaGraphLaunch on ITS stream
+        capture_append([=](cudaStream_t rs) { cudaMemsetAsync(p, value, bytes, rs); });
+        return cudaSuccess;
+    }
     queue_for(reinterpret_cast<void*>(s))->memset(p, value, bytes);
     return cudaSuccess;
 }
@@ -514,6 +562,10 @@ inline cudaError_t cudaMemcpy(void* dst, const void* src, size_t bytes, cudaMemc
 inline cudaError_t cudaMemcpyAsync(void* dst, const void* src, size_t bytes, cudaMemcpyKind kind,
                                    cudaStream_t s) {
     (void) kind;
+    if (capture_active()) {   // recorded, not submitted: replayed by cudaGraphLaunch on ITS stream
+        capture_append([=](cudaStream_t rs) { (void) cudaMemcpyAsync(dst, src, bytes, kind, rs); });
+        return cudaSuccess;
+    }
     return memcpy_impl(dst, src, bytes, queue_for(reinterpret_cast<void*>(s)), /*wait=*/false);
 }
 inline cudaError_t cudaMemcpy2DAsync(void* dst, size_t dpitch, const void* src, size_t spitch, size_t width,
@@ -741,6 +793,10 @@ inline cudaError_t cudaDeviceGetAttribute(int* value, cudaDeviceAttr attr, int o
     if (cudaGetDeviceProperties(&p, ordinal) != cudaSuccess) return cudaErrorInvalidValue;
     switch (attr) {
         case cudaDevAttrMaxSharedMemoryPerBlockOptin: *value = (int) p.sharedMemPerBlock; break;
+        // Xe has NO static/dynamic split: a work-group gets up to local_mem_size (128 KiB) either way, so the
+        // non-opt-in CUDA limit (48 KiB) maps to the same number rather than to a smaller one - reporting less
+        // than the device has would make the port slice tiles it does not have to.
+        case cudaDevAttrMaxSharedMemoryPerBlock: *value = (int) p.sharedMemPerBlock; break;
         case cudaDevAttrMultiProcessorCount: *value = p.multiProcessorCount; break;
         case cudaDevAttrComputeCapabilityMajor: *value = p.major; break;
         case cudaDevAttrComputeCapabilityMinor: *value = p.minor; break;
@@ -796,44 +852,68 @@ inline cudaError_t cudaFuncGetAttributes(cudaFuncAttributes* a, Kernel /*kernel*
     return cudaSuccess;
 }
 
-// ---- stream capture and graphs: no SYCL equivalent (PLAN.md §1.3(b), D7) ---
+// ---- stream capture and graphs: see the capture note above the launcher (PLAN.md §1.3(b), D7) -------
+// The graph handle owns the recorded node list; the exec handle owns a copy of it, so
+// cudaGraphExecDestroy cannot invalidate a graph that is still referenced.
 using cudaGraph_t = void*;
 using cudaGraphExec_t = void*;
 using cudaGraphNode_t = void*;
+using cuda_graph_nodes = std::vector<std::function<void(cudaStream_t)>>;
 
 inline cudaError_t cudaStreamBeginCapture(cudaStream_t /*s*/, cudaStreamCaptureMode /*mode*/) {
-    record(cudaErrorStreamCaptureUnsupported);
-    return cudaErrorStreamCaptureUnsupported;
-}
-inline cudaError_t cudaStreamEndCapture(cudaStream_t /*s*/, cudaGraph_t* g) {
-    if (g) *g = nullptr;
-    return cudaErrorStreamCaptureUnsupported;
-}
-inline cudaError_t cudaStreamIsCapturing(cudaStream_t /*s*/, cudaStreamCaptureStatus* st) {
-    *st = cudaStreamCaptureStatusNone;
+    if (capture_flag()) {   // nested capture: CUDA refuses it, and so does this
+        record(cudaErrorStreamCaptureImplicit);
+        return cudaErrorStreamCaptureImplicit;
+    }
+    capture_nodes().clear();
+    capture_flag() = true;
     return cudaSuccess;
 }
-inline cudaError_t cudaGraphGetNodes(cudaGraph_t /*g*/, cudaGraphNode_t* /*nodes*/, size_t* n) {
-    if (n) *n = 0;
-    return cudaErrorStreamCaptureUnsupported;
+inline cudaError_t cudaStreamEndCapture(cudaStream_t /*s*/, cudaGraph_t* g) {
+    if (!capture_flag()) {
+        record(cudaErrorStreamCaptureInvalidated);
+        return cudaErrorStreamCaptureInvalidated;
+    }
+    capture_flag() = false;
+    if (g) *g = new cuda_graph_nodes(capture_nodes());
+    capture_nodes().clear();
+    return cudaSuccess;
 }
-inline cudaError_t cudaGraphInstantiate(cudaGraphExec_t* e, cudaGraph_t /*g*/, cudaGraphNode_t* /*err*/,
+inline cudaError_t cudaStreamIsCapturing(cudaStream_t /*s*/, cudaStreamCaptureStatus* st) {
+    if (st) *st = capture_flag() ? cudaStreamCaptureStatusActive : cudaStreamCaptureStatusNone;
+    return cudaSuccess;
+}
+inline cudaError_t cudaGraphGetNodes(cudaGraph_t g, cudaGraphNode_t* /*nodes*/, size_t* n) {
+    const auto* v = static_cast<const cuda_graph_nodes*>(g);
+    if (n) *n = v ? v->size() : 0;
+    return v ? cudaSuccess : cudaErrorInvalidValue;
+}
+inline cudaError_t cudaGraphInstantiate(cudaGraphExec_t* e, cudaGraph_t g, cudaGraphNode_t* /*err*/,
                                         char* /*log*/, size_t /*n*/) {
-    if (e) *e = nullptr;
-    return cudaErrorStreamCaptureUnsupported;
+    if (e == nullptr) return cudaErrorInvalidValue;
+    const auto* v = static_cast<const cuda_graph_nodes*>(g);
+    if (v == nullptr) return cudaErrorInvalidValue;
+    *e = new cuda_graph_nodes(*v);
+    return cudaSuccess;
 }
-inline cudaError_t cudaGraphInstantiate(cudaGraphExec_t* e, cudaGraph_t /*g*/, unsigned long long /*flags*/) {
-    if (e) *e = nullptr;
-    return cudaErrorStreamCaptureUnsupported;
+inline cudaError_t cudaGraphInstantiate(cudaGraphExec_t* e, cudaGraph_t g, unsigned long long /*flags*/) {
+    return cudaGraphInstantiate(e, g, nullptr, nullptr, 0);
 }
-inline cudaError_t cudaGraphLaunch(cudaGraphExec_t /*e*/, cudaStream_t /*s*/) {
-    return cudaErrorStreamCaptureUnsupported;
+inline cudaError_t cudaGraphLaunch(cudaGraphExec_t e, cudaStream_t s) {
+    auto* v = static_cast<cuda_graph_nodes*>(e);
+    if (v == nullptr) return cudaErrorInvalidValue;
+    for (auto& fn : *v) fn(s);   // CUDA: the nodes run on the stream this call names
+    return cudaSuccess;
 }
-inline cudaError_t cudaGraphUpload(cudaGraphExec_t /*e*/, cudaStream_t /*s*/) {
-    return cudaErrorStreamCaptureUnsupported;
+inline cudaError_t cudaGraphUpload(cudaGraphExec_t /*e*/, cudaStream_t /*s*/) { return cudaSuccess; }
+inline cudaError_t cudaGraphDestroy(cudaGraph_t g) {
+    delete static_cast<cuda_graph_nodes*>(g);
+    return cudaSuccess;
 }
-inline cudaError_t cudaGraphDestroy(cudaGraph_t /*g*/) { return cudaSuccess; }
-inline cudaError_t cudaGraphExecDestroy(cudaGraphExec_t /*e*/) { return cudaSuccess; }
+inline cudaError_t cudaGraphExecDestroy(cudaGraphExec_t e) {
+    delete static_cast<cuda_graph_nodes*>(e);
+    return cudaSuccess;
+}
 
 }  // namespace strata::sycl_compat
 
@@ -850,6 +930,7 @@ using strata::sycl_compat::cudaDeviceSynchronize;
 using strata::sycl_compat::cudaDevAttrClockRate;
 using strata::sycl_compat::cudaDevAttrComputeCapabilityMajor;
 using strata::sycl_compat::cudaDevAttrComputeCapabilityMinor;
+using strata::sycl_compat::cudaDevAttrMaxSharedMemoryPerBlock;
 using strata::sycl_compat::cudaDevAttrMaxSharedMemoryPerBlockOptin;
 using strata::sycl_compat::cudaDevAttrMultiProcessorCount;
 using strata::sycl_compat::cudaDriverGetVersion;
