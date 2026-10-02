@@ -649,12 +649,24 @@ def hip_visible(cfg: dict) -> list[int]:
     return gpu_list(cfg)
 
 
+def sycl_visible(cfg: dict) -> list[int]:
+    """Intel XPU: the devices the engine should see, as Level Zero numbers them (ZE_AFFINITY_MASK).
+
+    `strata-device --list-devices` numbers the cards the same way and the engine's own device choice is
+    ZE_AFFINITY_MASK, so the config's "gpu" is it directly - no separate ordinal as HIP needs, because the mask and
+    the engine count the same Level Zero device list."""
+    return gpu_list(cfg)
+
+
 def child_env(cfg: dict) -> dict:
     """The engine's environment: the CUDA libraries setup installed (pip's nvidia packages, or the toolkit that
     compiled it) first on the library search path."""
     env = dict(os.environ)
     if hip_visible(cfg) and cfg.get("backend") == "hip":   # AMD: numbered as HIP numbers them (hip_visible)
         env["HIP_VISIBLE_DEVICES"] = ",".join(str(i) for i in hip_visible(cfg))
+    elif cfg.get("backend") == "sycl":          # Intel XPU: the engine reads ZE_AFFINITY_MASK, not the CUDA variables
+        if sycl_visible(cfg):
+            env["ZE_AFFINITY_MASK"] = ",".join(str(i) for i in sycl_visible(cfg))
     elif gpu_list(cfg):                              # issue #51: the GPU(s) to run on, numbered as nvidia-smi does; CUDA's
         env["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"      # own default order (fastest first) can number the cards otherwise
         env["CUDA_VISIBLE_DEVICES"] = ",".join(str(i) for i in gpu_list(cfg))

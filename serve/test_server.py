@@ -564,6 +564,18 @@ class GpuChoice(unittest.TestCase):
         plain = child_env({"backend": "hip"})
         self.assertEqual(plain.get("HIP_VISIBLE_DEVICES"), os.environ.get("HIP_VISIBLE_DEVICES"))
 
+    def test_sycl_env(self):
+        """Intel XPU: the config's gpu list reaches the engine as ZE_AFFINITY_MASK (the engine's own device choice
+        on Arc), and the CUDA variables are left alone because the engine does not read them."""
+        from serve.server import child_env
+        env = child_env({"backend": "sycl", "gpu": 0})
+        self.assertEqual(env["ZE_AFFINITY_MASK"], "0")
+        self.assertEqual(env.get("CUDA_VISIBLE_DEVICES"), os.environ.get("CUDA_VISIBLE_DEVICES"))
+        self.assertEqual(child_env({"backend": "sycl", "gpu": [0, 1]})["ZE_AFFINITY_MASK"], "0,1")
+        self.assertEqual(child_env({"backend": "sycl", "gpu": "1"})["ZE_AFFINITY_MASK"], "1")
+        plain = child_env({"backend": "sycl"})           # no choice: both cards stay visible, as the engine defaults
+        self.assertEqual(plain.get("ZE_AFFINITY_MASK"), os.environ.get("ZE_AFFINITY_MASK"))
+
 
 class RecordingPrompt(MockEngine):
     def generate(self, ids, max_new, sampling, cancel, embeddings=None):
