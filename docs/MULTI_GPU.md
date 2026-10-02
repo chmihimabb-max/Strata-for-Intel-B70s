@@ -213,3 +213,53 @@ here as well; at 16K the two command paths agree to 0.1% (213.98 against 213.8 t
   *routing* is driven by that wrong state, so read the throughput as the shape of the work at these contexts,
   not as a run of the model.
 
+### Measured: the upstream IQ3_S GGUF, served on the pair (2026-10-02)
+
+The W4A16 table above is our own pack and its text is degenerate. The **Strata-recommended** file is
+`ISTA-DASLab/Qwen3.8-Flash-Next-GSQ-RCO-GGUF`, `IQ3_S/` (`docs/MODELS.md:63`: "best: matches the full model
+on the published tests"), and it is the format the AMD backend validated end to end (`docs/AMD_HIP.md:160`).
+It runs on this backend too, and it produces coherent text:
+
+```
+tools/iq_pack.py --gguf ...-IQ3_S-00001-of-00002.gguf --out packs/iq3s      # shard 1 = the model
+--native  ...-IQ3_S-00001-of-00002.gguf      # the experts are read from it in place
+--ple-gguf ...-IQ3_S-00002-of-00002.gguf     # shard 2 holds exactly 1 tensor: the PLE table
+--mtp <a drafter: this GGUF ships no MTP head>  --kv int8 --expert-cache auto --mmap-experts
+--prefill 512 --spec 4 --spec-min-p 0.5 --max-context 4096 --serve --layer-split auto
+```
+
+Do **not** add `--experts-bin` for it: a native pack without `experts.bin` maps the model's own shards
+(`native_experts.txt`'s spans), so the 50.29 GB of expert blobs cost nothing on disk. `--pack` is 1.5 GB, and
+the pack's tokenizer is the model's own, exported from the GGUF's metadata.
+
+| | IQ3_S, 2 cards (auto: 0-22 / 23-47) |
+|---|---|
+| expert cache | 11,776 slots / 21.20 GiB (card 0) + 12,800 / 25.63 GiB (card 1) |
+| experts in VRAM | **24,576 of 24,576 (100.0%)** |
+| decode expert-cache hit rate | **100.0%** (50,400/50,400 over 3 requests) |
+| CPU expert entries per layer-window | **0.00** |
+| prefill | 234.2 tok/s (2,758-token prompt, 11.8 s) |
+| decode | 19.5-25.0 tok/s (4096 context) |
+| peak VRAM | 25.52 GiB + 30.91 GiB of 31.89 each |
+| peak RSS (whole tree) | 48.8 GiB |
+| expert reads | `files 0 blobs 50296.6 MB read (the GGUF in place)` |
+
+Answers through `serve/server.py` (engine `0.1.34`, oneAPI 2026.1, `"gpu": [0, 1]`, `ZE_AFFINITY_MASK`
+unset): `"The capital of France is"` -> **`The capital of France is **Paris**.`** (9 usage-counted tokens,
+`finish_reason stop`); a 2,758-token documentation question -> a correct answer naming what the passage does
+not say; a code request -> a working iterative `fibonacci` (96 tokens). The engine's own token stream for the
+same 5-token prompt (`760,6511,314,9338,369` in *both* packs' tokenizers) decodes to `' Paris. The capital of
+Germany is Berlin. The capital of Italy is Rome. The capital of Spain is Madrid. …'` — the same 40 ids warm
+and cold.
+
+**This also settles the differential.** The W4A16 pack measured minutes apart at the same HEAD, same prompt,
+same path and same two cards emits `'文偶NNNNNN3标准3 -anii Kn  user - -tan  !!!!!!!!!!!!!!!!'` (16 of its 40
+tokens are id 0), holds 80.8% of the experts against 100%, sends 1.70 expert entries per layer-window to the
+AVX-2 CPU pool against 0.00, and decodes the same 40 tokens in 4.38 s against 1.74 s. The wrong text is the
+W4A16 pack/native path, not the SYCL backend, the shared layer stack or the tokenizer.
+
+With both shards dropped from the page cache (`POSIX_FADV_DONTNEED`), the same request reads **53.31 GB from
+the block device** (50.29 GB of it the mapped experts, the rest PLE/embedding/head pages) in 73,924 major
+faults, takes 116 s against 77 s warm, and generates **the same tokens**. The RAM tier is the page cache
+(`--mmap-experts`: `arena_mib=0`), not a pinned expert arena.
+
