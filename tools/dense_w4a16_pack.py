@@ -33,11 +33,14 @@ transpose is needed anywhere.  Two mappings are not a rename:
 
 TWO TENSORS ARE QUANTISED HERE, because the engine requires an S-form and the checkpoint is all BF16:
 `token_embd.weight` and `output.weight`.  `layer.cpp:1015`/`verify.cpp:433` refuse anything whose `code_bits` is
-not 2/4/8, and `layer.cpp:1087` refuses a non-quantized `output.weight` outright.  They are written as **S4,
-group 32, code_bias -8** - ggml Q4_0's own convention (the bias the s-family kernel documents for Q4_0), with the
-code packing of `tools/strata_pack.py:pack_codes(bits=4)` (LSB-first, two codes per byte).  The quantisation error
-is measured and reported; S8 is the higher-fidelity alternative and is gated on how the kernels read an 8-bit
-code (see the report).
+not 2/4/8, and `layer.cpp:1087` refuses a non-quantized `output.weight` outright.  They are written as **S8,
+group 32, code_bias -128** - which is exactly the canonical form `tools/canonical_xcheck.py:571` maps a Q8_0
+source to ("Q8_0 -> S8: codes + an fp16 scale per 32 elements, codebook the affine `code - 128`"), so the
+convention is the repo's own rather than a reading of the kernel, and ggml's rounding (`d = amax/127`, codes
+clipped to 1..255) is used because that is what that mapping decodes.  Measured on the checkpoint
+(`scripts/w1b_embed_s8_measure.py`, 8,278 of 248,320 rows): row relative RMS **0.00596 (token_embd) / 0.00602
+(output)**, against **0.09620 / 0.09713** for the S4-g32-bias-8 alternative, for +0.318 GB each
+(715,161,600 B vs 397,312,000 B).
 """
 from __future__ import annotations
 
@@ -55,8 +58,7 @@ sys.path.insert(0, str(HERE))
 import iq_pack as IP  # noqa: E402  (FORM/form_of/convert/write_index - the pack's own contract)
 
 ALIGN = IP.ALIGN
-S4_GROUP = 32
-S4_BIAS = -8
+S_GROUP = 32          # the group of the two S-form tensors; 32 is Q8_0's own (canonical_xcheck.py:571)
 
 # ---- HF name -> pack name, for the layer tensors.  `{L}` is the layer index.
 LAYER_MAP = {
@@ -108,8 +110,8 @@ MODEL_MAP = {
     "model.language_model.hyper_connection_mixer.hc_norm.weight": "output_hc_norm.weight",
 }
 S_QUANTISED = {  # pack name -> (code_bits, group, bias); the two the engine requires in an S-form
-    "token_embd.weight": (4, S4_GROUP, S4_BIAS),
-    "output.weight": (4, S4_GROUP, S4_BIAS),
+    "token_embd.weight": (8, S_GROUP, -128),
+    "output.weight": (8, S_GROUP, -128),
 }
 SPLIT_INDEXER = "model.language_model.layers.{L}.self_attn.indexer.index_qk_proj.weight"
 PLAN_PLE = "PLE: the 128 n-gram table shards = W4A16-PLAN DELIVERABLE 1 (this card's ple-*.gguf)"
@@ -135,22 +137,35 @@ def bf16_f32(raw: bytes, shape=None) -> np.ndarray:
     return (u.astype(np.uint32) << 16).view(np.float32).reshape(shape if shape else -1)
 
 
-def s4_quantise(values: np.ndarray, ne0: int, group: int, bias: int):
-    """([rows, ne0] float32) -> (codes bytes LSB-first 2/byte, f32 scales).  ggml Q4_0's convention rounded the
-    same way Q4_0 is: d = amax / -bias (the largest code is 8), q = rint(v/d) + 8, clipped to 0..15."""
+def s4_quantise(values: np.ndarray, ne0: int, group: int, bias: int, bits: int = 4):
+    """([rows, ne0] float32) -> (codes bytes LSB-first, f32 scales, scales, codes2d).
+
+    ggml's own two conventions, which are also the canonical form's (`tools/canonical_xcheck.py:566,571`
+    map Q4_0 -> S4 bias -8 and Q8_0 -> S8 bias -128):
+
+        Q4_0: d = amax / 8,   code = clip(rint(v/d) + 8,   0,  15)     (2 codes per byte, LSB-first)
+        Q8_0: d = amax / 127, code = clip(rint(v/d) + 128, 0, 255)     (one code per byte)
+
+    so the S-form this writes is bit-compatible with what the repo's own mapping produces for a Q8_0/Q4_0
+    source: unsigned codes, an affine `code + bias`, one f32 scale per `group` values, no offset plane.
+    """
     v = values.reshape(-1, ne0).astype(np.float32)
     rows = v.shape[0]
     g = v.reshape(rows, ne0 // group, group)
     amax = np.abs(g).max(axis=2, keepdims=True)
-    d = amax / float(-bias)
+    divisor = float(-bias) if bits == 4 else float(-bias - 1)
+    d = amax / divisor
     inv = np.where(d > 0, 1.0 / np.where(d > 0, d, 1.0), 0.0)
     q = np.rint(g * inv).astype(np.int32) + (-bias)
-    q = np.clip(q, 0, 15).astype(np.uint8)                       # (rows, groups, group)
+    q = np.clip(q, 0, (1 << bits) - 1).astype(np.uint8)          # (rows, groups, group)
     scales = d.reshape(rows, ne0 // group).astype(np.float32)
     flat = q.reshape(rows, ne0)
-    if ne0 % 2:
-        raise ValueError("an S4 row must be an even number of elements")
-    codes = (flat[:, 0::2] | (flat[:, 1::2] << 4)).astype(np.uint8)   # strata_pack.pack_codes(bits=4)
+    if bits == 4:
+        if ne0 % 2:
+            raise ValueError("an S4 row must be an even number of elements")
+        codes = (flat[:, 0::2] | (flat[:, 1::2] << 4)).astype(np.uint8)   # strata_pack.pack_codes(bits=4)
+    else:
+        codes = flat.astype(np.uint8)
     return codes.tobytes(), scales.tobytes(), scales, flat
 
 
@@ -251,7 +266,7 @@ def main() -> int:
             if pack_name in S_QUANTISED:
                 bits, group, bias = S_QUANTISED[pack_name]
                 v = bf16_f32(raw, (ne1, ne0) if ne1 else (ne0,))
-                codes, scales, sc, codes2d = s4_quantise(v, ne0, group, bias)
+                codes, scales, sc, codes2d = s4_quantise(v, ne0, group, bias, bits)
                 # the S4 decode the engine applies: (code + bias) * scale
                 dec = ((codes2d.astype(np.float32) + bias) * np.repeat(sc, group, axis=1)).reshape(-1)
                 ref = v.reshape(-1)
