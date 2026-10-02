@@ -10,6 +10,11 @@
 // near-ties (where a float difference decides).  It also asserts that the 2**-14 CLAMP CANNOT TRIGGER for this
 // model's geometry - see below - so the absence of a clamp test is a proven fact rather than an omission.
 #include "strata/kernels/router_top10.hpp"
+#include "strata/kernels/native_router.hpp"   // M5g run 41: the window's router (verify.cpp's router block) had
+                                              // NO oracle - `router_top10` is the non-native kernel and the only
+                                              // one this test covered.  The native pair is compared below against
+                                              // the same host reference, on the same four distributions.
+
 
 #include <cuda_runtime.h>
 
@@ -107,6 +112,68 @@ int run_case(const char* name, const std::vector<float>& logits, int n_tokens, i
     return (int) (id_bad + w_bad);
 }
 
+// M5g run 41: the same comparison for the NATIVE router, which is what the verify window's MoE block calls
+// (`verify.cpp`'s router block via `moe_route` -> `native_router_top10`; `native_router_top10_multi` for a
+// multi-token window).  Neither had an oracle before this call - the registered `router_top10_parity` covers
+// the non-native kernel only, which is M5G-STATUS.md 7's second named gap.
+int run_case_native(const char* name, const std::vector<float>& logits, int n_tokens, int n_expert, int k,
+                    double tol, bool multi) {
+    std::vector<int> h_ids((size_t) n_tokens * k);
+    std::vector<float> h_w((size_t) n_tokens * k);
+    std::vector<int> r_ids((size_t) n_tokens * k);
+    std::vector<float> r_w((size_t) n_tokens * k);
+    for (int t = 0; t < n_tokens; ++t)
+        reference(&logits[(size_t) t * n_expert], n_expert, k, &r_ids[(size_t) t * k], &r_w[(size_t) t * k]);
+
+    float* d_l = nullptr;
+    int* d_ids = nullptr;
+    float* d_w = nullptr;
+    check(cudaMalloc(&d_l, logits.size() * sizeof(float)), "n malloc logits");
+    check(cudaMalloc(&d_ids, h_ids.size() * sizeof(int)), "n malloc ids");
+    check(cudaMalloc(&d_w, h_w.size() * sizeof(float)), "n malloc w");
+    check(cudaMemcpy(d_l, logits.data(), logits.size() * sizeof(float), cudaMemcpyHostToDevice), "n copy");
+    cudaStream_t s = nullptr;
+    check(cudaStreamCreate(&s), "n stream");   // the native router rejects a null stream on purpose
+    if (multi) {
+        strata::kernels::native_router_top10_multi(d_l, d_ids, d_w, n_tokens, s);
+    } else {
+        for (int t = 0; t < n_tokens; ++t)
+            strata::kernels::native_router_top10(d_l + (size_t) t * n_expert, d_ids + (size_t) t * k,
+                                                 d_w + (size_t) t * k, s);
+    }
+    check(cudaStreamSynchronize(s), "n sync");
+    check(cudaStreamDestroy(s), "n destroy");
+    check(cudaMemcpy(h_ids.data(), d_ids, h_ids.size() * sizeof(int), cudaMemcpyDeviceToHost), "n back ids");
+    check(cudaMemcpy(h_w.data(), d_w, h_w.size() * sizeof(float), cudaMemcpyDeviceToHost), "n back w");
+
+    long long id_bad = 0, w_bad = 0, first_bad = -1;
+    double worst = 0;
+    for (size_t i = 0; i < h_ids.size(); ++i) {
+        if (h_ids[i] != r_ids[i]) { ++id_bad; if (first_bad < 0) first_bad = (long long) i; }
+        const double rel = std::fabs((double) h_w[i] - (double) r_w[i]) /
+                           (std::fabs((double) r_w[i]) > 1e-30 ? std::fabs((double) r_w[i]) : 1e-30);
+        worst = std::max(worst, rel);
+        if (!(rel <= tol)) ++w_bad;
+    }
+    double worst_sum = 0;
+    for (int t = 0; t < n_tokens; ++t) {
+        double s = 0;
+        for (int i = 0; i < k; ++i) s += (double) h_w[(size_t) t * k + i];
+        worst_sum = std::max(worst_sum, std::fabs(s - 1.0));
+    }
+    std::printf("  %-26s ids %s (%lld bad)   weights worst rel %.3e (%lld over tol)   |sum-1| %.1e\n", name,
+                id_bad ? "*** WRONG ***" : "exact", id_bad, worst, w_bad, worst_sum);
+    if (first_bad >= 0) {
+        const size_t i = (size_t) first_bad;
+        std::printf("      first bad id: token %lld slot %lld   reference %d   native %d   (weights %.6f vs %.6f)\n",
+                    (long long) (i / (size_t) k), (long long) (i % (size_t) k), r_ids[i], h_ids[i], r_w[i], h_w[i]);
+    }
+    cudaFree(d_l);
+    cudaFree(d_ids);
+    cudaFree(d_w);
+    return (int) (id_bad + w_bad);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -144,6 +211,17 @@ int main(int argc, char** argv) {
     std::vector<float> d((size_t) NT * NE, 0.0f);
     for (int t = 0; t < NT; ++t) d[(size_t) t * NE + (t % NE)] = 20.0f;
     bad += run_case("dominant expert", d, NT, NE, K, 1e-5);
+
+    // ---- M5g run 41: THE NATIVE ROUTER, against the same host reference.  This is the kernel the verify
+    // window's MoE block actually calls (`moe_route` -> native_router_top10 for a T=1 window, and
+    // native_router_top10_multi for a multi-token one), and before this call it had NO oracle at all.
+    std::printf("\n-- the NATIVE router (the verify window's own kernel), vs the same double-precision reference --\n");
+    bad += run_case_native("random normal  [1 token]", a, 1, NE, K, 1e-5, false);
+    bad += run_case_native("random normal  [64 single]", a, NT, NE, K, 1e-5, false);
+    bad += run_case_native("random normal  [64 multi]", a, NT, NE, K, 1e-5, true);
+    bad += run_case_native("all equal ties [64 multi]", b, NT, NE, K, 1e-5, true);
+    bad += run_case_native("12-way exact tie [64 multi]", c, NT, NE, K, 1e-5, true);
+    bad += run_case_native("dominant expert [64 multi]", d, NT, NE, K, 1e-5, true);
 
     // ---- THE CLAMP CANNOT TRIGGER, and that is provable rather than untested.
     // The sum of the top k of a probability vector over n outcomes is at least k/n (the minimum is the uniform

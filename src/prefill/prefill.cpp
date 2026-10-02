@@ -1961,6 +1961,25 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                         }
                     }
                 }
+                if (half == 0 && p0 == 0) {
+                    if (const char* bp = std::getenv("STRATA_PREFILL_DUMP_BO"); bp != nullptr) {
+                        // M5g run 41: the prompt path's ATTENTION-HALF output (the GDN/QSA block's own output, before
+                        // the MoE half overwrites `m.bo`), so layer 0's divergence from the verify window can be
+                        // attributed to the attention half or to the MoE half.  int32 layer, then n_embd f32.
+                        std::vector<float> brow((size_t) N);
+                        if (cudaMemcpyAsync(brow.data(), m.bo, (size_t) N * 4, cudaMemcpyDeviceToHost, m.cs) != cudaSuccess ||
+                            cudaStreamSynchronize(m.cs) != cudaSuccess) {
+                            err = std::string("prefill: the bo dump: ") + cudaGetErrorString(cudaGetLastError());
+                            return false;
+                        }
+                        if (std::FILE* f = std::fopen(bp, l == LB ? "wb" : "ab")) {
+                            const int32_t bhdr = (int32_t) l;
+                            std::fwrite(&bhdr, 4, 1, f);
+                            std::fwrite(brow.data(), 4, brow.size(), f);
+                            std::fclose(f);
+                        }
+                    }
+                }
                 // ---- the hyper-connection write of this half; F-2: fused with the next half's norm when nothing else
                 // touches R in between (not the stage's last half, not before the PLE block of layer 1, not under a
                 // control vector)
@@ -1982,6 +2001,29 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                 }
                 if (half == 1 && strata::kernels::cvec().covers(l))   // --control-vector-scaled
                     strata::kernels::cvec_apply(m.R, l, T, D, nullptr, 0, nullptr, 0, false, m.cs);
+                // M5g run 41: STRATA_PREFILL_DUMP_LAYERS=<path> - the BATCHED PROMPT PATH's residual after EVERY
+                // layer, at position 0 only (int32 layer, then hc*n_embd f32).  The verify window is the other
+                // implementation of this same stack and `STRATA_DUMP_LADDER` already records its per-layer R, but
+                // the two are never run on the same position in one engine run - so this dump is what makes a
+                // per-layer bisection between the two implementations possible at all: run the window on a 1-token
+                // prompt (ladder entry l+2 == R after layer l) and the prompt path on a 2-token one with
+                // `--prefill 1` (position 0 in its own chunk).  A D2H copy is safe here: this path is not captured.
+                if (half == 1 && p0 == 0) {
+                    if (const char* lp = std::getenv("STRATA_PREFILL_DUMP_LAYERS"); lp != nullptr) {
+                        std::vector<float> lrow((size_t) D);
+                        if (cudaMemcpyAsync(lrow.data(), m.R, (size_t) D * 4, cudaMemcpyDeviceToHost, m.cs) != cudaSuccess ||
+                            cudaStreamSynchronize(m.cs) != cudaSuccess) {
+                            err = std::string("prefill: the per-layer dump: ") + cudaGetErrorString(cudaGetLastError());
+                            return false;
+                        }
+                        if (std::FILE* f = std::fopen(lp, l == LB ? "wb" : "ab")) {
+                            const int32_t lhdr = (int32_t) l;
+                            std::fwrite(&lhdr, 4, 1, f);
+                            std::fwrite(lrow.data(), 4, lrow.size(), f);
+                            std::fclose(f);
+                        }
+                    }
+                }
                 if (pf_trace_on())
                     std::fprintf(stderr, "prefill trace: layer %lld half %d (%s) done, chunk %.1f ms\n",
                                  (long long) l, half, half == 0 ? (core::is_qsa_layer(g, l) ? "QSA" : "GDN") : "MoE",
