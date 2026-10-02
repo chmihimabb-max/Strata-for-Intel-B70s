@@ -188,7 +188,10 @@ here as well; at 16K the two command paths agree to 0.1% (213.98 against 213.8 t
 | peak RSS (whole process tree) | 31.9 GiB | 50.9 GiB | 31.8 GiB | 51.0 GiB |
 | wall clock | 99 s | 122 s | 165 s | 164 s |
 
-- **Prefill: the pair is 1.19x ahead at 16K and 1.42x at 32K, the reverse of the 4K result above.** Two
+- **Prefill: the pair is 1.19x ahead at 16K and 1.42x at 32K, the reverse of the 4K result above.** Both
+  ratios are **cold-program-cache** runs (the DPC++ program cache empty: the first launch after a build); with
+  the cache warm they are **1.75x / 1.79x** (460.6 and 454.5 tok/s for the pair against 263.7 and 254.2 on one
+  card - the one-time term in the fit below is that JIT compile, paid once per process). Two
   contexts per arm give the prompt path's cost as two terms: one card ~9.5 s once plus ~2.09 s per 512-token
   chunk (245 tok/s marginal); the pair ~26.8 s once plus ~1.15 s per chunk (445 tok/s marginal). A one-chunk
   4K prompt therefore pays the pair's 2.8x larger fixed cost and gets none of its 1.8x better marginal rate.
