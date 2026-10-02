@@ -1068,6 +1068,21 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP OR STRATA_ENABLE_SYCL)
     target_link_libraries(sycl_prefill PRIVATE strata_prefill ${_strata_gpu_runtime_target})
     add_test(NAME sycl_prefill COMMAND sycl_prefill)
     set_tests_properties(sycl_prefill PROPERTIES TIMEOUT 900)
+
+    # ---- W1: the W4A16 experts artifact (card t_e8373d23, W4A16-PLAN.md §2 DW2) -------------------------
+    # The W1 acceptance needs the ENGINE's own loader over a 68 GB artifact that is not a model: the dense half
+    # through bench/micro/pack_census.cpp (WeightTable + layout.cpp::check_all), the expert half through
+    # bench/micro/w4a16_pack_check.cpp (expert_layout_load + native_fmt + FileExpertSource + ggml's to_float).
+    # Neither is registered as a ctest: both need a real pack on disk, and this project registers a test only
+    # where its required input exists (see the note at :915-921).  Each prints its own PASS/FAIL and exits
+    # non-zero, so the acceptance command is the program itself.
+    add_executable(pack_census bench/micro/pack_census.cpp)
+    target_include_directories(pack_census PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(pack_census PRIVATE strata_core ${_strata_gpu_runtime_target})
+    add_executable(w4a16_pack_check bench/micro/w4a16_pack_check.cpp)
+    target_include_directories(w4a16_pack_check PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(w4a16_pack_check PRIVATE strata_engine strata_kernels_cpu
+                                                  ${_strata_gpu_runtime_target})
   endif()
 endif()
 

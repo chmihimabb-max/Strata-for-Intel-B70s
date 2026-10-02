@@ -29,13 +29,18 @@ int main(int argc, char** argv) {
         };
         if (a == "--file") path = val();
         else if (a == "--layers") layers = std::strtoull(val(), nullptr, 10);
+        else if (a == "--blob-bytes") blob_bytes = std::strtoull(val(), nullptr, 10);
+        else if (a == "--blobs-per-layer") blobs_per_layer = std::strtoull(val(), nullptr, 10);
         else if (a == "--threads") threads = std::atoi(val());
         else if (a == "--chunk-mb") chunk = std::strtoull(val(), nullptr, 10) << 20;
         else if (a == "--no-pin") pin = false;
         else if (a == "--stream") stream = true;
         else if (a == "--help" || a == "-h") {
             std::printf("usage: strata-load --file experts.bin [--layers N] [--threads N] [--chunk-mb N]\n"
-                        "                   [--no-pin]\n");
+                        "                   [--no-pin] [--stream] [--blob-bytes N] [--blobs-per-layer N]\n"
+                        "  --blob-bytes / --blobs-per-layer exist because BLOB = 1,382,400 is the CANONICAL Q2_0\n"
+                        "  blob only: a native pack (a W4A16 Q4_0 pack, say) has its own per-layer blob size, and\n"
+                        "  the honest way to load one is to say so rather than to be silently measured wrong.\n");
             return 0;
         } else {
             std::fprintf(stderr, "unknown argument: %s\n", a.c_str());
