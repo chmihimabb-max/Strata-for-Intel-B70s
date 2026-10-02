@@ -6024,7 +6024,15 @@ int main(int argc, char** argv) {
     // round emits (accepted drafts + 1) tokens.  `commit` keeps the state of the tokens that were emitted.
     const bool ended = o.stop_eos && !produced.empty() &&
                        std::find(o.eos_ids.begin(), o.eos_ids.end(), (int64_t) produced.back()) != o.eos_ids.end();
-    if (spec_pos > 0 && (int64_t) produced.size() < o.max_new && !ended) {
+    // **M5g: `spec_pos > 0` IS A NON-NATIVE PRECONDITION, AND IT MAKES A 1-TOKEN PROMPT IMPOSSIBLE ON A NATIVE
+    // PACK.**  For the non-native path 0 is the sentinel the token loop above leaves when it never ran, so the
+    // test is right there.  A native pack never enters that loop (it breaks on `native_pack` with
+    // `spec_pos = pos_start`), and with a 1-token prompt `pos_start` IS 0 - the window's own position - so the
+    // whole speculative block was skipped and the engine exited 0 having generated nothing (`--tokens 369
+    // --max-new 8`: "output :", "decode 0 tokens", `logs/m5g-base1.log`).  A 1-token prompt is the only case
+    // where the window runs with a completely fresh session state (no KV, no GDN state, no PLE history, R = the
+    // embedding), which is exactly the control this defect needs, so the sentinel is disarmed for it.
+    if ((spec_pos > 0 || (native_pack && pos_start == 0)) && (int64_t) produced.size() < o.max_new && !ended) {
         std::vector<int64_t> oracle;
         if (!o.spec_oracle.empty()) {
             std::ifstream in(o.spec_oracle);

@@ -274,6 +274,13 @@ private:
     uint16_t* sh_bf16_ = nullptr;
     float *sh_gate_ = nullptr, *sh_up_ = nullptr, *sh_g_ = nullptr;
     float* hist_snap_ = nullptr;                              // T * NG_HIST * NG_HC_DIM
+    /// M5g: the per-layer residual ladder, `STRATA_DUMP_LADDER` (DEVICE, (n_layers + 2) * max_t * HC * N).
+    /// Entry 0 is the window's initial R (the embedding broadcast), entry k the R entering the k-th layer of
+    /// this verifier's range, and the last entry the final R.  It is filled by `scale_inplace(0)` + `add_inplace`
+    /// launches INSIDE the capture (two plain kernels - a memcpy node inside a verify window stalls this backend),
+    /// so no arithmetic is touched and the ladder is the window's own residual.  Copied out after the window.
+    float* lad_ = nullptr;
+    float* ladb_ = nullptr;   ///< the same ladder for the attention half's output
     int64_t cap_ = 0, max_blocks_ = 0, attn_scratch_floats_ = 0;
 };
 

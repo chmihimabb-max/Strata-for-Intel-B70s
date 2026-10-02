@@ -233,6 +233,8 @@ Verifier::~Verifier() {
     if (copy_) { cudaStreamSynchronize(copy_); cudaStreamDestroy(copy_); }
     if (commit_done_) cudaEventDestroy(commit_done_);
     if (arena_) cudaFree(arena_);
+    if (lad_) cudaFree(lad_);
+    if (ladb_) cudaFree(ladb_);
     void* hosts[] = {h_tok_, h_step_, h_pos_, h_commit_, h_ple_, h_out_, h_x_, h_ids_, h_w_, h_seq_, h_flag_, h_ymiss_,
                      h_flagA_, h_plan_, h_flagB_, h_beacon_};
     for (void* h : hosts)
@@ -387,6 +389,24 @@ bool Verifier::init(const WeightTable& wt, const ModelGeometry& g, SessionState&
         return false;
     }
     cudaMemset(arena_, 0, count.used);
+    // M5g: the per-layer residual ladder (STRATA_DUMP_LADDER).  DEVICE memory, filled by kernel launches inside
+    // the capture: a D2H memcpy node enqueued inside a verify window stalls this backend's graph replay (measured:
+    // the window rings layer 0 and never layer 1, `logs/m5g-ladder_dbg.log`), which is why this is a device buffer
+    // written by scale_inplace/add_inplace and copied out once, after the window.
+    if (std::getenv("STRATA_DUMP_LADDER") != nullptr) {
+        const size_t lad_floats = (size_t) (g.n_layers + 2) * (size_t) T * (size_t) (g.hc * g.n_embd);
+        if (cudaMalloc((void**) &lad_, lad_floats * sizeof(float)) != cudaSuccess) {
+            err = "verify: the ladder buffer does not fit";
+            return false;
+        }
+        cudaMemset(lad_, 0, lad_floats * sizeof(float));
+        const size_t ladb_floats = (size_t) (g.n_layers + 2) * (size_t) T * (size_t) g.n_embd;
+        if (cudaMalloc((void**) &ladb_, ladb_floats * sizeof(float)) != cudaSuccess) {
+            err = "verify: the attention-output ladder buffer does not fit";
+            return false;
+        }
+        cudaMemset(ladb_, 0, ladb_floats * sizeof(float));
+    }
     prof_on_ = std::getenv("STRATA_VERIFY_PROFILE") != nullptr;
     if (prof_on_) {
         const size_t np = (size_t) g.n_layers * kProfPer + 4;
@@ -483,6 +503,29 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
     };
     const int tb_[2] = {0, (T + 1) / 2}, te_[2] = {G == 2 ? (T + 1) / 2 : T, T};
     groups_[T] = G;
+    // M5g: the per-layer residual ladder, `STRATA_DUMP_LADDER` (armed by `init`).  A capture-time enqueue of one
+    // D2H copy per ladder entry, so the copies are nodes of the window's graph and replay with it: the ladder is
+    // the window's own residual, exactly as the window computed it, and no arithmetic is touched.
+    auto lad_copy = [&](int64_t slot, int tb, int te) {
+        if (lad_ == nullptr || windows != 0) return;
+        for (int t = tb; t < te; ++t) {
+            float* dst = lad_ + ((size_t) slot * (size_t) MT + (size_t) t) * (size_t) (HC * N);
+            strata::kernels::scale_inplace(dst, (int64_t) (HC * N), 0.0f, cs);   // dst = 0
+            strata::kernels::add_inplace(dst, Rt(t), (int64_t) (HC * N), cs);    // dst = R_t
+        }
+    };
+    // M5g: the same mechanism for the second ladder, `STRATA_DUMP_LADDER`'s `.bo` companion: the ATTENTION
+    // HALF'S output (`bo_`) per layer, captured before `post` overwrites it with the MoE combine.  On this window
+    // that is the only place a dead GDN/QSA block (a collapsed attention, an indexer that selected nothing)
+    // is visible next to a live one, since both write the same buffer at the same point of the layer.
+    auto lad_copy_bo = [&](int64_t slot, int tb, int te) {
+        if (ladb_ == nullptr || windows != 0) return;
+        for (int t = tb; t < te; ++t) {
+            float* dst = ladb_ + ((size_t) slot * (size_t) MT + (size_t) t) * (size_t) N;
+            strata::kernels::scale_inplace(dst, (int64_t) N, 0.0f, cs);
+            strata::kernels::add_inplace(dst, bo_ + (size_t) t * N, (int64_t) N, cs);
+        }
+    };
 
     // ---- the window's inputs, from mapped staging
     copy_i32_from_mapped(tok_, m_tok_, T, cs);
@@ -520,6 +563,7 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
                              row_codes, row_groups, emb_, cs);
         broadcast_streams(emb_, R_, N, (int) HC, T, cs);
     }
+    lad_copy(0, 0, T);   // M5g: entry 0 = the window's initial R (the embedding broadcast, or a split stage's input)
 
     // per-layer state indices (GDN and QSA layers are numbered separately)
     std::vector<int64_t> gdn_idx((size_t) g.n_layers, -1), qsa_idx((size_t) g.n_layers, -1);
@@ -567,6 +611,23 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
             pending = false;
         }
         auto gr_read_group = [&](int half, bool apply, float* inj_prev, float* inj_out) {
+            // M5g: THE FUSED-VS-PLAIN A/B ARM.  `fused_gr_read_multi` is the SYCL port's own read and the only
+            // read this path uses; its self-check compares its variants against EACH OTHER on the device, so a
+            // systematic porting error in the read is invisible to it.  The plain `gr_read` (src/kernels/cuda/
+            // gr.cu) is the kernel whose arithmetic `scripts/m5g_headmix.py` reproduces in numpy to 1e-6 on this
+            // pack, so forcing it here is a reference, not a guess:
+            //   ZE_AFFINITY_MASK=0 STRATA_WINDOW_PLAIN_GR=1 ./build-sycl/strata ...
+            // `apply` is the write the fused read folds in (pending FFN write), done explicitly first.
+            static const bool plain_gr = std::getenv("STRATA_WINDOW_PLAIN_GR") != nullptr;
+            if (plain_gr) {
+                for (int t = tb; t < te; ++t) {
+                    if (apply) strata::kernels::gr_write(Rt(t), bo_ + t * N, inj_prev + t * HC, gs, Rt(t), cs);
+                    strata::kernels::gr_read(Rt(t), (const float*) wn[half]->data, (const uint16_t*) wd[half]->data,
+                                             (const uint16_t*) wu[half]->data, (const uint16_t*) wi[half]->data, EPS,
+                                             gs, ss.block.gr, mixed_ + t * N, inj_out + t * HC, cs);
+                }
+                return;
+            }
             FusedGrArgs fa[kFusedGrMaxT];
             for (int t = tb; t < te; ++t) {
                 FusedGrArgs& a = fa[t - tb];
@@ -582,6 +643,9 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
         };
         gr_read_group(0, pending, inj2_, inj_);
         stamp(l, 1, grp);
+        // M5g: the fused read applies the previous layer's write, so R is materialised here - entry (l - lb_ + 1)
+        // is the residual ENTERING layer l, i.e. the exact output of layer l - 1.
+        lad_copy(l - lb_ + 1, tb, te);
         float* xm = mixed_ + tb * N;
         try {
             if (!is_qsa_layer(g, l)) {
@@ -744,9 +808,9 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
             err = "verify layer " + std::to_string(l) + ": " + e.what();
             return false;
         }
+        lad_copy_bo(l - lb_, tb, te);   // M5g: the attention half's output, before `post` overwrites bo_
         stamp(l, 16, grp);
-        gr_read_group(1, true, inj_, inj2_);
-        // the window's rows routed in 2 launches (one router GEMV reading the weight once, one
+        gr_read_group(1, true, inj_, inj2_);        // the window's rows routed in 2 launches (one router GEMV reading the weight once, one
         // top-10) instead of 2 per token; every row's arithmetic is the single-token call's (STRATA_DEC_BATCH=0: old)
         const WeightRef* w_router = v.get("ffn_gate_inp.weight");
         if (dec_batch && n > 1 && w_router != nullptr && native_router_enabled() && NE == 512 && K == 10) {
@@ -876,6 +940,7 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
         stamp(l, 24, grp);
         if (l == g.n_layers - 1) {
             for (int t = tb; t < te; ++t) gr_write(Rt(t), bo_ + t * N, inj2_ + t * HC, gs, Rt(t), cs);
+            lad_copy(g.n_layers - lb_ + 1, tb, te);   // M5g: the final residual, after the head's read source is set
             if (cvec().covers(l)) cvec_apply(Rt(tb), l, n, HC * N, nullptr, 0, nullptr, 0, false, cs);
             beacon(6);   // M5b: the last layer's gr_write/cvec are done
         } else if (cvec().covers(l)) {
@@ -1336,6 +1401,47 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
     //   T * n_embd            floats  the head's input, `head_mixed_ + t*n_embd`
     //   T * hc * n_embd       floats  the final residual, `R_ + t*hc*n_embd`
     //   T * n_vocab           floats  the head's logits, `head_logits_ + t*n_vocab`
+    // M5g: THE PER-LAYER LADDER.  `STRATA_DUMP_LADDER=<path>` writes, for the FIRST window, the residual as it
+    // entered every layer (entry 0 is the embedding the window started from, entry k the R entering layer k, the
+    // last entry the final R).  The values were staged by copy nodes inside the window's own graph (see
+    // `lad_copy`), so this is the window's arithmetic, not a re-run.
+    //   int32 hdr[4] = { n_entries, hc, n_embd, pos0 }, then int32 T, then n_entries * T * hc * n_embd floats
+    if (const char* lp = std::getenv("STRATA_DUMP_LADDER");
+        lp != nullptr && lad_ != nullptr && windows == 0) {
+        const int64_t n_entries = g.n_layers - lb_ + 2;
+        std::FILE* f = std::fopen(lp, "wb");
+        if (f == nullptr) { err = std::string("STRATA_DUMP_LADDER: cannot write ") + lp; return false; }
+        const int32_t hdr[5] = {(int32_t) n_entries, (int32_t) g.hc, (int32_t) g.n_embd, (int32_t) pos0, (int32_t) T};
+        const size_t per = (size_t) T * (size_t) (g.hc * g.n_embd);
+        const size_t stride = (size_t) max_t_ * (size_t) (g.hc * g.n_embd);   // entries are strided by max_t_ columns
+        std::vector<float> host((size_t) n_entries * per);
+        bool ok = true;
+        for (int64_t k = 0; ok && k < n_entries; ++k)
+            ok = cudaMemcpy(host.data() + (size_t) k * per, lad_ + (size_t) k * stride, per * sizeof(float),
+                            cudaMemcpyDeviceToHost) == cudaSuccess;
+        ok = ok && std::fwrite(hdr, sizeof hdr, 1, f) == 1 &&
+             std::fwrite(host.data(), sizeof(float), host.size(), f) == host.size();
+        std::fclose(f);
+        if (!ok) { err = "STRATA_DUMP_LADDER: a write failed"; return false; }
+        std::fprintf(stderr, "strata dbg: ladder -> %s (%lld entries x T %d x hc %lld x n_embd %lld, pos0 %lld)\n",
+                     lp, (long long) n_entries, T, (long long) g.hc, (long long) g.n_embd, (long long) pos0);
+        // the attention half's output, same layout, one column per layer
+        std::string bop = std::string(lp) + ".bo";
+        if (std::FILE* fb = std::fopen(bop.c_str(), "wb")) {
+            const size_t pb = (size_t) T * (size_t) g.n_embd;
+            const size_t sb = (size_t) max_t_ * (size_t) g.n_embd;
+            std::vector<float> hb((size_t) n_entries * pb);
+            bool okb = true;
+            for (int64_t k = 0; okb && k < n_entries; ++k)
+                okb = cudaMemcpy(hb.data() + (size_t) k * pb, ladb_ + (size_t) k * sb, pb * sizeof(float),
+                                 cudaMemcpyDeviceToHost) == cudaSuccess;
+            const int32_t bhdr[5] = {(int32_t) n_entries, 1, (int32_t) g.n_embd, (int32_t) pos0, (int32_t) T};
+            okb = okb && std::fwrite(bhdr, sizeof bhdr, 1, fb) == 1 &&
+                  std::fwrite(hb.data(), sizeof(float), hb.size(), fb) == hb.size();
+            std::fclose(fb);
+            if (!okb) { err = "STRATA_DUMP_LADDER: the attention-output ladder write failed"; return false; }
+        }
+    }
     if (const char* ws = std::getenv("STRATA_DUMP_WINDOW_STATE");
         ws != nullptr && windows == 0 && next_ == nullptr) {
         std::FILE* f = std::fopen(ws, "wb");
