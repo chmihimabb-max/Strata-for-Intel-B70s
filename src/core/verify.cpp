@@ -503,9 +503,11 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
     };
     const int tb_[2] = {0, (T + 1) / 2}, te_[2] = {G == 2 ? (T + 1) / 2 : T, T};
     groups_[T] = G;
-    // M5g: the per-layer residual ladder, `STRATA_DUMP_LADDER` (armed by `init`).  A capture-time enqueue of one
-    // D2H copy per ladder entry, so the copies are nodes of the window's graph and replay with it: the ladder is
-    // the window's own residual, exactly as the window computed it, and no arithmetic is touched.
+    // M5g: the per-layer residual ladder, `STRATA_DUMP_LADDER` (armed by `init`).  Two device kernels (zero, then
+    // add) are enqueued per entry INSIDE the capture, so they are nodes of the window's graph and replay with it:
+    // the ladder is the window's own residual, exactly as the window computed it, and no arithmetic is touched.
+    // (A D2H memcpy per entry - the C1 ladder's mechanism - stalls this backend's graph replay; that is why the
+    // ladder is a device buffer, see the note in `init`.)
     auto lad_copy = [&](int64_t slot, int tb, int te) {
         if (lad_ == nullptr || windows != 0) return;
         for (int t = tb; t < te; ++t) {
@@ -518,6 +520,10 @@ bool Verifier::record_window(int T, cudaStream_t cs, std::string& err) {
     // HALF'S output (`bo_`) per layer, captured before `post` overwrites it with the MoE combine.  On this window
     // that is the only place a dead GDN/QSA block (a collapsed attention, an indexer that selected nothing)
     // is visible next to a live one, since both write the same buffer at the same point of the layer.
+    // CONVENTION: the slot IS the layer index - `lad_copy_bo(l - lb_)` - so `.bo` slot k holds layer (lb_ + k)'s
+    // attention output, and only slots 0 .. n_layers - lb_ - 1 are ever written.  (The residual ladder above is
+    // offset by one, because its entry 0 is the window's input; the two files must not be read against each
+    // other's convention.)
     auto lad_copy_bo = [&](int64_t slot, int tb, int te) {
         if (ladb_ == nullptr || windows != 0) return;
         for (int t = tb; t < te; ++t) {
@@ -1402,10 +1408,16 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
     //   T * hc * n_embd       floats  the final residual, `R_ + t*hc*n_embd`
     //   T * n_vocab           floats  the head's logits, `head_logits_ + t*n_vocab`
     // M5g: THE PER-LAYER LADDER.  `STRATA_DUMP_LADDER=<path>` writes, for the FIRST window, the residual as it
-    // entered every layer (entry 0 is the embedding the window started from, entry k the R entering layer k, the
-    // last entry the final R).  The values were staged by copy nodes inside the window's own graph (see
-    // `lad_copy`), so this is the window's arithmetic, not a re-run.
-    //   int32 hdr[4] = { n_entries, hc, n_embd, pos0 }, then int32 T, then n_entries * T * hc * n_embd floats
+    // entered every layer: entry 0 is the R the window started from (the embedding broadcast, or a split stage's
+    // input), entry k (k >= 1) is the R ENTERING stage-local layer k-1 - i.e. the output of layer k-2 - and the
+    // last entry is the final R.  `lad_copy` therefore fills slot `l - lb_ + 1`, and there are n_layers - lb_ + 2
+    // entries, all of them written.  The `.bo` companion is indexed DIFFERENTLY: slot k is the attention-half
+    // output of stage-local layer k (`lad_copy_bo(l - lb_)`), and it carries only the n_layers - lb_ rows that
+    // exist - no padding.  Reading the two files against each other's convention is the defect that once made
+    // the zero-initialised tail look like "layer 47 writes a bit-zero attention output": the tail is not data.
+    // The values were staged by copy nodes inside the window's own graph (see `lad_copy`), so this is the
+    // window's arithmetic, not a re-run.
+    //   int32 hdr[5] = { n_entries, hc, n_embd, pos0, T }, then n_entries * T * hc * n_embd floats
     if (const char* lp = std::getenv("STRATA_DUMP_LADDER");
         lp != nullptr && lad_ != nullptr && windows == 0) {
         const int64_t n_entries = g.n_layers - lb_ + 2;
@@ -1425,21 +1437,26 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
         if (!ok) { err = "STRATA_DUMP_LADDER: a write failed"; return false; }
         std::fprintf(stderr, "strata dbg: ladder -> %s (%lld entries x T %d x hc %lld x n_embd %lld, pos0 %lld)\n",
                      lp, (long long) n_entries, T, (long long) g.hc, (long long) g.n_embd, (long long) pos0);
-        // the attention half's output, same layout, one column per layer
+        // the attention half's output, same row layout, one row per layer - and only the rows that were filled:
+        // slot k is layer (lb_ + k), there are n_layers - lb_ of them, and the buffer's zero-initialised tail is
+        // NOT written out (it used to be, and read as a layer with a bit-zero attention output).
+        const int64_t nb = g.n_layers - lb_;
         std::string bop = std::string(lp) + ".bo";
         if (std::FILE* fb = std::fopen(bop.c_str(), "wb")) {
             const size_t pb = (size_t) T * (size_t) g.n_embd;
             const size_t sb = (size_t) max_t_ * (size_t) g.n_embd;
-            std::vector<float> hb((size_t) n_entries * pb);
+            std::vector<float> hb((size_t) nb * pb);
             bool okb = true;
-            for (int64_t k = 0; okb && k < n_entries; ++k)
+            for (int64_t k = 0; okb && k < nb; ++k)
                 okb = cudaMemcpy(hb.data() + (size_t) k * pb, ladb_ + (size_t) k * sb, pb * sizeof(float),
                                  cudaMemcpyDeviceToHost) == cudaSuccess;
-            const int32_t bhdr[5] = {(int32_t) n_entries, 1, (int32_t) g.n_embd, (int32_t) pos0, (int32_t) T};
+            const int32_t bhdr[5] = {(int32_t) nb, 1, (int32_t) g.n_embd, (int32_t) pos0, (int32_t) T};
             okb = okb && std::fwrite(bhdr, sizeof bhdr, 1, fb) == 1 &&
                   std::fwrite(hb.data(), sizeof(float), hb.size(), fb) == hb.size();
             std::fclose(fb);
             if (!okb) { err = "STRATA_DUMP_LADDER: the attention-output ladder write failed"; return false; }
+            std::fprintf(stderr, "strata dbg: bo ladder -> %s (%lld rows, slot k == layer %lld + k, no padding)\n",
+                         bop.c_str(), (long long) nb, (long long) lb_);
         }
     }
     if (const char* ws = std::getenv("STRATA_DUMP_WINDOW_STATE");
