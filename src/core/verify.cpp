@@ -1323,6 +1323,62 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
         }
     }
     for (int t = 0; t < T; ++t) out[t] = ((volatile int32_t*) h_out_)[t];
+    // M5f: THE WINDOW'S OWN BUFFERS, WHICH NO OTHER DUMP ON THIS PATH CAN REACH.  `--dump-mixed` and
+    // `--dump-residual` read `ss.block.mixed` / `ss.R` - the NON-native session's scratch, which a native pack
+    // never fills, so both write all zeros (measured, ~/strata-xpu/M5F-STATUS.md §2).  `--dump-layers` (the C1
+    // ladder) is written by `session_loop`, which a native pack never enters, and `--dump-logits` covers only
+    // *generated* positions.  This writes the first window's head input, final residual and head logits, which
+    // is what a head-vs-layers bisection needs: with the pack's own `output_hc_*`/`output.weight` (bit-exact
+    // against the checkpoint) the head can be recomputed from the residual in numpy and compared with the
+    // engine's own logits, so "the text is odd" becomes "the head is right and the layers are wrong" (or not).
+    //
+    //   int32 hdr[4] = { T, n_embd, hc, pos0 }
+    //   T * n_embd            floats  the head's input, `head_mixed_ + t*n_embd`
+    //   T * hc * n_embd       floats  the final residual, `R_ + t*hc*n_embd`
+    //   T * n_vocab           floats  the head's logits, `head_logits_ + t*n_vocab`
+    if (const char* ws = std::getenv("STRATA_DUMP_WINDOW_STATE");
+        ws != nullptr && windows == 0 && next_ == nullptr) {
+        std::FILE* f = std::fopen(ws, "wb");
+        if (f == nullptr) { err = std::string("STRATA_DUMP_WINDOW_STATE: cannot write ") + ws; return false; }
+        const int32_t hdr[4] = {(int32_t) T, (int32_t) g.n_embd, (int32_t) g.hc, (int32_t) pos0};
+        const size_t n_mixed = (size_t) T * (size_t) g.n_embd;
+        const size_t n_res = n_mixed * (size_t) g.hc;
+        const size_t n_log = (size_t) T * (size_t) n_vocab_;
+        std::vector<float> mixed(n_mixed), residual(n_res), logits(n_log);
+        bool ok = std::fwrite(hdr, sizeof hdr, 1, f) == 1 &&
+                  cudaMemcpy(mixed.data(), head_mixed_, n_mixed * sizeof(float), cudaMemcpyDeviceToHost) ==
+                      cudaSuccess &&
+                  std::fwrite(mixed.data(), sizeof(float), n_mixed, f) == n_mixed &&
+                  cudaMemcpy(residual.data(), R_, n_res * sizeof(float), cudaMemcpyDeviceToHost) == cudaSuccess &&
+                  std::fwrite(residual.data(), sizeof(float), n_res, f) == n_res &&
+                  cudaMemcpy(logits.data(), head_logits_, n_log * sizeof(float), cudaMemcpyDeviceToHost) ==
+                      cudaSuccess &&
+                  std::fwrite(logits.data(), sizeof(float), n_log, f) == n_log;
+        std::fclose(f);
+        if (!ok) { err = "STRATA_DUMP_WINDOW_STATE: a read or write failed"; return false; }
+        double s2 = 0.0, mag = 0.0;
+        int64_t finite = 0, nonfinite = 0;
+        double mx = 0.0;
+        for (float v : mixed) {
+            if (!std::isfinite(v)) { ++nonfinite; continue; }
+            ++finite;
+            s2 += (double) v * (double) v;
+            mag += std::fabs((double) v);
+            mx = std::max(mx, std::fabs((double) v));
+        }
+        int64_t r_nan = 0;
+        for (float v : residual) r_nan += !std::isfinite(v);
+        int64_t l_nan = 0;
+        for (float v : logits) l_nan += !std::isfinite(v);
+        std::fprintf(stderr,
+                     "strata dbg: window state -> %s (T %d, n_embd %lld, hc %lld, pos0 %lld): head input rms %.6g, "
+                     "mean|.| %.6g, max|.| %.6g, non-finite %lld of %lld; residual non-finite %lld of %lld; "
+                     "logits non-finite %lld of %lld\n",
+                     ws, T, (long long) g.n_embd, (long long) g.hc, (long long) pos0,
+                     finite > 0 ? std::sqrt(s2 / (double) finite) : 0.0, finite > 0 ? mag / (double) finite : 0.0, mx,
+                     (long long) nonfinite, (long long) mixed.size(), (long long) r_nan,
+                     (long long) residual.size(), (long long) l_nan, (long long) logits.size());
+    }
     if (static const bool dbg = std::getenv("STRATA_DBG_NAN") != nullptr; dbg) {   // debug: the first non-finite head
         static bool reported = false;
         if (!reported) {
