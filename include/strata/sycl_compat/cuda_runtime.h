@@ -160,7 +160,27 @@ struct kernel_name_dynamic : Tag {};
 /// All host state behind one accessor, so the device pass compiles none of it.
 struct backend_state {
     std::vector<sycl::device> devices;
-    std::vector<sycl::queue*> streams;   // index 0 = the default (CUDA legacy) stream's queue
+    /// ONE context for every GPU, which is how this shim maps "one process, one USM namespace" (a queue built
+    /// for device d with a shared context still allocates on device d - probe33_sharedctx measured 4 GiB on q0
+    /// moving dev0's free memory and 4 GiB on q1 moving dev1's).  The layer split ran and returned the same
+    /// tokens with ONE CONTEXT PER DEVICE as well (STRATA_SYCL_CONTEXT_PER_DEVICE=1, the A/B control), so this is
+    /// hardening rather than the fix: a device pointer of one GPU is `usm::alloc::unknown` from another context
+    /// (`is_usm_pointer`), and `cudaStreamWaitEvent`'s `ext_oneapi_submit_barrier({event})` throws for an event of
+    /// another context.  What it does NOT buy: a copy between the two cards' memory still fails with
+    /// UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY (probe33, no peer path on this pair).  nullptr when the driver
+    /// refused the multi-device context, and `ctx_per_dev` stands in.
+    sycl::context* ctx = nullptr;
+    std::vector<sycl::context*> ctx_per_dev;
+    /// ONE DEFAULT (CUDA legacy) STREAM PER DEVICE - `cudaSetDevice` has to move it, as it does on CUDA, where
+    /// the legacy stream is per device.  Index = device.  (Measured on the two B70s, probe32_defaultq: with a
+    /// single default queue created while device 0 was current, an allocation inside `cudaSetDevice(1)` landed
+    /// on CARD 0 - 4 GiB: dev0 27.21 -> 23.21 GiB free, dev1 unchanged at 31.85 - which is what made the
+    /// split's stage-1 cache, session and weights pile onto card 0 and die of UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY.)
+    std::vector<sycl::queue*> streams;
+    /// Every queue this process has, for `sync_all` (cudaDeviceSynchronize): the default queues and the
+    /// explicit streams.  It used to hold the default queue alone, so a stage's work on its own stream was
+    /// never waited on by a device sync.
+    std::vector<sycl::queue*> all_queues;
     int current = 0;
     int driver_version = 0;
     int runtime_version = 0;
@@ -176,6 +196,9 @@ inline backend_state& backend() {
 inline void init_backend();
 inline sycl::queue& default_queue();
 inline sycl::queue* queue_for(void* stream);
+inline sycl::context& ctx_for_device(size_t d);
+inline void note_queue(sycl::queue* q);
+inline void drop_queue(sycl::queue* q);
 
 struct stream_t;
 using cudaStream_t = stream_t*;                 // nullptr is CUDA's default (legacy) stream
@@ -290,7 +313,49 @@ inline void init_backend() {
         // a driver/runtime version pair.
         b.driver_version = 20260101;
         b.runtime_version = 20260101;
+        // ONE CONTEXT OVER EVERY GPU (see backend_state::ctx).  Measured on the two B70s: probe33_sharedctx
+        // creates a 2-device context, allocates on both devices through it and reads one device's memory from
+        // the other device's queue, which is what a layer split needs.  STRATA_SYCL_CONTEXT_PER_DEVICE=1 is the
+        // A/B control (the pre-split behaviour).
+        const char* per_dev = std::getenv("STRATA_SYCL_CONTEXT_PER_DEVICE");
+        if (!(per_dev != nullptr && per_dev[0] == '1')) {
+            try {
+                b.ctx = new sycl::context(b.devices);
+            } catch (const std::exception& e) {
+                std::fprintf(stderr, "strata/sycl: one context over %zu devices was refused (%s); one context per "
+                                     "device, so a buffer of one GPU is not visible to another\n", b.devices.size(),
+                             e.what());
+                b.ctx = nullptr;
+            }
+        }
     }
+}
+
+/// The context a queue on device `d` must be built in: the shared one when the driver took it (the multi-GPU
+/// case), otherwise one per device.
+inline sycl::context& ctx_for_device(size_t d) {
+    init_backend();   // the device table MUST exist first: this is reached from default_queue(), which used to get
+                      // that from selected_device() - and argument evaluation order is unspecified, so a run that
+                      // happened to evaluate the context first read an empty table and died in a SIGSEGV
+    backend_state& b = backend();
+    if (b.ctx != nullptr) return *b.ctx;
+    if (b.ctx_per_dev.size() != b.devices.size()) b.ctx_per_dev.assign(b.devices.size(), nullptr);
+    if (b.ctx_per_dev.empty()) {   // no Level-Zero GPU at all: the selector's device stands in
+        static sycl::context* fallback = new sycl::context(sycl::device{sycl::gpu_selector_v});
+        return *fallback;
+    }
+    if (d >= b.ctx_per_dev.size()) d = 0;
+    if (b.ctx_per_dev[d] == nullptr) b.ctx_per_dev[d] = new sycl::context(b.devices[d]);
+    return *b.ctx_per_dev[d];
+}
+
+/// Every queue is registered here: `sync_all` (cudaDeviceSynchronize) has to wait for a stage's own stream too,
+/// not only for the default one (which is all it waited for before).
+inline void note_queue(sycl::queue* q) { backend().all_queues.push_back(q); }
+inline void drop_queue(sycl::queue* q) {
+    std::vector<sycl::queue*>& v = backend().all_queues;
+    for (size_t i = 0; i < v.size(); ++i)
+        if (v[i] == q) { v[i] = v.back(); v.pop_back(); return; }
 }
 
 inline bool profiling_enabled() {
@@ -312,11 +377,25 @@ inline sycl::device selected_device() {
 }
 
 inline sycl::queue& default_queue() {
+    init_backend();   // b.current, b.devices and b.streams are all read below
     backend_state& b = backend();
-    if (b.streams.empty()) {
-        b.streams.push_back(new sycl::queue(selected_device(), queue_properties()));
+    const size_t d = (size_t) (b.current < 0 ? 0 : b.current);
+    if (b.streams.size() <= d) b.streams.resize(b.devices.empty() ? d + 1 : b.devices.size(), nullptr);
+    // A SINGLE queue used to be created here, on whichever device happened to be current at the first call, and
+    // returned for every later call whatever `cudaSetDevice` did: CUDA's legacy stream is PER DEVICE.  That is
+    // the defect probe32_defaultq measured (4 GiB allocated inside cudaSetDevice(1) landed on card 0), and with
+    // a layer split it piles both stages' weights, sessions and caches onto card 0.
+    const char* single = std::getenv("STRATA_SYCL_SINGLE_DEFAULT_QUEUE");
+    const size_t slot = (single != nullptr && single[0] == '1') ? 0 : d;   // A/B control: the old single queue
+    if (b.streams.size() <= slot) b.streams.resize(slot + 1, nullptr);
+    if (b.streams[slot] == nullptr) {
+        // `selected_device()` is the CURRENT device, which is the one this queue stands for (the A/B control
+        // keeps the old rule: the device current at the first call - its context is that device's).
+        sycl::queue* q = new sycl::queue(ctx_for_device(d), selected_device(), queue_properties());
+        b.streams[slot] = q;
+        note_queue(q);
     }
-    return *b.streams[0];
+    return *b.streams[slot];
 }
 
 inline sycl::queue* queue_for(void* stream) {
@@ -326,7 +405,7 @@ inline sycl::queue* queue_for(void* stream) {
 
 inline void sync_all() {
     init_backend();
-    for (sycl::queue* q : backend().streams) q->wait_and_throw();
+    for (sycl::queue* q : backend().all_queues) q->wait_and_throw();
 }
 
 // ===========================================================================
@@ -692,7 +771,11 @@ inline cudaError_t cudaHostUnregister(void* /*p*/) { return cudaSuccess; }
 
 // ---- streams and events ---------------------------------------------------
 inline cudaError_t cudaStreamCreate(cudaStream_t* s) {
-    *s = reinterpret_cast<cudaStream_t>(new sycl::queue(selected_device(), queue_properties()));
+    // The shared context (see backend_state::ctx): an explicit stream and the default queue must be able to see
+    // each other's USM, and a fuse with a barrier of a foreign context throws.
+    sycl::queue* q = new sycl::queue(ctx_for_device((size_t) backend().current), selected_device(), queue_properties());
+    note_queue(q);
+    *s = reinterpret_cast<cudaStream_t>(q);
     return cudaSuccess;
 }
 /// cudaStreamNonBlocking is accepted and ignored: the engine assumes IN-ORDER per stream (§1.1), and an
@@ -702,7 +785,9 @@ inline cudaError_t cudaStreamCreateWithFlags(cudaStream_t* s, unsigned /*flags*/
 }
 inline cudaError_t cudaStreamDestroy(cudaStream_t s) {
     if (s == nullptr) return cudaSuccess;
-    delete reinterpret_cast<sycl::queue*>(s);
+    sycl::queue* q = reinterpret_cast<sycl::queue*>(s);
+    drop_queue(q);   // else cudaDeviceSynchronize would wait on a destroyed queue
+    delete q;
     return cudaSuccess;
 }
 inline cudaError_t cudaStreamSynchronize(cudaStream_t s) {

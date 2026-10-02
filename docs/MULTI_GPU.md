@@ -45,8 +45,9 @@ now on; the answer is kept.
 - a card with less than 8 GB of VRAM, together with others (each card holds a copy of the dense weights and its
   own prompt buffers) - unless you name it with `--gpus`: then setup says the risk and asks (`--yes` with the named
   cards goes ahead);
-- Intel GPUs, and a mix of NVIDIA and AMD cards. (AMD cards share a model among themselves: `./setup.sh --backend
-  hip --gpus 1,0`, see [AMD_HIP.md](AMD_HIP.md).)
+- Intel GPUs (a hand-written config runs the same split on the SYCL build: see "Measured" below), and a mix of
+  NVIDIA and AMD cards. (AMD cards share a model among themselves: `./setup.sh --backend hip --gpus 1,0`, see
+  [AMD_HIP.md](AMD_HIP.md).)
 
 Or edit an existing config (`strata-*.json`), then restart:
 
@@ -139,3 +140,28 @@ The Coder on an RTX 5080 + RTX 3090 (Ryzen 9 9950X3D), 32K context; details in
 - Leave out a much slower card when two already hold the model. An RTX 2080 Ti as a third card made the 5080 +
   3090 pair slower (68 / 90 tok/s decode): every extra card costs its own round per window.
 - More cards pay off when the model's routed experts do not fit the faster ones.
+
+## Measured: two Arc Pro B70 (SYCL / Level Zero, 2026-10-02)
+
+The split also runs on the Intel XPU build (`"backend": "sycl"`, a config whose `"gpu"` is `[0, 1]`; the server
+appends `--layer-split auto`). These are the first numbers for it, so read them as one data point, not as a
+rule: a W4A16 Q4_0 Flash-Next pack (76.7 GB), 24,576 experts of 2.44 MiB, `--max-context 4096 --kv int8
+--expert-cache auto --mmap-experts --prefill 512 --spec 4`, oneAPI 2026.1, Core Ultra 7 265KF (no AVX-512),
+2x Arc Pro B70 31.89 GiB, engine `0.1.34`.
+
+| | 1 card (card 0) | 2 cards (auto, K=24: 0-23 / 24-47) |
+|---|---|---|
+| expert cache | 9517 slots, 24.5 GiB | 26.0 GiB + 25.1 GiB = 51.1 GiB |
+| experts in VRAM | 9517 of 24576 (38.7%) | 19857 (80.8%) |
+| decode expert-cache hit rate | 46.9-58.9% | 91.1-93.6% |
+| CPU expert entries per layer-window | 4.1-5.7 | 0.85-0.89 |
+| decode tok/s (200-token prompt) | 15.0 | 16.4 |
+| prefill tok/s (200-token prompt) | 13.2 | 6.9 |
+| peak VRAM used | 31.1 GiB on card 0, card 1 idle | 31.8 GiB + 31.7 GiB |
+| tokens, same pack and prompt | `195090 195090 95905 116720` | identical |
+
+Decode is on par to +10% (the second card is VRAM for experts), and prefill is **~1.9x slower** on this pack and
+context - the open question there is the prompt path's per-stage cost, not correctness: the tokens are identical
+and the split streams *fewer* expert blobs during a request (~6.7 GB against ~18.9 GB). The conversation cache
+refuses a split at start here too (exit 2, "conversation parking does not yet support --layer-split"). Both cards
+must be visible to the driver (`ZE_AFFINITY_MASK` unset, or one listing both).
