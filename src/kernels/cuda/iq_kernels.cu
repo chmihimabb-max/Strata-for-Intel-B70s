@@ -1333,11 +1333,32 @@ __device__ void dq_bf16(const void* vx, int64_t ibs, dst_t* yy, int tid) {
     for (int j = 0; j < 8; ++j) yy[tid * 8 + j] = cvt<dst_t>(__uint_as_float((uint32_t) x[j] << 16));
 }
 
+// Q4_0 (the W4A16 pack's experts, `t_e8373d23`/`t_7e74bb89`): ggml's `dequantize_row_q4_0`.  Blocks are 18
+// bytes over 32 values, the low nibbles hold values 0..15 of the block and the high ones 16..31, each with
+// the -8 offset the format carries instead of a zero point.  This arm is what the PREFILL path needs to stage
+// a Q4_0 pack: a native Q4_0 layer's blob goes to `iq_dequant_gu_f16`/`iq_dequant_f16`, and with `is_iq(2)`
+// false those entry points REFUSED the pack ("iq_dequant_gu_f16: type 2 / 2560", measured on the W4A16 pack
+// by card t_fa7b481e) rather than dequantizing it.  The decode path never comes here (the grouped expert
+// kernels dequantize in-register), so this changes no decode arithmetic.
+template<typename dst_t>
+__device__ void dq_q4_0(const void* vx, int64_t ibs, dst_t* yy, int tid) {
+    const block_q4_0* x = (const block_q4_0*) vx + ibs * 8;      // 8 blocks of 32 per 256-value superblock
+    const int ib = tid % 8, il = tid / 8;
+    const float d = __half2float(x[ib].d);
+    dst_t* y = yy + 32 * ib + 4 * il;
+    const uint8_t* q = x[ib].qs + 4 * il;
+    for (int j = 0; j < 4; ++j) {
+        y[j + 0] = cvt<dst_t>(d * (float) ((q[j] & 0x0F) - 8));
+        y[j + 16] = cvt<dst_t>(d * (float) ((q[j] >> 4) - 8));
+    }
+}
+
 // Every type below must also be in is_iq() (BF16: embed_type_supported): the host entry points refuse the others,
 // so the default is unreachable.
 template<typename dst_t>
 __device__ __forceinline__ void dq_dispatch(int ty, const void* vx, int64_t ibs, dst_t* y, int tid) {
     switch (ty) {
+        case 2: dq_q4_0(vx, ibs, y, tid); break;
         case 16: dq_iq2_xxs(vx, ibs, y, tid); break;
         case 17: dq_iq2_xs(vx, ibs, y, tid); break;
         case 18: dq_iq3_xxs(vx, ibs, y, tid); break;
@@ -1374,8 +1395,8 @@ __global__ void dequant_gu_kernel(int ty, const void* __restrict__ gate, const v
 
 // the types dq_dispatch dequantizes
 bool is_iq(int t) {
-    return t == 16 || t == 17 || t == 18 || t == 20 || t == 21 || t == 22 || t == 23 || t == 29 || t == 42 || t == 11 ||
-           t == 12 || t == 13 || t == 7 || t == 8;
+    return t == 2 || t == 16 || t == 17 || t == 18 || t == 20 || t == 21 || t == 22 || t == 23 || t == 29 ||
+           t == 42 || t == 11 || t == 12 || t == 13 || t == 7 || t == 8;
 }
 // values per block of the types the grouped expert kernels take (0 = none)
 int gu_qk(int t) {

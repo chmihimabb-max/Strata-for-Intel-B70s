@@ -3193,16 +3193,26 @@ int main(int argc, char** argv) {
     // routed experts is not a slow measurement of this model, it is a measurement of a different model.
     //
     // Refusing is the fix.  `--no-pool` is the explicit way to say "I want the GPU-only floor".
-    if (o.no_capture && !o.no_pool) {
+    if (o.no_capture && !o.no_pool && !native_pack) {
         std::fprintf(stderr,
                      "strata generate: --no-capture runs `session_token`, which has NO CPU expert pool hook, so "
                      "the routed experts would silently contribute nothing. Pass --no-pool as well if the "
                      "GPU-only floor is what you want.\n");
         return 2;
     }
+    // **A NATIVE PACK IS EXEMPT FROM THAT REFUSAL, BECAUSE IT CANNOT REACH `session_token` AT ALL.**  The
+    // single-token loop breaks out before its first iteration when `native_pack` is set (the loop above:
+    // "a native pack's last prompt token is the first verify window"), and every token of a native run is a
+    // verify window - whose experts are computed inside the window itself (GPU tier + the pool), not by the
+    // `session_loop` hook this refusal protects.  The graphs are skipped for a native pack anyway
+    // (`if (!o.no_capture && !native_pack)` at session_capture), so the flag is inert there rather than
+    // dangerous: refusing it only made the documented native configuration (--no-capture, PLAN D7)
+    // unreachable.  Measured: with the refusal removed the native W4A16 run reaches verify windows with the
+    // expert cache ON and reports "R4 hit path ON - resident experts are computed on the GPU".
     // The ladder is written by `session_loop`, and `session_token` does not touch the staging buffer at all - so
     // accepting the flag there would produce a file of uninitialised memory, which reads as a wrong answer rather
-    // than as a mistake.  `--no-capture` without `--no-pool` is already refused above, so this catches the pair.
+    // than as a mistake.  (A native pack's ladder is written by its verify windows, so this pair - the ladder
+    // flags below - is refused for the same reason on every path.)
     if (o.no_capture && !o.dump_layers.empty()) {
         std::fprintf(stderr,
                      "strata generate: --dump-layers is written by `session_loop`; `--no-capture` runs "
