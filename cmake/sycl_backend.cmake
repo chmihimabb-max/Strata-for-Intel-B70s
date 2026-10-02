@@ -64,6 +64,15 @@ target_compile_options(strata_sycl_runtime INTERFACE
 # defect M2 fixed for the 2-D nd_range (PROBE16) - the 1-D launch is necessary but NOT sufficient.  With this
 # flag the sub-group is 32 for every kernel in the port; the parity tests are what prove it.
 target_compile_options(strata_sycl_runtime INTERFACE -fsycl-default-sub-group-size=32)
+# THE SPLIT THAT DECIDES WHAT THE RUNTIME JIT-BUILDS IS A LINK-TIME DECISION, AND THE COMPILE-TIME FLAG ABOVE DOES
+# NOT IMPLY IT (S3, card t_2b8d00fc).  Measured: with only the compile-time `-fsycl-device-code-split=per_kernel`
+# the LINKED fat binary still carries one device image per SOURCE FILE, so the runtime builds one program unit per
+# image and the first prompt pays for every kernel in it - the QSA hand port's `prompt_attn_kernel<0>`, `<1>`, `<3>`
+# + `prompt_attn_i8_kernel` + the FP32 `mma16816` emulation are ONE unit of 3.17 MiB / 0.14 MiB IR and JIT-compile
+# in 12.880 s even though the batch path only ever launches `<1>` (S2-STATUS.md §2).  Passing the same switch to the
+# link step is what makes each kernel its own device image (and therefore its own program unit / cache entry), so a
+# prompt pays only for the variants it launches.
+target_link_options(strata_sycl_runtime INTERFACE -fsycl-device-code-split=per_kernel)
 # The compat cuda_runtime.h is force-included into every host and device source, exactly as the HIP target
 # force-includes its own (hip_backend.cmake:75-83).  A source that does not mention cudaMalloc still gets the
 # shim for the types it passes around.
