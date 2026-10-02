@@ -3222,6 +3222,14 @@ int main(int argc, char** argv) {
     // dangerous: refusing it only made the documented native configuration (--no-capture, PLAN D7)
     // unreachable.  Measured: with the refusal removed the native W4A16 run reaches verify windows with the
     // expert cache ON and reports "R4 hit path ON - resident experts are computed on the GPU".
+    //
+    // **AND "INERT" WAS NOT TRUE UNTIL M5d, WHICH IS WHY THIS COMMENT NOW SAYS WHAT IT SAYS.**  The flag was
+    // exempt from the refusal above but it still switched off the device residency table (that build used to sit
+    // inside the `!no_capture` branch; see the note there), and the verify window REFUSES without that table
+    // (`verify.cpp:269`).  Measured on the W4A16 pack (2026-10-02, card 0, `--tokens 1,2,3,4 --spec 4`): with
+    // `--no-capture` the prompt path ran with "resident 0" - every routed expert streamed, 918 blobs against the
+    // captured arm's 381 - and the run then stopped with `--spec needs the device residency table`.  With the
+    // table decoupled from capture the same command serves and prints the same tokens (see M5D-STATUS.md).
     // The ladder is written by `session_loop`, and `session_token` does not touch the staging buffer at all - so
     // accepting the flag there would produce a file of uninitialised memory, which reads as a wrong answer rather
     // than as a mistake.  (A native pack's ladder is written by its verify windows, so this pair - the ladder
@@ -3632,12 +3640,34 @@ int main(int argc, char** argv) {
     } tgraph_free{&tgraph};
     // Plan v0.3 P4: with a PROFILE-filled cache the residency is static, so the hit decision moves onto the
     // device and the token graph keeps it.  (A cache filled on demand still needs the per-layer host path.)
+    //
+    // **THE RESIDENCY TABLE IS NOT A PROPERTY OF CAPTURE, AND GATING IT ON ONE WAS A BUG.**  `host_res`/`d_res`
+    // is one table saying which expert sits in which VRAM cache slot - data about the cache, not about how the
+    // layers are launched - and it has three readers that have nothing to do with the token graph:
+    // `Prefill::run` (a resident expert is computed from its slot instead of being streamed; without the table
+    // EVERY routed expert is streamed - "resident 0" - and the prompt path also cannot lend/borrow slots,
+    // `generate.cpp`'s "prompt path allocates its own buffers"), the **verify window** (`VerifyHits::d_res`,
+    // `verify.cpp:269` refuses to init without it - so `--serve` and `--spec` are dead), and the CPU pool's own
+    // residency view (`drive.d.host_res`).  A native pack reaches all three without ever capturing a token graph
+    // (`!native_pack` at the graph below), so building the table inside the capture branch made a capture flag
+    // decide whether the model could be SERVED at all: `--no-capture` on a native pack hung the prompt path
+    // (M5d) and then refused `--spec`/`--serve` with "needs the device residency table".  The table is built
+    // whenever the hit path exists; only the token graph below stays gated on capture.
     std::vector<int32_t> host_res;
     int32_t* d_res = nullptr;
     int32_t* d_hit_count = nullptr;
     strata::core::TokenHits thits;
     const bool graph_hits = hit_fn != nullptr && !profile.empty() && !o.no_pool;
-    if (graph_hits && !o.no_capture && !o.no_token_graph && layer_dump == nullptr && half_dump == nullptr) {
+    // STRATA_RESIDENCY_TABLE_CAPTURE_ONLY=1 (A/B control, M5d): the pre-fix gating - the table exists only when
+    // the token graph is captured too.  With it set, `--no-capture` (or `--no-token-graph`) reproduces the defect
+    // this expression was fixed for: the prompt path streams every expert and `--serve`/`--spec` refuse with
+    // "needs the device residency table".  Unset (the default) is the fixed arm.
+    static const bool table_with_capture_only = [] {
+        const char* v = std::getenv("STRATA_RESIDENCY_TABLE_CAPTURE_ONLY");
+        return v != nullptr && v[0] != '0';
+    }();
+    if (graph_hits && layer_dump == nullptr && half_dump == nullptr &&
+        (!table_with_capture_only || (!o.no_capture && !o.no_token_graph))) {
         host_res.assign((size_t) (g.n_layers * g.n_expert), strata::core::kNotResident);
         int64_t resident = 0;
         for (int64_t l = 0; l < g.n_layers; ++l)
