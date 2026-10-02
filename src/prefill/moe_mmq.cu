@@ -1,6 +1,22 @@
 // src/prefill/moe_mmq.cu - see include/strata/prefill/moe_mmq.hpp.  llama.cpp's MMQ (ggml-cuda, MIT) is compiled
 // from the pinned llama.cpp checkout the build already takes ggml from; src/prefill/ggml_cuda_host.cu supplies the
 // few host symbols of ggml-cuda.cu it references.
+//
+// ---- the SYCL backend: this file's REAL form is CUDA-only (M4, card t_086173b8; PLAN.md §4.2) --------------
+// The three headers below are ggml-CUDA's own (common.cuh, mmq.cuh, quantize.cuh): they carry CUDA device asm and
+// CUDA-only fallbacks, and they exist only when the build has a ggml tree to take ggml-cuda from.  The SYCL MMQ
+// route of PLAN §4.2 is Route S2, and it is a DIFFERENT set of sources - ggml-SYCL's mmq.cpp/common.cpp from the
+// PINNED commit (extracted read-only with `git archive` into ~/strata-xpu/ggml-pin and passed as
+// -DSTRATA_GGML_DIR=...; never a worktree/checkout inside Mike's ~/llama.cpp-qwen4-exp, BRIEF §9).  So on the
+// SYCL backend this translation unit is deliberately the REFUSAL form: it compiles to an empty unit, and the
+// symbols the rest of the engine needs come from the `#ifndef STRATA_PREFILL_MMQ` stubs in src/prefill/prefill.cpp
+// - whose built() is false, which is what makes the prompt path take the FP16/oneMKL route and SAY SO
+// (M4 measured it: `prefill mmq: requested (STRATA_PREFILL_MMQ=1) but this build has no MMQ ...`).
+// The guard is on the includes, not on a kernel body: with the headers absent there is nothing here to compile,
+// and pretending otherwise would be the "silently builds the CUDA asm" failure of Risk 7 in a new place.
+#if defined(STRATA_USE_SYCL)
+namespace strata::prefill::mmq {}   // deliberate: nothing to compile without a ggml-cuda tree (see above)
+#else
 #include "strata/prefill/moe_mmq.hpp"
 
 #include "common.cuh"
@@ -229,3 +245,4 @@ void iota(int32_t* dst, int64_t n, void* stream) {
 }
 
 }  // namespace strata::prefill::mmq
+#endif  // !STRATA_USE_SYCL (see the guard at the top of the file)

@@ -1015,6 +1015,59 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP OR STRATA_ENABLE_SYCL)
     else()
       message(STATUS "STRATA tests: no python3 with numpy - the SYCL iq_parity fixtures are not registered")
     endif()
+
+    # ---- M4: prefill (PLAN.md §5 M4, card t_086173b8) ---------------------------------------------------
+    # ROUTE S1: the engine's own chunked prompt path with oneMKL replacing cuBLAS.  `strata_prefill` and `strata`
+    # are the SAME targets the CUDA/HIP branch at :453 builds - same sources, same library boundary - but here
+    # from the five translation units cmake/sycl_backend.cmake generated for src/prefill/, and linked against
+    # MKL::MKL_SYCL instead of CUDA::cublas.  That is what makes `./build-sycl/strata` the binary M4's
+    # acceptance command names, and what makes gemm.cu's single cublasGemmEx call shape the thing under test.
+    #
+    # No per-file flag is added to the prefill group: the CUDA and HIP builds give src/prefill/*.cu none
+    # (PLAN.md §4.3 lists -ffp-contract=off for elementwise.cu and quantize_act.cu only, which the SYCL build
+    # already mirrors at :832 and in cmake/sycl_backend.cmake), so the arithmetic contract here is the same one
+    # the other two backends run under.
+    # strata_engine: the COMPOSED layer.  It is defined at :399 inside the block that the SYCL backend skips
+    # (`if(NOT STRATA_ENABLE_SYCL)` at :393), and the binary M4's acceptance command names cannot link without
+    # it - the first build of this section failed exactly there (`cannot find -lstrata_engine`).  Every one of
+    # its sources is a .cpp with 0 kernel launches, so they compile straight through icpx with the runtime
+    # target's flags: the same shim, the same include order, no per-file exception.  Its own tests stay where
+    # they are (the non-SYCL block), because they are not M4's acceptance set.
+    add_library(strata_engine STATIC src/core/layer.cpp src/core/session.cpp src/core/expert_source.cpp
+                                     src/core/remote_experts.cpp src/core/expert_cache.cpp src/core/native_head.cpp
+                                     src/core/native_dense.cpp src/core/verify.cpp src/core/mtp.cpp
+                                     src/core/conversation_snapshot.cpp src/core/conversation_state.cpp
+                                     src/core/conversation_memory.cpp)
+    target_include_directories(strata_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(strata_engine PUBLIC strata_core strata_kernels strata_kernels_cpu
+                                                ${_strata_gpu_runtime_target})
+
+    add_library(strata_prefill STATIC ${STRATA_SYCL_PREFILL_TUS})
+    target_include_directories(strata_prefill PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+                                                     ${_strata_gpu_include_directories})
+    target_link_libraries(strata_prefill PUBLIC strata_engine ${_strata_gpu_blas_target}
+                                                     ${_strata_gpu_runtime_target})
+
+    add_executable(strata src/program/generate.cpp)
+    target_include_directories(strata PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(strata PRIVATE strata_engine strata_prefill strata_spec ${_strata_gpu_runtime_target})
+
+    # RISK 9 (PLAN.md §6), the step whose falsifying experiment the plan names: "a synthetic GEMM parity test at
+    # the engine's shapes against a CPU reference (the HIP analogue is hip_prefill_hipblaslt_gemm)".  It drives
+    # the engine's own strata::prefill::Gemm class - so cublasCreate/SetStream/SetWorkspace and the
+    # OP_T/OP_N argument order at gemm.cu:388,407 are under test too - at the shapes prefill.cpp's call sites use.
+    add_executable(sycl_mkl_gemm tests/sycl/mkl_gemm_parity.cpp)
+    target_include_directories(sycl_mkl_gemm PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(sycl_mkl_gemm PRIVATE strata_prefill ${_strata_gpu_runtime_target})
+    add_test(NAME sycl_mkl_gemm COMMAND sycl_mkl_gemm)
+    set_tests_properties(sycl_mkl_gemm PROPERTIES TIMEOUT 600)
+
+    # sycl_prefill: the prompt path's GEMM route at the two chunk sizes M4 measures, plus the MMQ refusal check.
+    add_executable(sycl_prefill tests/sycl/prefill_chunk_bench.cpp)
+    target_include_directories(sycl_prefill PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(sycl_prefill PRIVATE strata_prefill ${_strata_gpu_runtime_target})
+    add_test(NAME sycl_prefill COMMAND sycl_prefill)
+    set_tests_properties(sycl_prefill PROPERTIES TIMEOUT 900)
   endif()
 endif()
 

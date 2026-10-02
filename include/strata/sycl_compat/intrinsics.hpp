@@ -363,6 +363,11 @@ inline double __fma_rn(double a, double b, double c) { return sycl::fma(a, b, c)
 inline float isnanf_dev(float x) { return sycl::isnan(x) ? 1 : 0; }
 inline int isinff_dev(float x) { return sycl::isinf(x) ? 1 : 0; }
 
+/// CUDA's PLAIN `isnan` (not `__isnanf`) has the same problem, and src/prefill/kernels.cu is the one file that
+/// calls it from inside a kernel (kernels.cu:43 hf_sat, kernels.cu:472 the router's softmax guard).  Same
+/// treatment: a device-callable wrapper plus a call-site RENAME, so the .cu stays as it is.
+inline bool isnan_dev(float x) { return sycl::isnan(x); }
+
 /// The three fences.  CUDA's __threadfence() is a DEVICE-scope release/acquire fence, __threadfence_block()
 /// a work-group one, and __threadfence_system() a SYSTEM-scope one - which is the one the host<->device
 /// doorbell ring needs (PLAN.md Risk 8, measured by tests/sycl/handoff.cpp).

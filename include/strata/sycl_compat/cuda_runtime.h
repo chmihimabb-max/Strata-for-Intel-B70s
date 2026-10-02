@@ -560,7 +560,11 @@ inline cudaError_t cudaMemcpy(void* dst, const void* src, size_t bytes, cudaMemc
     return memcpy_impl(dst, src, bytes, &default_queue(), /*wait=*/true);
 }
 inline cudaError_t cudaMemcpyAsync(void* dst, const void* src, size_t bytes, cudaMemcpyKind kind,
-                                   cudaStream_t s) {
+                                   cudaStream_t s = nullptr) {
+    // M4: CUDA's own declaration gives the stream a default (`cudaMemcpyAsync(..., kind, stream = 0)`), and
+    // src/program/generate.cpp:964,966 - the PCIe probe the engine runs before choosing its expert policy -
+    // calls it with four arguments.  Without the default the SYCL build of `strata` does not compile
+    // ("no matching function for call to 'cudaMemcpyAsync'"), which is what M4 measured before this line.
     (void) kind;
     if (capture_active()) {   // recorded, not submitted: replayed by cudaGraphLaunch on ITS stream
         capture_append([=](cudaStream_t rs) { (void) cudaMemcpyAsync(dst, src, bytes, kind, rs); });
@@ -915,6 +919,19 @@ inline cudaError_t cudaGraphExecDestroy(cudaGraphExec_t e) {
     return cudaSuccess;
 }
 
+// ---- the host callback (M4: src/core/verify.cpp:1252) ------------------------------------------------------
+// `cudaLaunchHostFunc(stream, fn, arg)` runs `fn(arg)` on the host AFTER everything already enqueued on that
+// stream has completed.  The shim's queue is in_order (see queue_properties), and SYCL's in-order queue runs a
+// host_task submitted to it after the commands submitted before it - which is exactly the CUDA contract, so
+// this is a real mapping rather than a no-op.  verify.cpp uses it to raise a doorbell flag only once the
+// staged expert blobs have landed, so a no-op here would be a correctness bug, not a shortcut.
+inline cudaError_t cudaLaunchHostFunc(cudaStream_t s, void (*fn)(void*), void* arg) {
+    if (fn == nullptr) return cudaErrorInvalidValue;
+    sycl::queue* q = queue_for(reinterpret_cast<void*>(s));
+    q->submit([fn, arg](sycl::handler& h) { h.host_task([fn, arg] { fn(arg); }); });
+    return cudaSuccess;
+}
+
 }  // namespace strata::sycl_compat
 
 // ===========================================================================
@@ -971,6 +988,7 @@ using strata::sycl_compat::cudaGraphLaunch;
 using strata::sycl_compat::cudaGraphNode_t;
 using strata::sycl_compat::cudaGraph_t;
 using strata::sycl_compat::cudaGraphUpload;
+using strata::sycl_compat::cudaLaunchHostFunc;
 using strata::sycl_compat::cudaHostAlloc;
 using strata::sycl_compat::cudaHostAllocDefault;
 using strata::sycl_compat::cudaHostAllocMapped;

@@ -962,6 +962,11 @@ RENAMES = [
     # case (bits/mathcalls.h expands __isnanf from isnan): native_router.cu:70.
     ("rsqrtf", "rsqrtf_fast"),
     ("__isnanf", "isnanf_dev"),
+    # M4: the PLAIN `isnan` from src/prefill/kernels.cu:43,472.  Same failure mode as `__isnanf` above - the
+    # name resolves to a host-only glibc inline, so a kernel calling it fails with "SYCL kernel cannot call an
+    # undefined function without SYCL_EXTERNAL attribute".  The word boundary keeps `__isnanf(` out of it (no
+    # boundary between '_' and 'i'), so the two rules do not fight over the same call sites.
+    ("isnan", "isnan_dev"),
 ]
 
 

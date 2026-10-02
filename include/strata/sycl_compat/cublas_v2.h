@@ -10,10 +10,11 @@
 // cublasSetWorkspace (PLAN.md §1.1).  The SYCL replacement is oneMKL's
 // oneapi::mkl::blas::column_major::gemm on the engine's own queue, keeping the same transpose convention.
 //
-// STATUS: the names, the enums and the handle are complete and the f32 case is a real oneMKL call; the
-// bf16/f16 and CUBLAS_COMPUTE_32F cases are M4 work (PLAN.md M4, Route S1) and return
-// CUBLAS_STATUS_NOT_SUPPORTED with a printed reason rather than a silently wrong number.  Nothing in M1
-// compiles this header: strata_prefill is not part of the M1 target set.
+// STATUS: COMPLETE for the engine's call shape (M4, PLAN.md §5 M4 Route S1).  f32/f32, bf16/bf16 and f16/f16
+// into an fp32 accumulator all go to oneMKL's column_major::gemm on the engine's queue with the same transpose
+// convention cuBLAS gets; any other dtype combination is refused with a printed reason rather than guessed.
+// The one thing that is NOT carried over is the caller-owned workspace - oneMKL has no scratch argument - and
+// the reason is written out at cublasGemmEx below, together with the measurement that backs the dtype mapping.
 #include <cuda_runtime.h>
 
 #include <cstdio>
@@ -94,6 +95,27 @@ inline oneapi::mkl::transpose to_mkl(cublasOperation_t op) {
 
 /// The one call shape gemm.cu uses.  Column-major on both sides; A is (lda x m) with OP applied by oneMKL
 /// through the same transpose enum cuBLAS gets, so the convention is preserved rather than reinterpreted.
+///
+/// M4 (Route S1) wires all four dtypes the engine passes:
+///   cublasGemmEx(handle, OP_T, OP_N, N, T, K, &alpha, W, CUDA_R_16BF, K, X, CUDA_R_16BF, K, &beta, Y,
+///                CUDA_R_32F, ldy, CUBLAS_COMPUTE_32F, CUBLAS_GEMM_DEFAULT)      <- Gemm::bf16, gemm.cu:388
+///   ...        CUDA_R_16F  both inputs                                          <- Gemm::f16,  gemm.cu:407
+///   ...        CUDA_R_32F  both inputs and output                                <- the M1 arm
+/// oneMKL 2026.1 has exactly these overloads with an fp32 accumulator
+/// (oneapi/mkl/blas/usm_decls.hpp:38-47: `ONEMKL_DECLARE_GEMM(sycl::half, sycl::half, float, float)` and
+/// `(bfloat16, bfloat16, float, float)`), so the mapping is a dtype change on the pointers and nothing else.
+///
+/// MEASURED (probe/probe27_mkl_gemm.cpp, M4, card 0, B70 driver 1.15.37833+4): all four arms agree with a
+/// double-precision CPU reference at the engine's own shapes - worst relative error 1.0e-6 (bf16 T=4096
+/// N=320 K=10240), i.e. fp32-accumulate noise, not a 16-bit-input-rounded result.  0 refused, 0 throws.
+///
+/// WHAT IS **NOT** PRESERVED, AND WHY IT CANNOT BE (PLAN.md §1.1, Risk 9): `cublasSetWorkspace` has no
+/// oneMKL equivalent.  oneMKL BLAS has no user-supplied scratch argument at all in 2026.1 - only LAPACK does
+/// (`oneapi/mkl/lapack/scratchpad.hpp`); the gemm overload set above takes dependencies, not a workspace.  So
+/// the handle still RECORDS the engine's workspace (`cublasSetWorkspace`/`rebind` are unchanged, and the
+/// engine's caller-owned-buffer contract still holds), but oneMKL allocates and manages its own internal
+/// scratch and ignores ours.  The engine's 32 MiB workspace (prefill.cpp:436) is therefore reserved-but-unused
+/// under this backend - a real deviation from PLAN §4.1.6, reported rather than papered over.
 inline cublasStatus_t cublasGemmEx(cublasHandle_t h, cublasOperation_t opA, cublasOperation_t opB, int m, int n,
                                    int k, const void* alpha, const void* A, cudaDataType_t typeA, int lda,
                                    const void* B, cudaDataType_t typeB, int ldb, const void* beta, void* C,
@@ -103,15 +125,36 @@ inline cublasStatus_t cublasGemmEx(cublasHandle_t h, cublasOperation_t opA, cubl
 #if STRATA_SYCL_HAVE_ONEMKL
     using namespace strata::sycl_compat::detail;
     try {
-        if (typeA == CUDA_R_32F && typeB == CUDA_R_32F && typeC == CUDA_R_32F && compute == CUBLAS_COMPUTE_32F) {
+        if (typeC != CUDA_R_32F || compute != CUBLAS_COMPUTE_32F) {
+            std::fprintf(stderr,
+                         "strata/sycl: cublasGemmEx with C=%d compute=%d is not wired to oneMKL: the engine's "
+                         "prefill GEMMs always accumulate in fp32 (gemm.cu:388,407).\n",
+                         (int) typeC, (int) compute);
+            return CUBLAS_STATUS_NOT_SUPPORTED;
+        }
+        if (typeA == CUDA_R_32F && typeB == CUDA_R_32F) {
             oneapi::mkl::blas::column_major::gemm(*h->q, to_mkl(opA), to_mkl(opB), m, n, k,
                                                   *(const float*) alpha, (const float*) A, lda,
                                                   (const float*) B, ldb, *(const float*) beta, (float*) C, ldc);
             return CUBLAS_STATUS_SUCCESS;
         }
+        if (typeA == CUDA_R_16BF && typeB == CUDA_R_16BF) {
+            oneapi::mkl::blas::column_major::gemm(
+                *h->q, to_mkl(opA), to_mkl(opB), m, n, k, *(const float*) alpha,
+                reinterpret_cast<const oneapi::mkl::bfloat16*>(A), lda,
+                reinterpret_cast<const oneapi::mkl::bfloat16*>(B), ldb, *(const float*) beta, (float*) C, ldc);
+            return CUBLAS_STATUS_SUCCESS;
+        }
+        if (typeA == CUDA_R_16F && typeB == CUDA_R_16F) {
+            oneapi::mkl::blas::column_major::gemm(
+                *h->q, to_mkl(opA), to_mkl(opB), m, n, k, *(const float*) alpha,
+                reinterpret_cast<const sycl::half*>(A), lda, reinterpret_cast<const sycl::half*>(B), ldb,
+                *(const float*) beta, (float*) C, ldc);
+            return CUBLAS_STATUS_SUCCESS;
+        }
         std::fprintf(stderr,
-                     "strata/sycl: cublasGemmEx with A=%d B=%d C=%d compute=%d is not wired to oneMKL yet "
-                     "(M4, PLAN.md Route S1); the engine's own FP32/FP16 prefill kernels are the fallback.\n",
+                     "strata/sycl: cublasGemmEx with A=%d B=%d C=%d compute=%d has no oneMKL overload (M4 wired "
+                     "f32/f32, bf16/bf16 and f16/f16 into fp32; anything else is refused rather than guessed).\n",
                      (int) typeA, (int) typeB, (int) typeC, (int) compute);
     } catch (const std::exception& e) {
         std::fprintf(stderr, "strata/sycl: oneMKL gemm failed: %s\n", e.what());

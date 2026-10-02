@@ -903,7 +903,11 @@ bool Verifier::capture(int T, std::string& err) {
         err = std::string("verify: end capture: ") + cudaGetErrorString(ce);
         return false;
     }
-#if !defined(STRATA_USE_HIP)   // a CUDA debug listing (node types, kernel names)
+#if !defined(STRATA_USE_HIP) && !defined(STRATA_USE_SYCL)   // a CUDA debug listing (node types, kernel names)
+    // M4: SYCL skips it for the same reason HIP does - there is nothing to introspect.  The SYCL shim's graph is
+    // the M3 capture EMULATION (a list of closures, PLAN.md §1.3(b)/D7), so it has no node TYPE, no kernel
+    // parameter block and no cudaFuncGetName; asking for them would mean inventing an answer.  The listing is a
+    // diagnostic behind STRATA_VERIFY_NODES, not part of what the window graph does.
     if (std::getenv("STRATA_VERIFY_NODES") != nullptr) {   // what the window graph holds
         size_t nn = 0;
         cudaGraphGetNodes(graph, nullptr, &nn);

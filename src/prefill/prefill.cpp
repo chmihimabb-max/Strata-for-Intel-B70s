@@ -32,6 +32,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <atomic>
 #include <condition_variable>
 #include <cstring>
@@ -43,8 +44,25 @@
 
 #ifndef STRATA_PREFILL_MMQ
 // A build without the llama.cpp sources (no STRATA_NATIVE_EXPERTS): no MMQ, the FP16 expert path everywhere.
+// M4 (card t_086173b8): a build that has no MMQ still has to REFUSE it out loud when it is asked for, instead of
+// quietly running the FP16 path and leaving the caller to guess which route produced the numbers.  The SYCL
+// backend always lands here (PLAN §4.2 Route S2 is not built), so this line is what "refuse cleanly" means for
+// M4's `STRATA_SYCL_PREFILL_MMQ` switch: say why, once, and take the oneMKL/FP16 route.
 namespace strata::prefill::mmq {
-bool built() { return false; }
+bool built() {
+    static const bool announced = [] {
+        const char* env = std::getenv("STRATA_PREFILL_MMQ");
+        if (env != nullptr && std::atoi(env) != 0) {
+            std::fprintf(stderr,
+                         "prefill mmq: requested (STRATA_PREFILL_MMQ=%s) but this build has no MMQ - it was built "
+                         "without the ggml MMQ sources (PLAN.md §4.2 Route S2); using the FP16/oneMKL expert path.\n",
+                         env);
+        }
+        return true;
+    }();
+    (void) announced;
+    return false;
+}
 bool supported(int) { return false; }
 bool fits(int, int64_t) { return false; }
 size_t matrix_bytes(int, int64_t, int64_t) { return 0; }

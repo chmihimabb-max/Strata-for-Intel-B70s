@@ -211,6 +211,47 @@ set(STRATA_SYCL_HAND_TUS "${_strata_sycl_hand_tus}" CACHE INTERNAL "")
 set_source_files_properties("${STRATA_SYCL_GEN_DIR}/elementwise.cpp" "${STRATA_SYCL_GEN_DIR}/quantize_act.cpp"
   PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")
 
+# ---- M4: the prefill group (PLAN.md §4.2 Route S1, §5 M4, card t_086173b8) ---------------------------
+# The prompt path's five sources.  Three of them are Route S1 itself - kernels.cu (the dequant/activation
+# kernels the chunked path calls), gemm.cu (the cuBLAS surface, whose ONE call shape the compat cublas_v2.h now
+# maps onto oneMKL's column_major::gemm for f32/bf16/f16) and prefill.cpp (the host driver, 0 __global__).
+# The other two are the MMQ files: on this backend they compile to their documented REFUSAL form (see the guard
+# at the top of each: ggml-CUDA's common.cuh/mmq.cuh/quantize.cuh are not part of a SYCL build, and PLAN §4.2
+# Route S2 is ggml-SYCL's mmq.cpp against the PINNED commit, not these).  Building them here is what makes
+# "compiles and refuses cleanly when the MMQ path is off" a build-verified statement rather than a claim:
+# `syclify` translates all five, and a 6th source would have to be added deliberately.
+# gemm.cu and prefill.cpp carry 0 launches, so their generated TUs are the sources unchanged; they go through
+# the same generation step anyway, so the M4 group has ONE rule and every error names the original .cu/.cpp line.
+set(STRATA_SYCL_PREFILL_CU
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/prefill/kernels.cu"        # 842  dequant/rms/activation kernels
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/prefill/gemm.cu"           # 432  0 __global__: the oneMKL target (Route S1)
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/prefill/prefill.cpp"       # 1977 0 __global__: the chunked prompt driver
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/prefill/moe_mmq.cu"        # 231  MMQ (Route S2) - refusal form here
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/prefill/ggml_cuda_host.cu")# 134  MMQ host shims - refusal form here
+set(_strata_sycl_prefill_tus "")
+foreach(_cu IN LISTS STRATA_SYCL_PREFILL_CU)
+  strata_sycl_generate("${_cu}" _gen)
+  list(APPEND _strata_sycl_prefill_tus "${_gen}")
+endforeach()
+set(STRATA_SYCL_PREFILL_TUS "${_strata_sycl_prefill_tus}" CACHE INTERNAL "")
+
+# Route S2 (PLAN §4.2): the ggml-SYCL MMQ path is NOT wired on this backend - it needs the pinned tree
+# (`git archive <pin> | tar -x -C ~/strata-xpu/ggml-pin`, passed as -DSTRATA_GGML_DIR=...; never a
+# worktree/checkout inside ~/llama.cpp-qwen4-exp, BRIEF §9), and it is a different source set (ggml-SYCL's
+# mmq.cpp + common.cpp), not the two files above.  The switch exists so that asking for it REFUSES cleanly
+# instead of silently doing nothing.
+option(STRATA_SYCL_PREFILL_MMQ "Build the ggml-SYCL MMQ prefill path (PLAN §4.2 Route S2, NOT WIRED)" OFF)
+if(STRATA_SYCL_PREFILL_MMQ)
+  message(FATAL_ERROR
+    "STRATA_SYCL_PREFILL_MMQ is not wired: PLAN.md §4.2 Route S2 needs the PINNED ggml tree "
+    "(git archive 3cf03257f219afbe7334045ff7c6a06ac68c627d | tar -x -C ~/strata-xpu/ggml-pin) and ggml-SYCL's "
+    "mmq.cpp/common.cpp built against it - the ggml-CUDA MMQ sources the HIP build uses cannot run on this "
+    "backend. Leave the switch OFF: the prompt path then runs Route S1 (oneMKL) and REFUSES MMQ out loud "
+    "(src/prefill/prefill.cpp's `#ifndef STRATA_PREFILL_MMQ` stubs print the reason when STRATA_PREFILL_MMQ=1 "
+    "reaches the engine at runtime).")
+endif()
+
 message(STATUS "Strata: SYCL enabled, arch ${STRATA_SYCL_ARCHS}, targets ${STRATA_SYCL_TARGETS} "
                "(oneMKL: ${STRATA_SYCL_MKL}); ${_strata_sycl_kernel_tus}"
-               "kernel translation unit(s) - the rest of PLAN.md §2 is M2..M5 work")
+               "kernel translation unit(s) + ${_strata_sycl_prefill_tus} prefill translation unit(s) "
+               "- the rest of PLAN.md §2 is M2..M5 work")

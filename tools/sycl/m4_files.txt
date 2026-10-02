@@ -1,0 +1,9 @@
+# tools/sycl/m4_files.txt - the M4 prefill group (PLAN.md §5 M4, card t_086173b8).
+# Five sources, read straight out of src/prefill/: the two Route-S1 files (kernels.cu: the dequant/activation
+# kernels the prompt path calls, gemm.cu: the cuBLAS surface), the host driver prefill.cpp, and the two MMQ
+# files that must at minimum COMPILE and refuse cleanly when the MMQ path is off (STRATA_PREFILL_MMQ).
+kernels        src/prefill/kernels.cu     842  dequant / rms / activation kernels the prompt path calls
+gemm           src/prefill/gemm.cu        432  0 __global__: host-only cuBLAS surface (Route S1's oneMKL target)
+prefill        src/prefill/prefill.cpp   1977  0 __global__: the chunked prompt path
+moe_mmq        src/prefill/moe_mmq.cu     231  MMQ expert path (Route S2 / STRATA_PREFILL_MMQ)
+ggml_cuda_host src/prefill/ggml_cuda_host.cu 134  ggml host shims the MMQ path needs

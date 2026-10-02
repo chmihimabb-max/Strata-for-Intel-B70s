@@ -1,5 +1,15 @@
 // src/prefill/ggml_cuda_host.cu - prompt-speed plan step 2b: the host-side symbols of llama.cpp's ggml-cuda that its MMQ
 // and quantize code reference, for the MMQ kernels compiled into strata_mmq without the rest of ggml-cuda.cu.
+//
+// ---- the SYCL backend: this file's REAL form is CUDA-only (M4, card t_086173b8; PLAN.md §4.2) ---------------
+// It exists to satisfy symbols that only ggml-CUDA's mmq.cuh/quantize.cuh reference, and it includes ggml-CUDA's
+// common.cuh; none of that exists - or makes sense - on the SYCL backend, whose MMQ route (Route S2) is
+// ggml-SYCL's own mmq.cpp against the PINNED commit (`git archive` -> ~/strata-xpu/ggml-pin, -DSTRATA_GGML_DIR=...).
+// So on SYCL this unit compiles empty, on purpose, and the MMQ path is refused at runtime by the
+// `#ifndef STRATA_PREFILL_MMQ` stubs in src/prefill/prefill.cpp (mmq::built() == false) - never silently.
+#if defined(STRATA_USE_SYCL)
+// nothing: there is no ggml-cuda host surface on this backend (see above)
+#else
 #include "strata/core/emulate.hpp"
 #include "common.cuh"
 
@@ -132,3 +142,4 @@ std::unique_ptr<ggml_cuda_pool> ggml_backend_cuda_context::new_pool_for_device(i
 }
 
 ggml_backend_cuda_context::~ggml_backend_cuda_context() {}
+#endif  // !STRATA_USE_SYCL (see the guard at the top of the file)

@@ -73,7 +73,11 @@ bool RemoteExperts::preflight(int device, double& free_gib, std::string& err) {
     // The layer waits for this GPU on the CPU pool's critical path: spin instead of sleeping, whose wake-up
     // costs more than a small expert batch takes (measured: ~0.3 ms per round trip on Windows).  Only possible
     // before the device's context exists, so first thing; STRATA_REMOTE_SPIN=0 keeps the driver's default.
-#if !defined(STRATA_USE_HIP)
+#if !defined(STRATA_USE_HIP) && !defined(STRATA_USE_SYCL)
+    // M4: SYCL skips the spin as HIP does.  `cudaInitDevice(..., cudaDeviceScheduleSpin | cudaDeviceMapHost, 0)`
+    // is a CUDA driver policy set before the device's context exists; on this backend the shim's queue (and its
+    // context) is already up by the time this code runs, and SYCL has no scheduling-policy switch.  The default
+    // policy is what the backend runs under, and it is named here rather than silently emulated.
     const char* spin = std::getenv("STRATA_REMOTE_SPIN");
     if (!(spin && spin[0] == '0')) cudaInitDevice(device, cudaDeviceScheduleSpin | cudaDeviceMapHost, 0);
     cudaGetLastError();
