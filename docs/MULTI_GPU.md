@@ -165,3 +165,48 @@ context - the open question there is the prompt path's per-stage cost, not corre
 and the split streams *fewer* expert blobs during a request (~6.7 GB against ~18.9 GB). The conversation cache
 refuses a split at start here too (exit 2, "conversation parking does not yet support --layer-split"). Both cards
 must be visible to the driver (`ZE_AFFINITY_MASK` unset, or one listing both).
+
+### Measured: the same pair at 16K and 32K (M6, 2026-10-02)
+
+The same pack and box at `--max-context 16384` and `32768`, fed a 15,872- and a 32,256-token prompt from
+`docs/` and asked for 256 tokens, `--kv int8 --prefill 512 --spec 4 --expert-cache auto --mmap-experts`. One
+card is `ZE_AFFINITY_MASK=0`; the pair is `--layer-split auto` (K=24: layers 0-23 / 24-47 + the head). The pair
+can only be measured through the engine's serve mode - the one-shot command refuses the flag with
+"`--layer-split K[,K2..]|auto needs --serve`" and exit 2 - so the one-card arm is measured through serve mode
+here as well; at 16K the two command paths agree to 0.1% (213.98 against 213.8 tok/s) and at 32K to 0.03%.
+
+| | 16K one card | 16K pair | 32K one card | 32K pair |
+|---|---|---|---|---|
+| prompt tokens read | 15,872 | 15,872 | 32,256 | 32,256 |
+| generated (usage-counted) | 256 | 256 | 256 | 256 |
+| prefill | 213.8 tok/s (74.3 s) | **254.4** (62.4 s) | 228.8 (141.0 s) | **325.3** (99.2 s) |
+| decode | 19.1 tok/s | 18.4 | 19.0 | 18.3 |
+| decode expert-cache hit rate | 96.7% | 100.0% | 96.7% | 100.0% |
+| CPU expert entries per layer-window | 0.42 distinct / 0.64 routed | **0.00** | 0.42 / 0.64 | **0.00** |
+| expert cache | 9343 slots, 24.1 GiB | 19,787 slots, 51.0 GiB | 9247 slots, 23.8 GiB | 19,689 slots, 50.7 GiB |
+| peak VRAM | 30.8 GiB card 0, card 1 idle | 31.1 + 31.6 GiB | 31.1 GiB card 0 | 31.1 + 31.6 GiB |
+| peak RSS (whole process tree) | 31.9 GiB | 50.9 GiB | 31.8 GiB | 51.0 GiB |
+| wall clock | 99 s | 122 s | 165 s | 164 s |
+
+- **Prefill: the pair is 1.19x ahead at 16K and 1.42x at 32K, the reverse of the 4K result above.** Two
+  contexts per arm give the prompt path's cost as two terms: one card ~9.5 s once plus ~2.09 s per 512-token
+  chunk (245 tok/s marginal); the pair ~26.8 s once plus ~1.15 s per chunk (445 tok/s marginal). A one-chunk
+  4K prompt therefore pays the pair's 2.8x larger fixed cost and gets none of its 1.8x better marginal rate.
+  Both are two-point fits, and `--prefill auto`/bigger chunks were not tried.
+- **Decode is 3-4% behind on the pair** (18.3-18.4 against 19.0-19.1 tok/s) while every expert of every decode
+  window comes from VRAM: a 100.0% hit rate and 0.00 CPU expert entries per layer-window, against 0.42 on one
+  card. The pair's VRAM is what removes the AVX-2 CPU pool from decode; its own per-window cost is what
+  remains.
+- **At 32K the pair needs the serve path's mid-prompt checkpointing off** (`--prompt-cache 0
+  --prompt-cache-every 0`). With it on, the checkpoint that fires at 16,384 fresh tokens dies with
+  `strata/sycl: memcpy failed: level_zero backend failed with error: 39 (UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY)`
+  and the request is lost (exit 1, 318 MiB of VRAM free with everything loaded). One card saves the same
+  checkpoint and carries on.
+- **The generated text is not validated at this revision**, so the table is throughput only. Every one of the
+  256 tokens in this block is token id 0 (the engine's own `output :` line), and the same build answers
+  "The capital of France is" with `'文偶NNNNN-fat'`. That is the defect `M5F-STATUS.md` describes - the hidden
+  state is wrong upstream of the head, stage unpinned - and it is open at this HEAD. The counts in this table
+  (tokens, cache slots, hit rates, the CPU/GPU split, VRAM and RSS) are measurements of real work; the expert
+  *routing* is driven by that wrong state, so read the throughput as the shape of the work at these contexts,
+  not as a run of the model.
+
