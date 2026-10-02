@@ -100,6 +100,48 @@ inline int64_t stream_all_min() {
     static const int64_t v = [] { const char* e = std::getenv("STRATA_PREFILL_STREAM_MIN"); return e ? (int64_t) std::atoll(e) : (int64_t) 1024; }();
     return v;
 }
+// M5e (card t_e489b31c): where a batched prompt chunk spends its time.  STRATA_PREFILL_TRACE=1 prints one line per
+// stage - the chunk's setup, every layer's two halves, and the expert walk every 64 experts - with the milliseconds
+// since the chunk began.  A chunk the serve watchdog calls a hang ("reading the prompt (batched): layer N") then
+// names the stage that was slow instead of leaving it to inference: the watchdog only sees one beat per LAYER, so a
+// layer that takes longer than STRATA_WATCHDOG_S (60 s) is indistinguishable from a deadlock from the outside.
+inline bool pf_trace_on() {
+    static const bool v = std::getenv("STRATA_PREFILL_TRACE") != nullptr;
+    return v;
+}
+// M5e, second arm: STRATA_PREFILL_TRACE_SYNC=1 adds a cudaStreamSynchronize after each expert's dequant kernels and
+// after its two GEMMs, so a wedge is attributed to the GPU work (and to which kernel) instead of to the pipeline.
+// It serializes the walk, so it is an instrument: if the chunk COMPLETES with it on, the defect is in the
+// asynchronous staging pipeline, not in a kernel.
+inline bool pf_sync_on() {
+    static const bool v = std::getenv("STRATA_PREFILL_TRACE_SYNC") != nullptr;
+    return v;
+}
+// M5e (card t_e489b31c): THE COPY STREAM MUST NOT WAIT ON THE COMPUTE STREAM AT QUEUE LEVEL.
+//
+// `stage_one` frees a staging slot by making the COPY stream wait for `m.used[slot]`, an event recorded on the
+// COMPUTE stream after the dequant kernels that read that slot.  Under the SYCL shim an event IS a queue barrier
+// (`cuda_runtime.h:748`: `ev->e = queue->ext_oneapi_submit_barrier()`), so that wait is not "after that dequant": it
+// is "after every command the compute stream has submitted so far" - and the compute stream's own commands include
+// its per-expert `cudaStreamWaitEvent(m.cs, m.copied[slot])`, which waits on the COPY stream.  The two queues then
+// wait on each other's tails and the prompt chunk stops dead: measured at T=100 on the W4A16 pack, layer 0, expert
+// 62 of 75, the main thread spinning in `Stager::wait(job 27)` and the copy stream never signalling `dma_done[11]`
+// (0 bytes read, 0 page faults, 4 stager threads spinning - a frozen pipeline, not a slow read).
+//
+// The fix is the handshake the engine already uses one level down: the STAGER does its slot-freeing on the HOST
+// (`cudaEventSynchronize` in `Stager::work`), so the copy queue has no queue-level dependency on the compute queue at
+// all and the cycle cannot exist.  The DMA itself stays asynchronous; only the wait for the slot moves to the host,
+// which is bounded by the ring exactly as before (the launcher may run `STAGE - 1` experts ahead).  The same edit in
+// the pinned-DMA arm: it is the same slot and the same cycle.
+// STRATA_PREFILL_COPY_WAIT_QUEUE=1 restores the queue-level wait, the A/B control for this measurement.
+inline bool pf_copy_wait_queue() {
+    static const bool v = std::getenv("STRATA_PREFILL_COPY_WAIT_QUEUE") != nullptr;
+    return v;
+}
+inline void pf_slot_free_wait(cudaEvent_t used, cudaStream_t copy) {
+    if (pf_copy_wait_queue()) cudaStreamWaitEvent(copy, used, 0);
+    else cudaEventSynchronize(used);
+}
 double g_pinned_share = 1.0;
 // The streamed ring: 384 slots when (nearly) every streamed expert is DMA'd from pinned RAM - measured on Q2_0,
 // 8192-token chunks: 96 slots 1153 tok/s, 384 1294 (the next layer's experts arrive during its attention half) -
@@ -1069,7 +1111,15 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
         if (should_stop && should_stop()) { err = "cancelled"; return false; }
         if (std::getenv("STRATA_TRACE")) { std::fprintf(stderr, "strata trace: prompt chunk %lld of %lld\n", (long long) c0, (long long) n); std::fflush(stderr); }
         const int64_t T = std::min(m.T, n - c0), p0 = pos0 + c0;
+        const Clock::time_point t_chunk = Clock::now();
+        auto el = [&t_chunk]() {   // M5e: ms since this chunk began (STRATA_PREFILL_TRACE=1)
+            return std::chrono::duration<double, std::milli>(Clock::now() - t_chunk).count();
+        };
+        if (pf_trace_on())
+            std::fprintf(stderr, "prefill trace: chunk start p0=%lld T=%lld n=%lld\n", (long long) p0, (long long) T,
+                         (long long) n);
         core::progress_at("reading the prompt (batched): preparing the chunk from token", p0);   // #251
+
         ++stats_.chunks;
         pt.mark(kPfStart, cs);
         const auto tsetup = Clock::now();
@@ -1201,7 +1251,7 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                 const int sl = (int) (issued % (size_t) m.ring);
                 const auto th = Clock::now();
                 const size_t bytes = (size_t) lay0.blob_bytes(en.l);
-                if (m.stage_live[sl]) cudaStreamWaitEvent(m.copy, m.used[sl], 0);
+                if (m.stage_live[sl]) pf_slot_free_wait(m.used[sl], m.copy);   // M5e: on the host, never copy<-compute
                 if (en.job < 0) {
                     cudaMemcpyAsync(m.stage_dev[sl], en.blob, bytes, cudaMemcpyHostToDevice, m.copy);
                     ++stats_.experts_dma;
@@ -1248,7 +1298,7 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                     const int sl = (int) (idx % (size_t) m.ring);
                     const auto th = Clock::now();
                     const size_t bytes = (size_t) lay0.blob_bytes(en.l);
-                    if (m.stage_live[sl]) cudaStreamWaitEvent(m.copy, m.used[sl], 0);
+                    if (m.stage_live[sl]) pf_slot_free_wait(m.used[sl], m.copy);   // M5e: on the host, never copy<-compute
                     if (en.job < 0) {
                         cudaMemcpyAsync(m.stage_dev[sl], en.blob, bytes, cudaMemcpyHostToDevice, m.copy);
                         ++iss_dma;
@@ -1277,6 +1327,9 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
             else issue_until(upto + (size_t) m.ring);
         };
         host_setup_ms += ms_since(tsetup);
+        if (pf_trace_on())
+            std::fprintf(stderr, "prefill trace: chunk p0=%lld setup (embed, PLE, steps, %s) done %.1f ms\n",
+                         (long long) p0, stream_all ? "streamed ring" : "routed staging", el());
         bool normed = false;   // F-2: the previous half's write already normed R for this half (grs, xn16)
         for (int64_t l = LB; l < LE; ++l) {
             core::progress_beat();   // the serve watchdog: a prompt chunk of 8192 tokens is still moving
@@ -1634,6 +1687,9 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                     // the experts, in id order: resident ones from VRAM, the others through the staging ring
                     std::vector<int32_t> order;
                     for (int32_t e = 0; e < m.g->n_expert; ++e) if (m.cnt[(size_t) e] > 0) order.push_back(e);
+                    if (pf_trace_on())
+                        std::fprintf(stderr, "prefill trace: layer %lld routed %zu experts of %lld (%lld pairs), chunk %.1f ms\n",
+                                     (long long) l, order.size(), (long long) m.g->n_expert, (long long) (T * K), el());
                     const strata::kernels::cpu::ExpertLayout& lay = strata::kernels::cpu::expert_layout();
                     const bool use_mmq = mmq_plan().any && mmq_plan().layer[(size_t) l];
                     const int mmq_gt = lay.native ? lay.fmt[(size_t) l].gu_type : 42;
@@ -1690,6 +1746,11 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                     StagerDone stager_done{stream_all ? nullptr : m.stager.get()};
                     auto stage_one = [&](size_t j) -> bool {
                         const int32_t e = order[j];
+                        const bool tj = pf_trace_on() && j + 16 >= order.size();   // M5e: the tail is where it wedged
+                        if (tj)
+                            std::fprintf(stderr, "prefill trace: layer %lld stage_one(%zu) enter (issued=%d kRing=%d), chunk %.1f ms\n",
+                                         (long long) l, j, m.stager ? m.stager->issued.load() : -1,
+                                         m.stager ? m.stager->kRing : -1, el());
                         const bool resident = m.host_res && m.cache && m.host_res[(size_t) l * m.g->n_expert + e] >= 0;
                         if (resident) return true;
                         const int sl = stage_next;
@@ -1700,15 +1761,23 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                         if (pinned && !b) { err = "prefill: expert source has no blob"; return false; }
                         if (pinned) {
                             // DMA straight from the page-locked arena: the copy stream only waits for the slot
-                            if (m.stage_live[sl]) cudaStreamWaitEvent(m.copy, m.used[sl], 0);
+                            if (tj) std::fprintf(stderr, "prefill trace: layer %lld stage_one(%zu) slot %d: pinned DMA, chunk %.1f ms\n",
+                                                 (long long) l, j, sl, el());
+                            if (m.stage_live[sl]) pf_slot_free_wait(m.used[sl], m.copy);   // M5e: on the host, never copy<-compute
                             cudaMemcpyAsync(m.stage_dev[sl], b, (size_t) lay.blob_bytes(l), cudaMemcpyHostToDevice, m.copy);
                             ++stats_.experts_dma;
                         } else {
                             // copied to a pinned buffer by the stager (waits only if it is behind), then DMA
+                            if (tj) std::fprintf(stderr, "prefill trace: layer %lld stage_one(%zu) slot %d: waiting for the stager's copy of job %d, chunk %.1f ms\n",
+                                                 (long long) l, j, sl, job_of[j], el());
                             const uint8_t* hb = m.stager->wait(job_of[j]);
-                            if (m.stage_live[sl]) cudaStreamWaitEvent(m.copy, m.used[sl], 0);
+                            if (tj) std::fprintf(stderr, "prefill trace: layer %lld stage_one(%zu): stager's copy ready, chunk %.1f ms\n",
+                                                 (long long) l, j, el());
+                            if (m.stage_live[sl]) pf_slot_free_wait(m.used[sl], m.copy);   // M5e: on the host, never copy<-compute
                             cudaMemcpyAsync(m.stage_dev[sl], hb, (size_t) lay.blob_bytes(l), cudaMemcpyHostToDevice, m.copy);
                             m.stager->issued_one(job_of[j], m.copy);
+                            if (tj) std::fprintf(stderr, "prefill trace: layer %lld stage_one(%zu): DMA queued, chunk %.1f ms\n",
+                                                 (long long) l, j, el());
                         }
                         cudaEventRecord(m.copied[sl], m.copy);
                         m.stage_live[sl] = true;
@@ -1761,6 +1830,10 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                             return true;
                         }
                         const int q = (int) (j % DQ);
+                        const bool pj = pf_trace_on() && (j < 4 || j % 8 == 0 || j + 16 >= order.size());
+                        if (pj)
+                            std::fprintf(stderr, "prefill trace: layer %lld expert %zu/%zu e=%d slot=%d: dequant queued, chunk %.1f ms\n",
+                                         (long long) l, j, order.size(), e, slot, el());
                         if (lay.native) {
                             // plan v0.3 P6: a native pack's layer, dequantized by llama.cpp's own formulas
                             const auto& f = lay.fmt[(size_t) l];
@@ -1770,24 +1843,54 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                         } else {
                             blob_dequant_f16(blob_dev, m.dq_gu[q], m.dq_d[q], m.cs);
                         }
+                        if (pf_sync_on()) {   // M5e instrument: did the dequant kernels actually complete?
+                            cudaStreamSynchronize(m.cs);
+                            if (pj)
+                                std::fprintf(stderr, "prefill trace: layer %lld expert %zu/%zu: dequant COMPLETE on the GPU, chunk %.1f ms\n",
+                                             (long long) l, j, order.size(), el());
+                        }
+                        if (pj)
+                            std::fprintf(stderr, "prefill trace: layer %lld expert %zu/%zu: dequant returned, chunk %.1f ms\n",
+                                         (long long) l, j, order.size(), el());
                         if (slot >= 0) cudaEventRecord(m.used[slot], m.cs);
                         const int64_t o0 = m.off[(size_t) e], ne = m.cnt[(size_t) e];
                         pt.mark(kPfGemmGU, cs);
                         m.gemm.f16(m.Xs + o0 * N, m.dq_gu[q], m.GU + o0 * 1280, ne, 1280, N);
+                        if (pj)
+                            std::fprintf(stderr, "prefill trace: layer %lld expert %zu/%zu: gate/up GEMM returned (ne=%lld), chunk %.1f ms\n",
+                                         (long long) l, j, order.size(), (long long) ne, el());
                         swiglu_interleaved(m.GU + o0 * 1280, m.Hh + o0 * 640, ne, m.cs);
                         pt.mark(kPfGemmD, cs);
                         m.gemm.f16(m.Hh + o0 * 640, m.dq_d[q], m.Dm + o0 * N, ne, N, 640);
+                        if (pj)
+                            std::fprintf(stderr, "prefill trace: layer %lld expert %zu/%zu: down GEMM returned, chunk %.1f ms\n",
+                                         (long long) l, j, order.size(), el());
+                        if (pf_sync_on()) {   // M5e instrument: did this expert's GEMMs actually complete?
+                            cudaStreamSynchronize(m.cs);
+                            if (pj)
+                                std::fprintf(stderr, "prefill trace: layer %lld expert %zu/%zu: GEMMs COMPLETE on the GPU, chunk %.1f ms\n",
+                                             (long long) l, j, order.size(), el());
+                        }
                         return true;
                     };
                     if (!stream_all) {
                         size_t staged = 0;
                         const size_t lookahead = STAGE - 1;
                         for (size_t j = 0; j < order.size(); ++j) {
+                            const bool tj = pf_trace_on() && j + 16 >= order.size();   // M5e: the tail
+                            if (pf_trace_on() && j > 0 && j % 64 == 0)
+                                std::fprintf(stderr, "prefill trace: layer %lld experts %zu/%zu, chunk %.1f ms\n",
+                                             (long long) l, j, order.size(), el());
+                            if (tj) std::fprintf(stderr, "prefill trace: layer %lld expert %zu/%zu: stage ahead from %zu, chunk %.1f ms\n",
+                                                 (long long) l, j, order.size(), staged, el());
                             while (staged < order.size() && staged <= j + lookahead) {
                                 if (!stage_one(staged)) return false;
                                 ++staged;
                             }
                             const int32_t e = order[j];
+                            if (tj) std::fprintf(stderr, "prefill trace: layer %lld expert %zu/%zu e=%d: staged %zu, compute from %s, chunk %.1f ms\n",
+                                                 (long long) l, j, order.size(), e, staged,
+                                                 stage_of[j] < 0 ? "VRAM" : "the ring", el());
                             if (stage_of[j] < 0) {
                                 ++stats_.experts_resident;
                                 if (!compute(j, m.cache->device_slot(m.host_res[(size_t) l * m.g->n_expert + e]), -1)) return false;
@@ -1796,6 +1899,13 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                                 cudaStreamWaitEvent(m.cs, m.copied[stage_of[j]], 0);
                                 if (!compute(j, m.stage_dev[stage_of[j]], stage_of[j])) return false;
                             }
+                            if (tj) std::fprintf(stderr, "prefill trace: layer %lld expert %zu/%zu: computed, chunk %.1f ms\n",
+                                                 (long long) l, j, order.size(), el());
+                        }
+                        if (pf_trace_on()) {   // instrument only: with STRATA_PREFILL_TRACE_SYNC the print includes the GPU's lag
+                            if (pf_sync_on()) cudaStreamSynchronize(m.cs);
+                            std::fprintf(stderr, "prefill trace: layer %lld experts done, chunk %.1f ms\n",
+                                         (long long) l, el());
                         }
                     } else {
                         // the streamed walk: this layer's entries [k, kend) in id order; an entry the routing did not
@@ -1872,6 +1982,10 @@ bool Prefill::run(const int64_t* tokens, int64_t n, int64_t pos0, std::string& e
                 }
                 if (half == 1 && strata::kernels::cvec().covers(l))   // --control-vector-scaled
                     strata::kernels::cvec_apply(m.R, l, T, D, nullptr, 0, nullptr, 0, false, m.cs);
+                if (pf_trace_on())
+                    std::fprintf(stderr, "prefill trace: layer %lld half %d (%s) done, chunk %.1f ms\n",
+                                 (long long) l, half, half == 0 ? (core::is_qsa_layer(g, l) ? "QSA" : "GDN") : "MoE",
+                                 el());
             }
         }
         if (issuer.joinable()) {
