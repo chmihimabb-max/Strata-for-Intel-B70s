@@ -20,6 +20,11 @@ bool iq_supported(int ggml_type) noexcept;
 /// ever says 102 - a W4A16 pack's native_experts.txt says 2 - and the only caller is the W4A16 parity test,
 /// which uses it to measure the two conventions against each other and against the CPU miss.
 inline constexpr int kQ4_0PinnedForm = 102;
+/// TEST-ONLY pseudo-type: Q4_0 with the same integer-exact correction, but taken from `sum(q)` stored in the
+/// q8_1 block's `ds.y` (quantize_q8_1_rows_sumq) instead of a second dp4a - i.e. the exact dot at the pinned
+/// form's cost.  PAIRED: it is only valid when the activation AND native_expert_grouped's internal `h` were
+/// quantized by the sumq kernel, which is why `native_expert_grouped` takes `hq_sumq`.
+inline constexpr int kQ4_0SumqForm = 103;
 /// The token-embedding types iq_embed_rows and iq_dequant_f32 read: the i-quants above and BF16 (30).
 bool embed_type_supported(int ggml_type) noexcept;
 /// Bytes of one row of `n` values of `ggml_type` (n a multiple of the type's block).
@@ -27,6 +32,10 @@ size_t iq_row_bytes(int ggml_type, int64_t n) noexcept;
 
 /// q8_1 blocks for `n_rows` rows of `n_cols` floats (n_cols a multiple of 32): y is n_rows * n_cols/32 blocks.
 void quantize_q8_1_rows(const float* x, int64_t n_rows, int64_t n_cols, void* y, void* stream);
+/// The same blocks with `ds.y` = the integer sum of the CODES instead of the sum of the activations - the
+/// paired form `kQ4_0SumqForm` reads (see iq_kernels.cu).  Nothing but the parity test and the W2 benchmark
+/// calls it; every other dot in the tree reads `ds.y` as the activation sum.
+void quantize_q8_1_rows_sumq(const float* x, int64_t n_rows, int64_t n_cols, void* y, void* stream);
 
 /// y[c][r] = W[r] . x[c] for `ncols` columns of q8_1 activations (x stride n_in/32 blocks per column).
 void iq_mmvq(int ggml_type, const void* w, const void* x_q8_1, float* y, int n_in, int n_out, int ncols, void* stream);
@@ -62,9 +71,13 @@ size_t native_expert_scratch_bytes(int64_t cap_entries, int64_t n_ff);
 /// Grouped experts in the native format: group g's blob at device address grp_ptr[g]; its entries
 /// [grp_start[g], grp_start[g+1]) read token ent_tok[e]'s q8_1 activation (n_embd/32 blocks per token in x_q8_1)
 /// and write row ent_dst[e] of `out` (n_embd floats).  Counts are read on the device.
+/// `hq_sumq` selects the kernel that quantizes the intermediate `h`: false (default) writes the sum of the
+/// activations into `ds.y` (what every format except kQ4_0SumqForm reads), true writes sum(q) (what
+/// kQ4_0SumqForm needs).  It is a TEST-ONLY knob: no production caller passes true.
 void native_expert_grouped(const NativeExpertLayout& L, const unsigned long long* grp_ptr, const int32_t* grp_start,
                            const int32_t* n_groups, const int32_t* ent_dst, const int32_t* ent_tok, int64_t cap_groups,
-                           int64_t cap_entries, const void* x_q8_1, void* scratch, float* out, void* stream);
+                           int64_t cap_entries, const void* x_q8_1, void* scratch, float* out, void* stream,
+                           bool hq_sumq = false);
 
 /// `iq_mmvq` and `native_expert_grouped` decode each weight part once and apply it to every column / entry;
 /// true selects the older kernels that decode it again per column (STRATA_OLD_IQ_MMVQ=1 at startup).  Both give

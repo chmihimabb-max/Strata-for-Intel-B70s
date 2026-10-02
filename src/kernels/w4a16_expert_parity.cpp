@@ -192,14 +192,18 @@ int main(int argc, char** argv) {
     check(K::native_expert_supported(2, 2, H, FF), "native_expert_supported(2, 2, 2560, 640)");
     check(K::native_expert_supported(K::kQ4_0PinnedForm, K::kQ4_0PinnedForm, H, FF),
           "native_expert_supported(102, 102, 2560, 640)");
+    check(K::native_expert_supported(K::kQ4_0SumqForm, K::kQ4_0SumqForm, H, FF),
+          "native_expert_supported(103, 103, 2560, 640)");
     const K::NativeExpertLayout L = K::native_expert_layout(2, 2, H, FF);
     const K::NativeExpertLayout Lp = K::native_expert_layout(K::kQ4_0PinnedForm, K::kQ4_0PinnedForm, H, FF);
+    const K::NativeExpertLayout Ls = K::native_expert_layout(K::kQ4_0SumqForm, K::kQ4_0SumqForm, H, FF);
     std::printf("  layout  gu_row %zu  d_row %zu  up_off %zu  down_off %zu  bytes %zu\n", L.gu_row, L.d_row,
                 L.up_off, L.down_off, L.bytes);
     check(L.gu_row == 1440 && L.d_row == 360 && L.up_off == 921600 && L.down_off == 1843200 && L.bytes == kBlob,
           "the Q4_0 layout is 1440 / 360 / 921600 / 1843200 / 2764800 B");
     check(Lp.bytes == L.bytes && Lp.gu_row == L.gu_row && Lp.d_row == L.d_row,
           "the pinned pseudo-type has the same geometry");
+    check(Ls.bytes == L.bytes, "the sum(q) pseudo-type has the same geometry");
 
     // ------------------------------------------------------------- the oracle, and the blob
     std::vector<uint8_t> xdot;
@@ -325,6 +329,7 @@ int main(int argc, char** argv) {
     void* d_x = nullptr;
     void* d_q8 = nullptr;
     void* d_q8b = nullptr;
+    void* d_q8s = nullptr;
     void* d_scratch = nullptr;
     void* d_hq = nullptr;
     float* d_out = nullptr;
@@ -335,6 +340,7 @@ int main(int argc, char** argv) {
     cudaMalloc(&d_x, (size_t) H * 4);
     cudaMalloc(&d_q8, q8_bytes);
     cudaMalloc(&d_q8b, q8_bytes);
+    cudaMalloc(&d_q8s, q8_bytes);
     cudaMalloc(&d_scratch, K::native_expert_scratch_bytes(1, FF));
     cudaMalloc(&d_hq, (size_t) FF / 32 * 36);
     cudaMalloc((void**) &d_out, (size_t) H * 4);
@@ -343,8 +349,8 @@ int main(int argc, char** argv) {
     cudaMalloc((void**) &d_ngroups, sizeof(int32_t));
     cudaMalloc((void**) &d_dst, sizeof(int32_t));
     cudaMalloc((void**) &d_tok, sizeof(int32_t));
-    if (!d_blob || !d_x || !d_q8 || !d_q8b || !d_scratch || !d_hq || !d_out || !d_grp || !d_start || !d_ngroups ||
-        !d_dst || !d_tok) {
+    if (!d_blob || !d_x || !d_q8 || !d_q8b || !d_q8s || !d_scratch || !d_hq || !d_out || !d_grp || !d_start ||
+        !d_ngroups || !d_dst || !d_tok) {
         std::printf("  FAIL  device allocation\n");
         return 1;
     }
@@ -361,25 +367,45 @@ int main(int argc, char** argv) {
     }
     K::quantize_q8_1_rows((const float*) d_x, 1, H, d_q8, s);
     K::native_quantize_q8_1((const float*) d_x, d_q8b, (int) H, 1, s);
+    K::quantize_q8_1_rows_sumq((const float*) d_x, 1, H, d_q8s, s);
     cudaStreamSynchronize(s);
     {
-        std::vector<uint8_t> a(q8_bytes), b(q8_bytes);
+        std::vector<uint8_t> a(q8_bytes), b(q8_bytes), c(q8_bytes);
         cudaMemcpy(a.data(), d_q8, q8_bytes, cudaMemcpyDeviceToHost);
         cudaMemcpy(b.data(), d_q8b, q8_bytes, cudaMemcpyDeviceToHost);
+        cudaMemcpy(c.data(), d_q8s, q8_bytes, cudaMemcpyDeviceToHost);
         const bool same = std::memcmp(a.data(), b.data(), q8_bytes) == 0;
+        size_t qs_diff = 0, ds_diff = 0;
+        for (size_t k = 0; k < q8_bytes / 36; ++k) {
+            if (std::memcmp(a.data() + k * 36 + 4, c.data() + k * 36 + 4, 32) != 0) ++qs_diff;
+            if (std::memcmp(a.data() + k * 36 + 2, c.data() + k * 36 + 2, 2) != 0) ++ds_diff;
+        }
         std::printf("  q8_1    the iq path's quantizer and native_mmvq's: %s (%zu B)\n",
                     same ? "byte-identical" : "DIFFER", q8_bytes);
+        std::printf("  q8_1    the sumq quantizer: same codes in %zu of %zu blocks, ds.y differs in %zu "
+                    "(it carries sum(q), not sum(x))\n", q8_bytes / 36 - qs_diff, q8_bytes / 36, ds_diff);
         check(same, "both q8_1 quantizers produce the same activation blocks");
+        check(qs_diff == 0 && ds_diff == q8_bytes / 36,
+              "the sumq quantizer changes ds.y only, and in every block");
     }
 
     const size_t fa = ((size_t) FF * 4 + 255) & ~(size_t) 255;   // native_expert_grouped's per-entry stride
-    const int types[2] = {2, K::kQ4_0PinnedForm};
-    const K::NativeExpertLayout* lays[2] = {&L, &Lp};
-    const char* names[2] = {"type 2  ", "type 102"};
-    std::vector<float> g_gate[2], g_up[2], g_out[2];
+    struct Arm {
+        const char* name;
+        int type;
+        const K::NativeExpertLayout* L;
+        const void* act;      // the q8_1 activation THIS arm must read
+        bool hq_sumq;
+        bool per_column;      // whether native_q4_0_mmvq is a meaningful comparison (it uses the pinned form)
+    };
+    const Arm arms[3] = {{"type 2  ", 2, &L, d_q8, false, true},
+                         {"type 102", K::kQ4_0PinnedForm, &Lp, d_q8, false, true},
+                         {"type 103", K::kQ4_0SumqForm, &Ls, d_q8s, true, false}};
+    std::vector<float> g_gate[3], g_up[3], g_out[3];
 
-    for (int arm = 0; arm < 2; ++arm) {
-        K::native_expert_grouped(*lays[arm], d_grp, d_start, d_ngroups, d_dst, d_tok, 1, 1, d_q8, d_scratch, d_out, s);
+    for (int arm = 0; arm < 3; ++arm) {
+        K::native_expert_grouped(*arms[arm].L, d_grp, d_start, d_ngroups, d_dst, d_tok, 1, 1, arms[arm].act,
+                                 d_scratch, d_out, s, arms[arm].hq_sumq);
         cudaStreamSynchronize(s);
         g_gate[arm].resize((size_t) FF);
         g_up[arm].resize((size_t) FF);
@@ -388,43 +414,50 @@ int main(int argc, char** argv) {
         cudaMemcpy(g_up[arm].data(), (const uint8_t*) d_scratch + fa, (size_t) FF * 4, cudaMemcpyDeviceToHost);
         cudaMemcpy(g_out[arm].data(), d_out, (size_t) H * 4, cudaMemcpyDeviceToHost);
 
-        // (d) the per-column Q4_0 kernel on the SAME blob and the SAME activation, projection by projection.
-        // The down arm uses the grouped kernel's OWN h, re-quantized exactly as the kernel quantizes it.
-        std::vector<float> y_g((size_t) FF), y_u((size_t) FF), y_d((size_t) H);
-        K::native_q4_0_mmvq(d_blob, d_q8b, y_g.data(), (int) H, (int) FF, 1, s);
-        K::native_q4_0_mmvq((const uint8_t*) d_blob + L.up_off, d_q8b, y_u.data(), (int) H, (int) FF, 1, s);
-        K::native_quantize_q8_1((const float*) ((const uint8_t*) d_scratch + 2 * fa), d_hq, (int) FF, 1, s);
-        K::native_q4_0_mmvq((const uint8_t*) d_blob + L.down_off, d_hq, y_d.data(), (int) FF, (int) H, 1, s);
-        cudaStreamSynchronize(s);
-
-        std::printf("  %s grouped vs native_q4_0_mmvq (one column, same activation)\n", names[arm]);
-        std::printf("          gate rel %.3e (%zu/640 rows differ in a bit),  up rel %.3e,  down rel %.3e\n",
-                    rel(g_gate[arm], y_g), n_diff_bits(g_gate[arm], y_g), rel(g_up[arm], y_u),
-                    rel(g_out[arm], y_d));
-        std::printf("          gate/up vs the fp64 dot on the q8_1 activation: gate rel %.3e, up rel %.3e\n",
+        std::printf("  %s grouped, one group, one entry\n", arms[arm].name);
+        if (arms[arm].per_column) {
+            // (d) the per-column Q4_0 kernel on the SAME blob and the SAME activation, projection by
+            // projection.  The down arm uses the grouped kernel's OWN h, re-quantized as the kernel does.
+            std::vector<float> y_g((size_t) FF), y_u((size_t) FF), y_d((size_t) H);
+            K::native_q4_0_mmvq(d_blob, d_q8b, y_g.data(), (int) H, (int) FF, 1, s);
+            K::native_q4_0_mmvq((const uint8_t*) d_blob + L.up_off, d_q8b, y_u.data(), (int) H, (int) FF, 1, s);
+            K::native_quantize_q8_1((const float*) ((const uint8_t*) d_scratch + 2 * fa), d_hq, (int) FF, 1, s);
+            K::native_q4_0_mmvq((const uint8_t*) d_blob + L.down_off, d_hq, y_d.data(), (int) FF, (int) H, 1, s);
+            cudaStreamSynchronize(s);
+            std::printf("          vs native_q4_0_mmvq (pinned form): gate rel %.3e (%zu/640 rows differ in a "
+                        "bit), up rel %.3e, down rel %.3e\n", rel(g_gate[arm], y_g),
+                        n_diff_bits(g_gate[arm], y_g), rel(g_up[arm], y_u), rel(g_out[arm], y_d));
+        }
+        std::printf("          vs the fp64 dot on the q8_1 activation: gate rel %.3e, up rel %.3e\n",
                     rel_f(g_gate[arm], ref_gate), rel_f(g_up[arm], ref_up));
         std::printf("          the whole expert (down rows) vs the oracle's fp64 dot over the raw fp32 x: "
-                    "rel %.3e\n", rel(g_out[arm], ref_dot));
+                    "rel %.3e, and vs the cpu miss: rel %.3e\n", rel(g_out[arm], ref_dot),
+                    rel(g_out[arm], cpu_out));
     }
 
     // ------------------------------------------------------------- the comparison that decides it
-    const double gpu_vs_cpu[2] = {rel(g_out[0], cpu_out), rel(g_out[1], cpu_out)};
-    std::printf("\n  == %lld down rows of one expert, one token, four implementations (rel L1) ==\n", (long long) H);
+    const double gpu_vs_cpu[3] = {rel(g_out[0], cpu_out), rel(g_out[1], cpu_out), rel(g_out[2], cpu_out)};
+    std::printf("\n  == %lld down rows of one expert, one token, the four implementations (rel L1) ==\n",
+                (long long) H);
     std::printf("  cpu miss          vs the oracle's fp64 dot over the raw fp32 x : rel %.3e\n", rel(cpu_out, ref_dot));
     std::printf("  gpu hit  type 2   vs the oracle's fp64 dot over the raw fp32 x : rel %.3e\n", rel(g_out[0], ref_dot));
+    std::printf("  gpu hit  type 103 vs the oracle's fp64 dot over the raw fp32 x : rel %.3e\n", rel(g_out[2], ref_dot));
     std::printf("  gpu hit  type 102 vs the oracle's fp64 dot over the raw fp32 x : rel %.3e\n", rel(g_out[1], ref_dot));
     std::printf("  gpu hit  type 2   vs the cpu miss                             : rel %.3e (%zu of %lld rows differ "
                 "in a bit)\n", gpu_vs_cpu[0], n_diff_bits(g_out[0], cpu_out), (long long) H);
+    std::printf("  gpu hit  type 103 vs the cpu miss                             : rel %.3e\n", gpu_vs_cpu[2]);
     std::printf("  gpu hit  type 102 vs the cpu miss                             : rel %.3e\n", gpu_vs_cpu[1]);
-    std::printf("  gpu hit  type 2   vs gpu hit type 102                         : rel %.3e\n",
-                rel(g_out[0], g_out[1]));
+    std::printf("  gpu hit  type 2   vs gpu hit type 103                         : rel %.3e\n",
+                rel(g_out[0], g_out[2]));
     std::printf("\n");
     check(gpu_vs_cpu[0] < kRung2Tol, "the type-2 GPU hit reproduces the CPU miss (< 1e-5): the hit/miss contract");
+    check(gpu_vs_cpu[2] < kRung2Tol, "so does the type-103 (sum(q)) form, which needs no extra dp4a");
     check(gpu_vs_cpu[1] > 10 * gpu_vs_cpu[0],
           "cross-check: the pinned type-102 convention is measurably NOT the CPU miss");
 
-    cudaFree(d_blob); cudaFree(d_x); cudaFree(d_q8); cudaFree(d_q8b); cudaFree(d_scratch); cudaFree(d_hq);
-    cudaFree(d_out); cudaFree(d_grp); cudaFree(d_start); cudaFree(d_ngroups); cudaFree(d_dst); cudaFree(d_tok);
+    cudaFree(d_blob); cudaFree(d_x); cudaFree(d_q8); cudaFree(d_q8b); cudaFree(d_q8s); cudaFree(d_scratch);
+    cudaFree(d_hq); cudaFree(d_out); cudaFree(d_grp); cudaFree(d_start); cudaFree(d_ngroups); cudaFree(d_dst);
+    cudaFree(d_tok);
     cudaStreamDestroy(s);
 
     std::printf("\nw4a16_expert_parity: %s (%d failed check%s)\n", g_fail ? "FAIL" : "PASS", g_fail,

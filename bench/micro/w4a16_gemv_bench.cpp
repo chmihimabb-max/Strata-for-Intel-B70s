@@ -158,10 +158,12 @@ int main(int argc, char** argv) {
 
     float* d_x = nullptr;
     void* d_q8 = nullptr;
+    void* d_q8s = nullptr;
     void* d_scratch = nullptr;
     float* d_out = nullptr;
     check(cudaMalloc((void**) &d_x, (size_t) H * 4), "malloc x");
     check(cudaMalloc(&d_q8, (size_t) H / 32 * 36), "malloc q8");
+    check(cudaMalloc(&d_q8s, (size_t) H / 32 * 36), "malloc q8s");
     check(cudaMalloc(&d_scratch, K::native_expert_scratch_bytes(n_experts, FF)), "malloc scratch");
     check(cudaMalloc((void**) &d_out, (size_t) n_experts * H * 4), "malloc out");
     {
@@ -173,30 +175,75 @@ int main(int argc, char** argv) {
     // ---- the GPU arms
     struct Arm {
         const char* name;
-        int type;
         const K::NativeExpertLayout* L;
+        const void* act;      // the q8_1 activation this arm reads (the sumq arm needs its own)
+        bool hq_sumq;
         double us;
     };
-    Arm grouped[2] = {{"grouped  type 2  ", 2, &L, 0.0}, {"grouped  type 102", K::kQ4_0PinnedForm, &Lp, 0.0}};
+    const K::NativeExpertLayout Ls = K::native_expert_layout(K::kQ4_0SumqForm, K::kQ4_0SumqForm, H, FF);
+    Arm grouped[3] = {{"grouped  type 2   (exact, 2 dp4a)   ", &L, d_q8, false, 0.0},
+                      {"grouped  type 102 (pinned, llama.cpp)", &Lp, d_q8, false, 0.0},
+                      {"grouped  type 103 (exact, sum(q))    ", &Ls, d_q8s, true, 0.0}};
 
     // warmup + timed: iters calls on one stream, then one sync (a decode layer submits once and waits late)
     auto run_grouped = [&](Arm& arm) {
         for (int i = 0; i < warmup; ++i)
-            K::native_expert_grouped(*arm.L, d_grp, d_start, d_count, d_dst, d_tok, n_experts, n_experts, d_q8,
-                                     d_scratch, d_out, s);
+            K::native_expert_grouped(*arm.L, d_grp, d_start, d_count, d_dst, d_tok, n_experts, n_experts, arm.act,
+                                     d_scratch, d_out, s, arm.hq_sumq);
         check(cudaStreamSynchronize(s), "sync warmup");
         const double t0 = now_us();
         for (int i = 0; i < iters; ++i)
-            K::native_expert_grouped(*arm.L, d_grp, d_start, d_count, d_dst, d_tok, n_experts, n_experts, d_q8,
-                                     d_scratch, d_out, s);
+            K::native_expert_grouped(*arm.L, d_grp, d_start, d_count, d_dst, d_tok, n_experts, n_experts, arm.act,
+                                     d_scratch, d_out, s, arm.hq_sumq);
         check(cudaStreamSynchronize(s), "sync timed");
         arm.us = (now_us() - t0) / iters;
     };
     // the quantized activation is an input to the hit kernel: quantize it once, as the engine does per layer
     K::quantize_q8_1_rows((const float*) d_x, 1, H, d_q8, s);
+    K::quantize_q8_1_rows_sumq((const float*) d_x, 1, H, d_q8s, s);
     check(cudaStreamSynchronize(s), "sync q8");
-    run_grouped(grouped[0]);
-    run_grouped(grouped[1]);
+    for (int i = 0; i < 3; ++i) run_grouped(grouped[i]);
+    // The three arms: type 2 and type 103 are BOTH meant to be the exact form (type 102 is the pinned
+    // convention and is expected to differ).  type 103 gets its correction from sum(q) stored in the q8_1
+    // block's fp16 `ds.y`, and fp16 holds integers exactly only to 2048 - so the deviation measured here is
+    // reported WITH the largest |sum(q)| this activation produces, which is what decides whether the sum(q)
+    // form is usable at all:
+    {
+        std::vector<float> out[3];
+        for (int i = 0; i < 3; ++i) {
+            K::native_expert_grouped(*grouped[i].L, d_grp, d_start, d_count, d_dst, d_tok, n_experts, n_experts,
+                                     grouped[i].act, d_scratch, d_out, s, grouped[i].hq_sumq);
+            check(cudaStreamSynchronize(s), "sync check");
+            out[i].resize((size_t) n_experts * H);
+            check(cudaMemcpy(out[i].data(), d_out, out[i].size() * 4, cudaMemcpyDeviceToHost), "read check");
+        }
+        auto rel = [](const std::vector<float>& a, const std::vector<float>& b) {
+            double n = 0, d = 0;
+            for (size_t i = 0; i < a.size(); ++i) { n += std::fabs((double) a[i] - (double) b[i]); d += std::fabs((double) b[i]); }
+            return n / (d + 1e-30);
+        };
+        // the largest |sum(q)| per 32-value block of this activation (the codes are identical in both q8_1
+        // buffers, only ds.y differs), i.e. the quantity fp16 must hold exactly
+        int max_sumq = 0;
+        {
+            std::vector<int8_t> codes((size_t) H);
+            std::vector<uint8_t> blk((size_t) H / 32 * 36);
+            check(cudaMemcpy(blk.data(), d_q8, blk.size(), cudaMemcpyDeviceToHost), "read codes");
+            for (int64_t k = 0; k < H / 32; ++k) {
+                int s = 0;
+                for (int j = 0; j < 32; ++j) s += ((const int8_t*) blk.data())[k * 36 + 4 + j];
+                max_sumq = (std::max)(max_sumq, s < 0 ? -s : s);
+            }
+        }
+        std::printf("  correctness of the timed arms: type 2 vs type 103 %.3e (both meant to be exact), "
+                    "type 2 vs type 102 %.3e (different convention)\n", rel(out[0], out[2]), rel(out[0], out[1]));
+        std::printf("  the activation's largest |sum(q)| per 32-value block: %d "
+                    "(fp16 holds integers exactly to 2048)\n", max_sumq);
+        if (!(rel(out[0], out[1]) > 1e-4)) {
+            std::printf("  FAIL: the pinned convention is not distinguishable from the exact one - no power\n");
+            return 1;
+        }
+    }
 
     // the per-column path: gate, up and down per expert, one call each
     double percol_us = 0;
@@ -306,10 +353,15 @@ int main(int argc, char** argv) {
             const double t0 = now_us();
             for (int i = 0; i < reps; ++i) pool.run_split_multi_native(fmt, jobs.data(), n_experts);
             const double us = (now_us() - t0) / reps;
-            std::printf("  cpu     %s: node %8.2f us  |  per expert %7.2f us  |  %.0f GB/s\n", what, us,
+            std::printf("  cpu     %s: node %8.2f us  |  per expert %7.2f us  |  %4.0f GB/s\n", what, us,
                         us / n_experts, (double) kBlob / (us / n_experts) / 1e3);
             return us;
         };
+        {
+            const auto topo = cpu::detect_cpu_topology(true);
+            std::printf("  cpu     topology: %zu worker cores (hybrid %d, p_cores %d, e_cores %d)\n",
+                        topo.worker_cores.size(), (int) topo.is_hybrid, topo.p_cores, topo.e_cores);
+        }
         cpu_node_pool_us = bench_pool(0, "the engine's pool (row-split, pinned)  ", 20);
         cpu_node_1_us = bench_pool(1, "one worker                          ", 10);
         cpu_expert_us = cpu_node_1_us / n_experts;
@@ -335,25 +387,31 @@ int main(int argc, char** argv) {
     }
 
     // ---- the report
-    const double per_expert_grouped[2] = {grouped[0].us / n_experts, grouped[1].us / n_experts};
+    const double per_expert_grouped[3] = {grouped[0].us / n_experts, grouped[1].us / n_experts,
+                                          grouped[2].us / n_experts};
     std::printf("\n  == one layer's routed experts: %d experts, one token (the QUANT.md §5.2 node shape) ==\n",
                 n_experts);
     std::printf("  submission floor: memsetAsync %.2f us, one real kernel launch (1 quantize block) %.2f us, "
                 "both per call on this stream\n", floor_us, kernel_floor_us);
-    for (int i = 0; i < 2; ++i)
+    for (int i = 0; i < 3; ++i)
         std::printf("  %s node %8.2f us  |  per expert %7.2f us  |  %4.0f GB/s  |  %5.2f us above the kernel floor\n",
-                    grouped[i].name, grouped[i].us, per_expert_grouped[i], (double) kBlob / per_expert_grouped[i] / 1e3,
-                    per_expert_grouped[i] - kernel_floor_us);
+                    grouped[i].name, grouped[i].us, per_expert_grouped[i],
+                    (double) kBlob / per_expert_grouped[i] / 1e3, per_expert_grouped[i] - kernel_floor_us);
     std::printf("  per-column Q4_0 path (3 mmvq calls per expert) node %8.2f us  |  per expert %7.2f us  |  "
                 "%4.0f GB/s\n", percol_us, percol_us / n_experts, (double) kBlob / (percol_us / n_experts) / 1e3);
 
-    const double gpu_expert = per_expert_grouped[0];
+    // type 2 is the exact form and is the one a pack can name; type 103 is the same arithmetic clocked at the
+    // pinned form's dp4a count, and it is only exact while every block's |sum(q)| stays <= 2048 (see the
+    // diagnostic above) - so the headline number is type 2's, and 103's is printed next to it, labelled.
+    const double gpu_exact = per_expert_grouped[0];
     std::printf("\n  == which is faster per expert ==\n");
-    std::printf("  gpu hit  (grouped Q4_0, type 2) : %8.2f us/expert  ->  the engine's %lld experts/token over %lld "
+    std::printf("  gpu hit  (grouped Q4_0, exact)  : %8.2f us/expert  ->  the engine's %lld experts/token over %lld "
                 "layers (a fully resident cache) = %.1f ms/token = %.0f tok/s ceiling from the expert GEMVs alone\n",
-                gpu_expert, (long long) kExpertsPerToken, (long long) kLayers,
-                gpu_expert * (double) (kExpertsPerToken * kLayers) * 1e-3,
-                1e6 / (gpu_expert * (double) (kExpertsPerToken * kLayers)));
+                gpu_exact, (long long) kExpertsPerToken, (long long) kLayers,
+                gpu_exact * (double) (kExpertsPerToken * kLayers) * 1e-3,
+                1e6 / (gpu_exact * (double) (kExpertsPerToken * kLayers)));
+    std::printf("  gpu hit  (type 103, sum(q) in fp16, exact only while |sum(q)| <= 2048): %8.2f us/expert\n",
+                per_expert_grouped[2]);
     std::printf("  cpu miss (1 thread)             : %8.2f us/expert  ->  same 480 instances on ONE core = "
                 "%.1f ms/token = %.0f tok/s ceiling\n", cpu_expert_us,
                 cpu_expert_us * (double) (kExpertsPerToken * kLayers) * 1e-3,
@@ -363,8 +421,9 @@ int main(int argc, char** argv) {
                 cpu_node_pool_us / n_experts * (double) (kExpertsPerToken * kLayers) * 1e-3,
                 1e6 / (cpu_node_pool_us / n_experts * (double) (kExpertsPerToken * kLayers)));
     std::printf("  -> per expert, %s is faster: the Arc is %.1fx one core and %.2fx the engine's pool at this "
-                "shape and format\n", gpu_expert < cpu_node_pool_us / n_experts ? "the GPU" : "the CPU pool",
-                cpu_expert_us / gpu_expert, (cpu_node_pool_us / n_experts) / gpu_expert);
+                "shape and format, on the exact (CPU-parity) arithmetic\n",
+                gpu_exact < cpu_node_pool_us / n_experts ? "the GPU" : "the CPU pool", cpu_expert_us / gpu_exact,
+                (cpu_node_pool_us / n_experts) / gpu_exact);
 
     // ---- the expert-cache arithmetic (what the format change costs the cache, W4A16-PLAN.md §2.4)
     {
@@ -382,7 +441,7 @@ int main(int argc, char** argv) {
     }
 
     cudaFree(d_w); cudaFree(d_grp); cudaFree(d_start); cudaFree(d_count); cudaFree(d_dst); cudaFree(d_tok);
-    cudaFree(d_x); cudaFree(d_q8); cudaFree(d_scratch); cudaFree(d_out);
+    cudaFree(d_x); cudaFree(d_q8); cudaFree(d_q8s); cudaFree(d_scratch); cudaFree(d_out);
     cudaStreamDestroy(s);
     return 0;
 }

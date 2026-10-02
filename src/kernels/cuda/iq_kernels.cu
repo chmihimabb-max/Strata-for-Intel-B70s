@@ -490,6 +490,33 @@ __device__ __forceinline__ float vec_dot_q4_0_pinned_q8_1(const void* __restrict
     const float2 ds8f = __half22float2(bq8_1->ds);
     return __half2float(bq4_0->d) * (sumi * ds8f.x - (8 * VDR_Q4_0 / QI4_0) * ds8f.y);
 }
+// The EXACT correction at the pinned form's cost: the same two dp4a, but `ds.y` carries the integer sum of the
+// q8 codes (`sum(q)`, from quantize_q8_1_sumq_kernel) instead of the sum of the original activations.  The
+// correction term then needs no second dp4a - `sum(q)` is already a reduced integer - and it is exact:
+//
+//     per call:  d * d8 * (sumi - (8 * vdr / QI4_0) * sum(q))    and the two calls per block add to
+//                d * d8 * (sum(n) * sum(q) - 8 * sum(q))         = ggml-cpu's own arithmetic.
+//
+// sum(q) is an integer in [-4064, +4064] and fp16 represents integers exactly to 2048 (and even ones to 4096),
+// so ds.y is exact except for the rare block whose |sum(q)| exceeds 2048 and is odd.  This is the same
+// convention native_expert_parity's Q5_1 control measured as "ggml-cpu (quantized sum)".
+//
+// IT IS A PAIRED CONVENTION, NOT A DROP-IN: a dot that reads ds.y this way MUST be fed an activation - and an
+// internal `h` - quantized by the sumq kernel.  Fmt<2> and Fmt<103> on the same buffer are BOTH silently wrong.
+__device__ __forceinline__ float vec_dot_q4_0_sumq_q8_1(const void* __restrict__ vbq,
+                                                        const block_q8_1* __restrict__ bq8_1, const int& kbx,
+                                                        const int& iqs) {
+    const block_q4_0* bq4_0 = (const block_q4_0*) vbq + kbx;
+    int sumi = 0;
+#pragma unroll
+    for (int i = 0; i < VDR_Q4_0; ++i) {
+        const int v = get_int_b2(bq4_0->qs, iqs + i);
+        sumi = ggml_cuda_dp4a((v >> 0) & 0x0F0F0F0F, get_int_b4(bq8_1->qs, iqs + i), sumi);
+        sumi = ggml_cuda_dp4a((v >> 4) & 0x0F0F0F0F, get_int_b4(bq8_1->qs, iqs + i + QI4_0), sumi);
+    }
+    const float2 ds8f = __half22float2(bq8_1->ds);
+    return __half2float(bq4_0->d) * ds8f.x * ((float) sumi - (8 * VDR_Q4_0 / QI4_0) * ds8f.y);
+}
 
 // ---------------------------------------------------------------- the formats
 // qk = values per block, ipb = dot calls per block (qi / vdr), step = the iqs stride between calls.
@@ -528,12 +555,17 @@ template<> struct Fmt<2> { static constexpr int qk = 32, ipb = QI4_0 / VDR_Q4_0,
 // at vec_dot_q4_0_q8_1).  It is never written into native_experts.txt: a pack says type 2.
 template<> struct Fmt<102> { static constexpr int qk = 32, ipb = QI4_0 / VDR_Q4_0, step = VDR_Q4_0;
     __device__ static float dot(const void* v, const block_q8_1* y, int kbx, int iqs) { return vec_dot_q4_0_pinned_q8_1(v, y, kbx, iqs); } };
+// Q4_0 with the exact correction taken from `sum(q)` in the q8_1 block (see vec_dot_q4_0_sumq_q8_1).  Also
+// test-only, and only valid when the activation AND the kernel's internal `h` come from the sumq quantizer -
+// `native_expert_grouped`'s `hq_sumq` argument is what guarantees the second half.
+template<> struct Fmt<103> { static constexpr int qk = 32, ipb = QI4_0 / VDR_Q4_0, step = VDR_Q4_0;
+    __device__ static float dot(const void* v, const block_q8_1* y, int kbx, int iqs) { return vec_dot_q4_0_sumq_q8_1(v, y, kbx, iqs); } };
 
 // The formats of each role, one list each so a type cannot be in one switch and missing from another.  Every
 // entry is a kernel template for each CUDA architecture of the build, hence two lists rather than one.
 // Q4_0 (2) is in BOTH roles: the W4A16 pack uses it for gate/up AND for down (W1-REPORT.md §2).
-#define STRATA_GU_FMTS(X) X(16) X(17) X(18) X(21) X(22) X(23) X(29) X(42) X(2) X(102) X(12) X(13) X(8)
-#define STRATA_D_FMTS(X) X(20) X(23) X(42) X(7) X(8) X(2) X(102)
+#define STRATA_GU_FMTS(X) X(16) X(17) X(18) X(21) X(22) X(23) X(29) X(42) X(2) X(102) X(103) X(12) X(13) X(8)
+#define STRATA_D_FMTS(X) X(20) X(23) X(42) X(7) X(8) X(2) X(102) X(103)
 #define STRATA_MMVQ_FMTS(X) X(16) X(17) X(18) X(20) X(21) X(22) X(23) X(29) X(42) X(12) X(13) X(7) X(8)
 
 __device__ __forceinline__ float warp_sum(float v) {
@@ -1050,6 +1082,25 @@ __global__ void quantize_q8_1_kernel(const float* __restrict__ x, block_q8_1* __
     if (iqs == 0) y[ib].ds = make_half2(d, sum);
 }
 
+// Same blocks as quantize_q8_1_kernel, but `ds.y` carries the integer sum of the CODES (sum(q)) instead of the
+// sum of the original activations.  That is what makes an affine 4-bit dot exact without a second dp4a
+// (vec_dot_q4_0_sumq_q8_1), and it is the convention native_expert_parity's Q5_1 control measures as
+// "ggml-cpu (quantized sum)".  sum(q) <= 4064 in absolute value and fp16 holds integers exactly to 2048.
+__global__ void quantize_q8_1_sumq_kernel(const float* __restrict__ x, block_q8_1* __restrict__ y, long long n) {
+    const long long i = (long long) blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n) return;
+    const float xi = x[i];
+    float amax = fabsf(xi);
+#pragma unroll
+    for (int o = 16; o > 0; o >>= 1) amax = fmaxf(amax, __shfl_xor_sync(0xffffffffu, amax, o));
+    const float d = amax / 127.0f;
+    const int8_t q = amax == 0.0f ? 0 : roundf(xi / d);
+    const long long ib = i / 32, iqs = i % 32;
+    y[ib].qs[iqs] = q;
+    const float sq = warp_sum((float) q);      // exact: |sum| <= 4064 < 2^24
+    if (iqs == 0) y[ib].ds = make_half2(d, sq);
+}
+
 // ---------------------------------------------------------------- dequant (dequantize.cuh)
 template<typename dst_t> __device__ __forceinline__ dst_t cvt(float v);
 template<> __device__ __forceinline__ float cvt<float>(float v) { return v; }
@@ -1407,6 +1458,7 @@ size_t iq_row_bytes(int t, int64_t n) noexcept {
         case 8: return (size_t) (n / 32) * sizeof(block_q8_0);
         case 2: return (size_t) (n / 32) * sizeof(block_q4_0);   // Q4_0, the W4A16 expert blob (DW2)
         case 102: return (size_t) (n / 32) * sizeof(block_q4_0); // Q4_0, pinned correction (parity test only)
+        case 103: return (size_t) (n / 32) * sizeof(block_q4_0); // Q4_0, sum(q) correction (parity test only)
         case 30: return (size_t) n * 2;   // BF16: the token embedding only (iq_embed_rows, iq_dequant_f32)
         default: return 0;
     }
@@ -1417,6 +1469,16 @@ void quantize_q8_1_rows(const float* x, int64_t n_rows, int64_t n_cols, void* y,
     if (n <= 0) return;
     quantize_q8_1_kernel<<<(unsigned) ((n + 255) / 256), 256, 0, (cudaStream_t) stream>>>(x, (block_q8_1*) y, n);
     check("quantize_q8_1_rows");
+}
+
+// See quantize_q8_1_sumq_kernel.  TEST-ONLY pairing: every dot that reads this buffer must be the sumq form
+// (Fmt<103>), and native_expert_grouped's `hq_sumq` argument must be set - mixing the two conventions in one
+// graph is silently wrong.
+void quantize_q8_1_rows_sumq(const float* x, int64_t n_rows, int64_t n_cols, void* y, void* stream) {
+    const long long n = (long long) n_rows * n_cols;
+    if (n <= 0) return;
+    quantize_q8_1_sumq_kernel<<<(unsigned) ((n + 255) / 256), 256, 0, (cudaStream_t) stream>>>(x, (block_q8_1*) y, n);
+    check("quantize_q8_1_rows_sumq");
 }
 
 void iq_mmvq(int t, const void* w, const void* x_q8_1, float* y, int n_in, int n_out, int ncols, void* stream) {
@@ -1478,8 +1540,9 @@ bool native_expert_supported(int gu_type, int d_type, int64_t n_embd, int64_t n_
     // Q4_0 (2) is a legal native EXPERT type but NOT an `is_iq` type: is_iq gates the dequantizing entry
     // points (dq_dispatch has no Q4_0 arm, so admitting 2 there would leave `dst` unwritten and say nothing),
     // while the grouped expert kernels read the blob directly and never dequantize a whole plane.
-    // 102 is the same format with the pinned llama.cpp-CUDA correction: parity-test-only (iq_kernels.hpp).
-    const auto expert_type = [](int t) { return is_iq(t) || t == 2 || t == 102; };
+    // 102 and 103 are the same format with the pinned and the sum(q) corrections: parity-test-only
+    // (iq_kernels.hpp).
+    const auto expert_type = [](int t) { return is_iq(t) || t == 2 || t == 102 || t == 103; };
     return qg > 0 && qd > 0 && expert_type(gu_type) && expert_type(d_type) && n_embd % qg == 0 &&
            n_ff % qd == 0 && n_embd % 256 == 0 && (n_ff * n_embd) % 256 == 0;
 }
@@ -1505,7 +1568,8 @@ size_t native_expert_scratch_bytes(int64_t cap, int64_t n_ff) {
 
 void native_expert_grouped(const NativeExpertLayout& L, const unsigned long long* grp_ptr, const int32_t* grp_start,
                            const int32_t* n_groups, const int32_t* ent_dst, const int32_t* ent_tok, int64_t cap_groups,
-                           int64_t cap_entries, const void* x_q8_1, void* scratch, float* out, void* stream) {
+                           int64_t cap_entries, const void* x_q8_1, void* scratch, float* out, void* stream,
+                           bool hq_sumq) {
     if (cap_groups <= 0 || cap_entries <= 0) return;
     cudaStream_t s = (cudaStream_t) stream;
     const size_t f = (size_t) cap_entries * (size_t) L.n_ff * sizeof(float), fa = (f + 255) & ~(size_t) 255;
@@ -1524,7 +1588,12 @@ void native_expert_grouped(const NativeExpertLayout& L, const unsigned long long
     check("native_expert_grouped/gu");
     const long long nh = (long long) cap_entries * L.n_ff;
     swiglu_entries_kernel<<<(unsigned) ((nh + 255) / 256), 256, 0, s>>>(gate, up, h, nh);
-    quantize_q8_1_kernel<<<(unsigned) ((nh + 255) / 256), 256, 0, s>>>(h, hq, nh);
+    // The intermediate's quantizer must write the same `ds.y` convention the down dot reads: the sumq form
+    // (Fmt<103>) needs sum(q), everything else needs the sum of the original activations (quantize_q8_1_kernel).
+    if (hq_sumq)
+        quantize_q8_1_sumq_kernel<<<(unsigned) ((nh + 255) / 256), 256, 0, s>>>(h, hq, nh);
+    else
+        quantize_q8_1_kernel<<<(unsigned) ((nh + 255) / 256), 256, 0, s>>>(h, hq, nh);
     const dim3 gd((unsigned) ((L.n_embd + 7) / 8), (unsigned) cap_groups);
     switch (L.d_type) {
 #define STRATA_DOWN(T) case T: launch_down<T>(gd, s, grp_ptr, grp_start, n_groups, ent_dst, hq, L, out); break;
