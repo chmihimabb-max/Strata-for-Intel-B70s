@@ -43,7 +43,43 @@ HEADER_COLS = ("name file kind src_off src_bytes dst_off dst_bytes ne0 ne1 code_
                "codebook has_offset codes_bytes scales_bytes offset_bytes scales_fp16 act_kind").split()
 # the shape-only row tools/iq_pack.py writes for a tensor the GGUF serves (its `served` branch)
 SERVED_TAIL = ["8", "0", "32"] + ["0"] * 7
+# 19-column row: 0 name, 1 file, 2 kind, 3 src_off, 4 src_bytes, 5 dst_off, 6 dst_bytes, 7 ne0, 8 ne1,
+# 9 code_bits, 10 code_bias, 11 group_elems, 12 codebook, 13 has_offset, 14 codes_bytes, 15 scales_bytes,
+# 16 offset_bytes, 17 scales_fp16, 18 act_kind
+PLANE_COLS = (14, 15, 16)
 N_VOCAB = 248320
+
+
+def complete_planes(f: list, report: dict) -> list:
+    """Record the S-form planes of a row the GGUF does NOT serve.
+
+    The W-track packer writes its two S-form tensors (`token_embd.weight`, `output.weight`) as kind 0
+    (VERBATIM) with the blob `codes + scales` (one uint8 per element, then one fp32 scale per group) and a
+    correct dst_bytes, but leaves the plane columns at zero (`tools/dense_w4a16_pack.py:279-282`).  The
+    engine needs them: `layer.cpp:89` (sform_of) refuses a row whose planes are unrecorded, and
+    `layer.cpp:1038-1043` checks the three sizes against the shape.  Without this, any pack whose head or
+    embedding is served canonically - a native pack with `--canonical-head` - dies at its first head use
+    with "the planes add up to 0 B but the tensor is 715161600 B".  Derived, never guessed: the three
+    planes must add up to the row's own dst_bytes or the tool stops.
+    """
+    if len(f) != 19 or any(int(f[c]) for c in PLANE_COLS):
+        return f                                    # already recorded (or not one of our rows)
+    bits, bias, group, ne0, ne1, dst = int(f[9]), int(f[10]), int(f[11]), int(f[7]), int(f[8]), int(f[6])
+    has_offset = int(f[13])
+    if bits not in (2, 4, 8) or group <= 0 or ne0 <= 0 or ne1 <= 0 or ne0 % group or ne0 % (8 // bits):
+        return f
+    row_codes, row_groups = ne0 // (8 // bits), ne0 // group
+    codes, scales = row_codes * ne1, row_groups * ne1 * 4
+    offsets = scales if has_offset else 0
+    if codes + scales + offsets != dst:
+        sys.exit("index.txt: %s: the derived planes (%d codes + %d scales + %d offsets) are not its %d B"
+                 % (f[0], codes, scales, offsets, dst))
+    out = list(f)
+    out[14], out[15], out[16] = str(codes), str(scales), str(offsets)
+    report.setdefault("planes_completed", []).append(
+        {"name": f[0], "code_bits": bits, "code_bias": bias, "group_elems": group,
+         "codes_bytes": codes, "scales_bytes": scales, "offset_bytes": offsets})
+    return out
 
 
 def served_row(fields: list[str]) -> str:
@@ -138,7 +174,8 @@ def main() -> int:
             served.append(f[0])
             kept.append(served_row(f))
         else:
-            kept.append(line)
+            full = complete_planes(f, report)
+            kept.append(line if full is f else " ".join(full))
     if not served:
         sys.exit("no index row is served by %s: the pack's shapes and the GGUF do not meet" % a.native_gguf)
     # every GGUF tensor the engine will look for must have a row, or NativeDense has nothing to attach to
@@ -168,6 +205,9 @@ def main() -> int:
     for l in header:
         print("  header: %s" % l)
     print("  index rows: %d, of which GGUF-served: %d" % (len(kept) - len(header), len(served)))
+    done = report.get("planes_completed", [])
+    print("  S-form rows whose planes were recorded here: %d%s"
+          % (len(done), (" (%s)" % ", ".join(d["name"] for d in done)) if done else ""))
     print("  served names: %s" % ", ".join(sorted(served)[:6]) + (" ..." if len(served) > 6 else ""))
     if missing:
         print("  WARNING: %d GGUF tensor(s) have no index row: %s" % (len(missing), ", ".join(missing[:5])))

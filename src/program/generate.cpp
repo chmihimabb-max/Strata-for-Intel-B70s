@@ -208,6 +208,12 @@ struct Options {
     bool native_router = false;       // pinned fused 512-expert top-10 router
     bool cpu_oracle_q8_0 = false;      // pinned x86 activation scales/codes at both expert stages
     std::string native_head_gguf;      // native output.weight experiment; same model shard as the pack
+    /// M5: serve the vocabulary head from the pack's own `output.weight` (the canonical S-form path) instead of
+    /// natively from the GGUF.  A native pack had no way to say this: `--native` defaults --native-head-gguf to the
+    /// same model, the head's load failure is fatal (below), and `--keep-canonical` is refused for a native pack -
+    /// so the verify window's tail always called native_mmvq on the head.  The window's canonical arm already
+    /// exists (verify.cpp:916, `lm_head`); this switch is what reaches it.
+    bool canonical_head = false;
     std::vector<std::string> native_dense_gguf; // repeat for native GDN/QSA projection shards
     /// Every shard of --native's model (strata::gguf_split_paths: the metadata shard first; a missing shard is an
     /// error) and of --native-head-gguf's (the same list unless that names another model).
@@ -461,6 +467,8 @@ void usage() {
                  "                       indexer, RoPE, PLE postops, and the CPU q8_0 contract unless the\n"
                  "                       expert cache is on. Individual --native-* flags stay for A/B.\n"
                  "  --native-head-gguf PATH  native Q5_K head from model shard 1; requires --stream-token\n"
+                 "  --canonical-head     serve the vocabulary head from the pack's own output.weight (M5: the\n"
+                 "                       window's tail then runs lm_head, not native_mmvq on the head)\n"
                  "  --embd-gguf PATH     the token embedding from this GGUF instead of --native's (tools/embd_bf16_pack.py:\n"
                  "                       BF16 as the checkpoint ships it; mapped host memory, no VRAM)\n"
                  "  --native-dense-gguf PATH native GDN/QSA/shared projections; repeat for each source model shard\n"
@@ -1079,6 +1087,7 @@ int main(int argc, char** argv) {
         else if (a == "--cpu-oracle-q8-0") o.cpu_oracle_q8_0 = true;
         else if (a == "--native") o.native_preset = next("--native");
         else if (a == "--native-head-gguf") o.native_head_gguf = next("--native-head-gguf");
+        else if (a == "--canonical-head") o.canonical_head = true;   // M5: the pack's head, not the GGUF's
         else if (a == "--embd-gguf") o.embd_gguf = next("--embd-gguf");
         else if (a == "--native-dense-gguf") o.native_dense_gguf.push_back(next("--native-dense-gguf"));
         else if (a == "--no-capture") o.no_capture = true;
@@ -1522,6 +1531,10 @@ int main(int argc, char** argv) {
         o.native_ple_key = o.native_moe_combine = o.native_gdn = o.native_router = true;
         o.native_qsa = o.native_qsa_indexer = o.native_rope = o.native_ple_postops = true;
         if (o.native_head_gguf.empty()) o.native_head_gguf = o.native_preset;
+        // M5: --canonical-head leaves native_head_gguf empty, so `skip` keeps the pack's output.weight canonical and
+        // the verify window's tail runs lm_head instead of native_mmvq on the head (PLAN D7's flag set serves the
+        // head from the pack).
+        if (o.canonical_head) o.native_head_gguf.clear();
         if (o.native_dense_gguf.empty()) {
             // every shard of the model (<name>-0000N-of-0000M.gguf beside --native), then the PLE shard: a split
             // may put any layer in any shard (Swift's GGUFs: layers 13-47 in shard 2, the PLE table in shard 1)
