@@ -1392,6 +1392,24 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
     VDBG("captured; staging\n");
     const Clock::time_point t0 = Clock::now();
     const QsaShapes s = shapes_of(g);
+    // P3 (card t_d8afe53f): the submissions this stage's window costs.  Snapshotted here and reported after the
+    // tail sync, so the figure is "what the host submitted to get THIS stage's window onto the GPU", split into
+    // the shim's submission kinds (a kernel launch, a memset, a copy, a query barrier, an event, a host fn).
+    static const bool sub_on = std::getenv("STRATA_SUBMIT_COUNT") != nullptr;
+    const strata::sycl_compat::submit_stats sub0 = strata::sycl_compat::subs();
+    auto sub_delta = [](const strata::sycl_compat::submit_stats& a,
+                        const strata::sycl_compat::submit_stats& b) {
+        strata::sycl_compat::submit_stats d;
+        d.kernel = a.kernel - b.kernel;
+        d.memset_ = a.memset_ - b.memset_;
+        d.memcpy_ = a.memcpy_ - b.memcpy_;
+        d.barrier = a.barrier - b.barrier;
+        d.event = a.event - b.event;
+        d.host_fn = a.host_fn - b.host_fn;
+        d.graph_launch = a.graph_launch - b.graph_launch;
+        d.recorded = a.recorded - b.recorded;
+        return d;
+    };
     for (int t = 0; t < T; ++t) {
         h_tok_[t] = tokens[t];
         qsa_step_fill(h_step_ + t * kStepCount, pos0 + t, s);
@@ -1549,6 +1567,18 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
         if (se != cudaSuccess) { err = std::string("verify: ") + cudaGetErrorString(se); return false; }
         progress_at("verify window: waiting for the expert copies", (int64_t) T);
         cudaStreamSynchronize(copy_);   // no host function of this window may raise flag B in the next one
+    }
+    if (sub_on) {
+        const strata::sycl_compat::submit_stats d = sub_delta(strata::sycl_compat::subs(), sub0);
+        const int64_t nlayer = (le_ >= lb_ + g.n_layers) ? g.n_layers : (le_ - lb_);
+        std::fprintf(stderr,
+                     "strata submit: %s window T=%d pos0=%lld layers %lld..%lld (%lld): submitted %llu "
+                     "(kernel %llu memset %llu memcpy %llu barrier %llu event %llu hostfn %llu graph %llu) "
+                     "+ recorded %llu; %.1f per layer; GPU-reach wait %.2f ms\n",
+                     (next_ != nullptr || lb_ != 0) ? "stage" : "single", T, (long long) pos0, (long long) lb_,
+                     (long long) (le_ - 1), (long long) nlayer, d.submitted(), d.kernel, d.memset_, d.memcpy_,
+                     d.barrier, d.event, d.host_fn, d.graph_launch, d.recorded,
+                     nlayer > 0 ? (double) d.submitted() / (double) nlayer : 0.0, ms_wait);
     }
     if (prof_on_ && G == 1) {       // the window's GPU stage stamps
         cudaMemcpy(prof_h_.data(), prof_, prof_h_.size() * 8, cudaMemcpyDeviceToHost);

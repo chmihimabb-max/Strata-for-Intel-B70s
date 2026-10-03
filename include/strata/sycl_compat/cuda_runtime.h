@@ -27,6 +27,12 @@
 // Deliberately absent (PLAN.md §1.3): stream capture and cudaHostRegister have no SYCL equivalent.  Both
 // return a specific, documented error so the engine's own degrade paths run instead of a silent no-op.
 #include <sycl/sycl.hpp>
+// P3 (card t_d8afe53f): the SYCL graph extension is what makes a REAL graph-replay equivalent possible on this
+// backend - oneAPI 2026.1 ships sycl::ext::oneapi::experimental::command_graph for the Level Zero backend, and
+// the B70 reports sycl::aspect::ext_oneapi_graph.  It is used only behind STRATA_SYCL_GRAPH=1 (off by default);
+// the header is included unconditionally because a runtime flag cannot change a type.
+#include <sycl/ext/oneapi/experimental/graph.hpp>
+
 
 // CUDA's builtin vector types (float2/float4/int2/uint4/char4/... and the make_* constructors) live in
 // their own header: cuda_fp16.h needs them too (__half22float2 returns a float2), and the kernels include
@@ -491,6 +497,109 @@ inline std::vector<std::function<void(cudaStream_t)>>& capture_nodes() {
 inline bool capture_active() { return capture_flag(); }
 inline void capture_append(std::function<void(cudaStream_t)> fn) { capture_nodes().push_back(std::move(fn)); }
 
+// ---- submission accounting (P3, card t_d8afe53f) ------------------------------------------------
+// Every submission the engine makes funnels through this shim (D2), so THIS is the authoritative count
+// of what the host asks Level Zero to do - and it is what `zeCommandListAppend*` in a unitrace report
+// is the driver-side counterpart of.  One relaxed counter per submission: measured free beside a
+// window's other host work, so it can stay on in a measured run.
+struct submit_stats {
+    unsigned long long kernel = 0;     // strata::sycl_compat::launch -> one q.submit(parallel_for)
+    unsigned long long memset_ = 0;    // cudaMemsetAsync -> one q.memset
+    unsigned long long memcpy_ = 0;    // memcpy_impl -> one q.memcpy
+    unsigned long long barrier = 0;    // cudaStreamQuery -> one ext_oneapi_submit_barrier
+    unsigned long long event = 0;      // cudaEventRecord / cudaStreamWaitEvent -> one barrier submit
+    unsigned long long host_fn = 0;    // cudaLaunchHostFunc -> one q.submit(host_task)
+    unsigned long long graph_launch = 0;   // cudaGraphLaunch in graph mode -> ONE q.submit(the whole window)
+    unsigned long long recorded = 0;   // submissions RECORDED into a capture instead of submitted
+    unsigned long long total() const { return kernel + memset_ + memcpy_ + barrier + event + host_fn; }
+    /// What the host handed to the runtime: individual submissions plus whole-graph submissions.
+    unsigned long long submitted() const { return total() + graph_launch; }
+    unsigned long long all() const { return total() + recorded; }
+};
+inline submit_stats& subs() {
+    static submit_stats s;
+    return s;
+}
+
+// ---- stream capture and graphs: the handle, and the two implementations -----------------------------
+// The graph handle owns the recorded node list; the exec handle owns a copy of it, so
+// cudaGraphExecDestroy cannot invalidate a graph that is still referenced.
+using cudaGraph_t = void*;
+using cudaGraphExec_t = void*;
+using cudaGraphNode_t = void*;
+using cuda_graph_nodes = std::vector<std::function<void(cudaStream_t)>>;
+
+// ---- P3: the graph-replay equivalent (STRATA_SYCL_GRAPH=1, OFF by default) --------------------------
+// WHAT THE PORT WAS MISSING.  The engine's steady-state decode step is the same sequence of kernels every
+// window; on CUDA the engine's own graph path replays it, and the cost the port pays instead is measured: the
+// window's host side spends most of its time in zeCommandListAppendLaunchKernelWithArguments and
+// zeCommandListCreateImmediate (S2/S3), and GPU-reach wait is 42.71 ms of a 132.25 ms window at 128K.
+//
+// The closure list below (M3) is a faithful CAPTURE contract but NOT a replay mechanism: cudaGraphLaunch walks
+// the list and calls q.submit() once per node, so a window costs exactly as many submissions as it has kernels.
+// This is the second, real implementation of the same contract, on the SYCL graph extension (oneAPI 2026.1,
+// L0 backend): recording a window builds a command_graph and cudaGraphLaunch hands the whole thing to the
+// driver in ONE submit.  Semantics kept identical to the closure path, deliberately:
+//   * the engine's body runs UNCHANGED - it calls the same launch()/memcpy/memset entry points, which submit
+//     normally while recording is open (SYCL records them; nothing executes);
+//   * the graph is re-submitted on the stream cudaGraphLaunch names (queue_for), and USM buffers are read at
+//     replay time, so a later window with different data in the same buffers is correct;
+//   * anything the extension refuses throws and is reported as cudaErrorStreamCaptureUnsupported, loudly: a
+//     failed recording must NOT silently fall back to "the body already ran".
+namespace graph_detail {
+using sycl_mod = sycl::ext::oneapi::experimental::command_graph<
+    sycl::ext::oneapi::experimental::graph_state::modifiable>;
+using sycl_exec = sycl::ext::oneapi::experimental::command_graph<
+    sycl::ext::oneapi::experimental::graph_state::executable>;
+
+struct rec_state {
+    sycl_mod* mod = nullptr;
+    sycl::queue* q = nullptr;
+    unsigned long long nodes = 0;
+    bool active = false;
+    bool failed = false;
+    std::string err;
+};
+inline rec_state& rec() {
+    static rec_state s;
+    return s;
+}
+/// Runtime switch, read once.  Off unless STRATA_SYCL_GRAPH=1, and off (with one line on stderr) on a device
+/// that does not report sycl::aspect::ext_oneapi_graph.
+inline bool graph_mode() {
+    static const bool on = [] {
+        const char* v = std::getenv("STRATA_SYCL_GRAPH");
+        if (v == nullptr || std::atoi(v) == 0) return false;
+        try {
+            if (!default_queue().get_device().has(sycl::aspect::ext_oneapi_graph)) {
+                std::fprintf(stderr,
+                             "strata/sycl: STRATA_SYCL_GRAPH=1 but this device does not report "
+                             "sycl::aspect::ext_oneapi_graph; the launch-closure replay is used instead\n");
+                return false;
+            }
+        } catch (...) {
+            return false;
+        }
+        std::fprintf(stderr, "strata/sycl: STRATA_SYCL_GRAPH=1 - a window's capture records a SYCL command_graph "
+                             "and cudaGraphLaunch submits it in ONE submission\n");
+        return true;
+    }();
+    return on;
+}
+inline bool graph_recording() { return rec().active; }
+}  // namespace graph_detail
+
+/// The handle both capture implementations share.  `kind` is the tag: 0 = the launch-closure list (M3's
+/// contract, no driver object), 1 = a SYCL modifiable command_graph (STRATA_SYCL_GRAPH=1), 2 = its executable
+/// form.  Keeping one tagged object means the engine's calls need no mode awareness.
+struct cuda_graph_obj {
+    int kind = 0;
+    unsigned long long nodes = 0;
+    cuda_graph_nodes closures;                            // kind 0
+    graph_detail::sycl_mod* mod = nullptr;                // kind 1
+    graph_detail::sycl_exec* exec = nullptr;              // kind 2
+};
+
 // ---- the launcher ---------------------------------------------------------
 // Unnamed kernel lambdas on purpose - see the measurement note on `kernel_name` above.  ONE-DIMENSIONAL
 // nd_range on purpose too - see the measurement note on `this_item()`: it is what makes the sub-group equal
@@ -505,9 +614,16 @@ inline void capture_append(std::function<void(cudaStream_t)> fn) { capture_nodes
 template <class Fn>
 inline void launch(const launch_config& c, cudaStream_t stream, Fn fn) {
     if (capture_active()) {
-        capture_append([c, fn](cudaStream_t s) { launch(c, s, fn); });   // replayed on the LAUNCH's stream
-        return;
+        ++subs().recorded;
+        if (graph_detail::graph_recording()) {
+            ++graph_detail::rec().nodes;   // recorded into the SYCL command graph: fall through and submit,
+                                           // which is what SYCL records (nothing executes while recording)
+        } else {
+            capture_append([c, fn](cudaStream_t s) { launch(c, s, fn); });   // replayed on the LAUNCH's stream
+            return;
+        }
     }
+    ++subs().kernel;
     sycl::queue& q = *queue_for(reinterpret_cast<void*>(stream));
     const unsigned gx = c.grid.x ? c.grid.x : 1u, gy = c.grid.y ? c.grid.y : 1u, gz = c.grid.z ? c.grid.z : 1u;
     const unsigned bx = c.block.x ? c.block.x : 1u, by = c.block.y ? c.block.y : 1u, bz = c.block.z ? c.block.z : 1u;
@@ -582,11 +698,13 @@ inline cudaError_t cudaMemset(void* p, int value, size_t bytes) {
     return cudaSuccess;
 }
 inline cudaError_t cudaMemsetAsync(void* p, int value, size_t bytes, cudaStream_t s) {
-    if (capture_active()) {   // recorded, not submitted: replayed by cudaGraphLaunch on ITS stream
+    if (capture_active() && !graph_detail::graph_recording()) {   // recorded, not submitted: replayed by cudaGraphLaunch on ITS stream
         capture_append([=](cudaStream_t rs) { cudaMemsetAsync(p, value, bytes, rs); });
         return cudaSuccess;
     }
+    if (graph_detail::graph_recording()) ++graph_detail::rec().nodes;
     queue_for(reinterpret_cast<void*>(s))->memset(p, value, bytes);
+    ++subs().memset_;
     return cudaSuccess;
 }
 
@@ -595,6 +713,7 @@ inline cudaError_t cudaMemsetAsync(void* p, int value, size_t bytes, cudaStream_
 /// (dequant_s2_parity's std::vector staging, the weights loader's pageable reads) pass ordinary host memory.
 inline cudaError_t memcpy_impl(void* dst, const void* src, size_t bytes, sycl::queue* q, bool wait) {
     if (bytes == 0) return cudaSuccess;
+    ++subs().memcpy_;
     try {
         const bool du = is_usm_pointer(dst), su = is_usm_pointer(src);
         if (du && su) {
@@ -645,10 +764,11 @@ inline cudaError_t cudaMemcpyAsync(void* dst, const void* src, size_t bytes, cud
     // calls it with four arguments.  Without the default the SYCL build of `strata` does not compile
     // ("no matching function for call to 'cudaMemcpyAsync'"), which is what M4 measured before this line.
     (void) kind;
-    if (capture_active()) {   // recorded, not submitted: replayed by cudaGraphLaunch on ITS stream
+    if (capture_active() && !graph_detail::graph_recording()) {   // recorded, not submitted
         capture_append([=](cudaStream_t rs) { (void) cudaMemcpyAsync(dst, src, bytes, kind, rs); });
         return cudaSuccess;
     }
+    if (graph_detail::graph_recording()) ++graph_detail::rec().nodes;
     return memcpy_impl(dst, src, bytes, queue_for(reinterpret_cast<void*>(s)), /*wait=*/false);
 }
 inline cudaError_t cudaMemcpy2DAsync(void* dst, size_t dpitch, const void* src, size_t spitch, size_t width,
@@ -806,6 +926,7 @@ inline cudaError_t cudaStreamSynchronize(cudaStream_t s) {
 inline cudaError_t cudaStreamQuery(cudaStream_t s) {
     sycl::queue* q = queue_for(reinterpret_cast<void*>(s));
     const sycl::event e = q->ext_oneapi_submit_barrier();
+    ++subs().barrier;
     return e.get_info<sycl::info::event::command_execution_status>() ==
                    sycl::info::event_command_status::complete
                ? cudaSuccess
@@ -833,10 +954,12 @@ inline cudaError_t cudaEventDestroy(cudaEvent_t ev) {
 inline cudaError_t cudaEventRecord(cudaEvent_t ev, cudaStream_t s = nullptr) {
     ev->e = queue_for(reinterpret_cast<void*>(s))->ext_oneapi_submit_barrier();
     ev->recorded = true;
+    ++subs().event;
     return cudaSuccess;
 }
 inline cudaError_t cudaStreamWaitEvent(cudaStream_t s, cudaEvent_t ev, unsigned /*flags*/) {
     if (ev->recorded) queue_for(reinterpret_cast<void*>(s))->ext_oneapi_submit_barrier({ev->e});
+    ++subs().event;
     return cudaSuccess;
 }
 /// A QUERY, never a blocking sync: a blocking wait here would serialize the layer loop (PLAN.md §1.1).
@@ -975,21 +1098,37 @@ inline cudaError_t cudaFuncGetAttributes(cudaFuncAttributes* a, Kernel /*kernel*
     return cudaSuccess;
 }
 
-// ---- stream capture and graphs: see the capture note above the launcher (PLAN.md §1.3(b), D7) -------
-// The graph handle owns the recorded node list; the exec handle owns a copy of it, so
-// cudaGraphExecDestroy cannot invalidate a graph that is still referenced.
-using cudaGraph_t = void*;
-using cudaGraphExec_t = void*;
-using cudaGraphNode_t = void*;
-using cuda_graph_nodes = std::vector<std::function<void(cudaStream_t)>>;
-
-inline cudaError_t cudaStreamBeginCapture(cudaStream_t /*s*/, cudaStreamCaptureMode /*mode*/) {
+// ---- the graph API: both implementations of the contract declared above -------------------------
+inline cudaError_t cudaStreamBeginCapture(cudaStream_t s, cudaStreamCaptureMode /*mode*/) {
     if (capture_flag()) {   // nested capture: CUDA refuses it, and so does this
         record(cudaErrorStreamCaptureImplicit);
         return cudaErrorStreamCaptureImplicit;
     }
     capture_nodes().clear();
     capture_flag() = true;
+    graph_detail::rec_state& r = graph_detail::rec();
+    r.nodes = 0;
+    r.failed = false;
+    r.err.clear();
+    if (graph_detail::graph_mode()) {
+        sycl::queue* q = queue_for(reinterpret_cast<void*>(s));
+        try {
+            r.q = q;
+            r.mod = new graph_detail::sycl_mod(q->get_context(), q->get_device());
+            r.mod->begin_recording(*q);
+            r.active = true;
+        } catch (const std::exception& e) {
+            r.active = false;
+            r.failed = true;
+            r.err = e.what();
+            delete r.mod;
+            r.mod = nullptr;
+            std::fprintf(stderr, "strata/sycl: SYCL graph recording is unavailable on this backend: %s\n", e.what());
+            capture_flag() = false;
+            record(cudaErrorStreamCaptureUnsupported);
+            return cudaErrorStreamCaptureUnsupported;
+        }
+    }
     return cudaSuccess;
 }
 inline cudaError_t cudaStreamEndCapture(cudaStream_t /*s*/, cudaGraph_t* g) {
@@ -998,7 +1137,38 @@ inline cudaError_t cudaStreamEndCapture(cudaStream_t /*s*/, cudaGraph_t* g) {
         return cudaErrorStreamCaptureInvalidated;
     }
     capture_flag() = false;
-    if (g) *g = new cuda_graph_nodes(capture_nodes());
+    graph_detail::rec_state& r = graph_detail::rec();
+    if (r.active) {
+        try {
+            r.mod->end_recording();
+        } catch (const std::exception& e) {
+            r.active = false;
+            r.failed = true;
+            r.err = e.what();
+            std::fprintf(stderr, "strata/sycl: SYCL graph recording failed to close: %s\n", e.what());
+            delete r.mod;
+            r.mod = nullptr;
+            if (g) *g = nullptr;
+            record(cudaErrorStreamCaptureUnsupported);
+            return cudaErrorStreamCaptureUnsupported;
+        }
+        r.active = false;
+        if (g) {
+            auto* o = new cuda_graph_obj();
+            o->kind = 1;
+            o->nodes = r.nodes;
+            o->mod = r.mod;
+            *g = o;
+        }
+        return cudaSuccess;
+    }
+    if (g) {
+        auto* o = new cuda_graph_obj();
+        o->kind = 0;
+        o->nodes = capture_nodes().size();
+        o->closures = capture_nodes();
+        *g = o;
+    }
     capture_nodes().clear();
     return cudaSuccess;
 }
@@ -1007,34 +1177,70 @@ inline cudaError_t cudaStreamIsCapturing(cudaStream_t /*s*/, cudaStreamCaptureSt
     return cudaSuccess;
 }
 inline cudaError_t cudaGraphGetNodes(cudaGraph_t g, cudaGraphNode_t* /*nodes*/, size_t* n) {
-    const auto* v = static_cast<const cuda_graph_nodes*>(g);
-    if (n) *n = v ? v->size() : 0;
-    return v ? cudaSuccess : cudaErrorInvalidValue;
+    const auto* o = static_cast<const cuda_graph_obj*>(g);
+    if (n) *n = o ? (size_t) o->nodes : 0;
+    return o ? cudaSuccess : cudaErrorInvalidValue;
 }
 inline cudaError_t cudaGraphInstantiate(cudaGraphExec_t* e, cudaGraph_t g, cudaGraphNode_t* /*err*/,
                                         char* /*log*/, size_t /*n*/) {
     if (e == nullptr) return cudaErrorInvalidValue;
-    const auto* v = static_cast<const cuda_graph_nodes*>(g);
-    if (v == nullptr) return cudaErrorInvalidValue;
-    *e = new cuda_graph_nodes(*v);
+    const auto* o = static_cast<const cuda_graph_obj*>(g);
+    if (o == nullptr) return cudaErrorInvalidValue;
+    auto* out = new cuda_graph_obj();
+    out->nodes = o->nodes;
+    if (o->kind == 0) {
+        out->kind = 0;
+        out->closures = o->closures;
+    } else {
+        try {
+            out->kind = 2;
+            out->exec = new graph_detail::sycl_exec(o->mod->finalize());   // MEASURED 5-7 ms per window shape
+        } catch (const std::exception& ex) {
+            delete out;
+            std::fprintf(stderr, "strata/sycl: SYCL graph finalize failed: %s\n", ex.what());
+            record(cudaErrorStreamCaptureUnsupported);
+            return cudaErrorStreamCaptureUnsupported;
+        }
+    }
+    *e = out;
     return cudaSuccess;
 }
 inline cudaError_t cudaGraphInstantiate(cudaGraphExec_t* e, cudaGraph_t g, unsigned long long /*flags*/) {
     return cudaGraphInstantiate(e, g, nullptr, nullptr, 0);
 }
 inline cudaError_t cudaGraphLaunch(cudaGraphExec_t e, cudaStream_t s) {
-    auto* v = static_cast<cuda_graph_nodes*>(e);
-    if (v == nullptr) return cudaErrorInvalidValue;
-    for (auto& fn : *v) fn(s);   // CUDA: the nodes run on the stream this call names
+    auto* o = static_cast<cuda_graph_obj*>(e);
+    if (o == nullptr) return cudaErrorInvalidValue;
+    if (o->kind == 2) {   // ONE submission for the whole window: this is what the port was missing
+        sycl::queue* q = queue_for(reinterpret_cast<void*>(s));
+        try {
+            graph_detail::sycl_exec* ex = o->exec;
+            q->submit([ex](sycl::handler& h) { h.ext_oneapi_graph(*ex); });
+            ++subs().graph_launch;
+        } catch (const std::exception& ex) {
+            std::fprintf(stderr, "strata/sycl: SYCL graph launch failed: %s\n", ex.what());
+            record(cudaErrorUnknown);
+            return cudaErrorUnknown;
+        }
+        return cudaSuccess;
+    }
+    for (auto& fn : o->closures) fn(s);   // CUDA: the nodes run on the stream this call names
     return cudaSuccess;
 }
 inline cudaError_t cudaGraphUpload(cudaGraphExec_t /*e*/, cudaStream_t /*s*/) { return cudaSuccess; }
 inline cudaError_t cudaGraphDestroy(cudaGraph_t g) {
-    delete static_cast<cuda_graph_nodes*>(g);
+    auto* o = static_cast<cuda_graph_obj*>(g);
+    if (o != nullptr && o->kind == 1) {   // the modifiable graph is the engine's cudaGraph_t in this mode
+        delete o->mod;
+        o->mod = nullptr;
+    }
+    delete o;
     return cudaSuccess;
 }
 inline cudaError_t cudaGraphExecDestroy(cudaGraphExec_t e) {
-    delete static_cast<cuda_graph_nodes*>(e);
+    auto* o = static_cast<cuda_graph_obj*>(e);
+    if (o != nullptr && o->exec != nullptr) delete o->exec;
+    delete o;
     return cudaSuccess;
 }
 
@@ -1047,6 +1253,7 @@ inline cudaError_t cudaGraphExecDestroy(cudaGraphExec_t e) {
 inline cudaError_t cudaLaunchHostFunc(cudaStream_t s, void (*fn)(void*), void* arg) {
     if (fn == nullptr) return cudaErrorInvalidValue;
     sycl::queue* q = queue_for(reinterpret_cast<void*>(s));
+    ++subs().host_fn;
     q->submit([fn, arg](sycl::handler& h) { h.host_task([fn, arg] { fn(arg); }); });
     return cudaSuccess;
 }
