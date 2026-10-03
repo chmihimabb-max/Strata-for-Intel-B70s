@@ -1,0 +1,195 @@
+==============================================================
+M6c serve run p1-32k-before   2026-10-02T20:33:10-06:00
+two GPUs: ZE_AFFINITY_MASK=<unset> (PLAN 11 U11), --layer-split auto (config of record strata-sycl-iq3s.json)
+model: IQ3_S GSQ-RCO snapshot ed59f92082b1e93c0e96d60a8b11aab089b52f09 (pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack)
+prompt: /home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt  max-new=256  max-context=32768  kv-resident=32768  page-cache drop=0
+program cache: SYCL_CACHE_PERSISTENT=1 SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c
+HEAD: 3ccb530 P1 (t_44a0ac61): time the #267 verify release's flag publication and drain
+engine binary: 2026-10-02 20:29:32.068463748 -0600  34934512 bytes
+
+== device check BEFORE the run (PLAN 9 rule 5: no other process may hold either card) ==
+-- engines/servers of ours --
+   none
+-- render-node holders --
+                     USER        PID ACCESS COMMAND
+/dev/dri/renderD128: michael    4359 F.... gnome-shell
+                     michael    4867 F...m Xwayland
+                     michael    5200 F...m ibus-x11
+                     michael    5201 F...m mutter-x11-fram
+                     michael   12379 F...m ptyxis
+                     michael   12722 F...m firefox
+                     michael   14495 F...m nautilus
+                     michael   37892 F...m gnome-text-edit
+                     michael   38552 F...m missioncenter
+/dev/dri/renderD129: michael   12379 F.... ptyxis
+                     michael   14495 F.... nautilus
+                     michael   37892 F.... gnome-text-edit
+                     michael   38552 F.... missioncenter
+-- per-process VRAM right now (scripts/m6_occupancy.py) --
+process                      card     VRAM MiB
+12379 ptyxis                 card0        59.8
+12722 firefox                card0       228.7
+14495 nautilus               card0        84.3
+37892 gnome-text-edit        card0        20.7
+38552 missioncenter          card0        60.9
+4359 gnome-shell             card0       411.9
+4867 Xwayland                card0         0.2
+5200 ibus-x11                card0         0.0
+5201 mutter-x11-fram         card0         0.1
+----------------------------------------------
+TOTAL on card0                           866.6 MiB
+TOTAL on card1                             0.0 MiB
+-- containers --
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+-- load / disk / memory --
+1.14 3.59 11.39 3/1744 766743
+/dev/nvme1n1p2  915G  698G  171G  81% /
+               total        used        free      shared  buff/cache   available
+Mem:             123           6          32           0          84         116
+-- biggest processes --
+    PID %CPU %MEM   RSS     ELAPSED COMMAND
+  19055  0.1  0.3 499480 1-07:27:21 Isolated Web Co
+  12722  1.5  0.3 494812 1-08:08:24 firefox
+  12529  0.5  0.2 320716 1-08:17:20 hermes
+  13751  0.1  0.2 275612 1-08:08:21 Isolated Web Co
+   2297  0.3  0.2 275492 1-11:16:40 node
+== end of the device check ==
+ 
+:: initializing oneAPI environment ...
+   m6c_serve.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+-- sycl-ls (needs oneAPI setvars) --
+[level_zero:gpu][level_zero:0] Intel(R) oneAPI Unified Runtime over Level-Zero V2, Intel(R) Graphics [0xe223] 20.2.0 [1.15.37833+4]
+[level_zero:gpu][level_zero:1] Intel(R) oneAPI Unified Runtime over Level-Zero V2, Intel(R) Graphics [0xe223] 20.2.0 [1.15.37833+4]
+[opencl:cpu][opencl:0] Intel(R) OpenCL, Intel(R) Core(TM) Ultra 7 265KF OpenCL 3.0 (Build 0) [2026.21.7.0.24_160000]
+-- xpu-smi / intel_gpu_top --
+   xpu-smi NOT INSTALLED on this host
+   intel_gpu_top NOT INSTALLED on this host
+
+== the exact engine command line ==
+cd /home/michael/strata-xpu/strata && ZE_AFFINITY_MASK=<unset> SYCL_CACHE_PERSISTENT=1 SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c \
+  STRATA_DECODE_TIMING=1 STRATA_PREFILL_TRACE=1 \
+  ./build-sycl/strata ./build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /run/media/michael/2208B12208B0F63F/strata-w4a16/mtp-bf16/rt-q2_0 --kv int8 --expert-cache auto --expert-profile data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 32768 --no-capture --stats --layer-split auto --prompt-cache 0 --prompt-cache-every 0 --kv-resident 32768
+  < 'GEN 256 <139825 B of ids>' + QUIT      (driven by m6c/m6c_drive.py)
+== checkpointing off: M6 measured the mid-prompt checkpoint OOMing at 32K on the split (318 MiB free) ==
+
+
+== page cache just before the engine starts ==
+MemTotal:       129040784 kB
+MemFree:        34455940 kB
+MemAvailable:   122050604 kB
+Cached:         86004780 kB
+Unevictable:       67128 kB
+Mlocked:              16 kB
+Dirty:              7576 kB
+engine exited 0
+== engine exit 0, wall 136s ==
+
+== the split plan, the caches, the hand-off (engine stderr) ==
+strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+strata generate: native pack: /run/media/michael/2208B12208B0F63F/strata-iq3s/pack experts (largest blob 2.66 MB), token embedding IQ4_XS in mapped host memory (322 MiB)
+strata generate: layer split: CUDA1 PCIe probe 13.4 GB/s -> pcie_frac 0.28
+strata generate: layer split: CUDA1 holds its weights; 28.34 GiB free (its session follows the split search)
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.90 GiB free before its session carve
+strata generate: layer split auto: CUDA1 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.59 GiB free before its session carve
+strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
+strata generate: PLE on, table 320001536 rows of /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf
+strata generate: layer split: CUDA1 holds its weights, session [23, 48) and the head; 27.53 GiB free
+strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+strata generate: expert cache auto: 27.33 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10745 slots
+strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+strata generate: layer split: CUDA1 runs layers 23-47, expert cache 12800 slots (25.63 GiB), 12800 of its 12800 profiled pairs; slot 0 verified
+strata generate: layer split: CUDA0 runs layers 0-22
+strata generate: R4 hit path ON - resident experts are computed on the GPU
+strata generate: token graph hit path: 24576 resident experts, decided on the device
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve:   CUDA0 keeps its own prompt buffers (3.66 GiB of 6.12 GiB free): no loan
+strata serve:   CUDA1 prompt path borrows 1823 of its 12800 slots (3.66 GiB)
+strata hc: CUDA1: the hyper-connection read runs as staged (the norm per token and stream, the down projection's activations staged ahead by cp.async); checked bit for bit against the plain read on this card (STRATA_HC_SPLIT=1 or 0 for the earlier ones)
+strata verify: window up to 6 tokens, 74.1 MiB of device buffers
+strata serve: layer split: layers 0-22 (CUDA0), 23-47 (CUDA1), one hand-off per window
+strata hc: CUDA0: the hyper-connection read runs as staged (the norm per token and stream, the down projection's activations staged ahead by cp.async); checked bit for bit against the plain read on this card (STRATA_HC_SPLIT=1 or 0 for the earlier ones)
+strata verify: window up to 6 tokens, 74.1 MiB of device buffers
+strata serve: 2411 MiB of VRAM free with everything loaded
+strata serve: decode expert cache hit rate: 100.0% (143520 hits / 143520 lookups)
+
+== the request's own numbers (engine stderr: --stats + the serve summary) ==
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve: prompt chunk auto: 8192 tokens
+strata serve:   CUDA0 keeps its own prompt buffers (3.66 GiB of 6.12 GiB free): no loan
+strata serve:   CUDA1 prompt path borrows 1823 of its 12800 slots (3.66 GiB)
+strata serve: layer split: layers 0-22 (CUDA0), 23-47 (CUDA1), one hand-off per window
+strata serve: 2411 MiB of VRAM free with everything loaded
+strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 137.99 ms/window = verify 115.12 (GPU-reach wait 44.30 + per-layer host 0.49 [plan 0.30 actq 0.23 jobs 0.26 CPU 0.00] + stage 1.19) + commit/emit 2.03 + draft 20.85; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.18, PCIe 0.00
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 92722 ms (347.9 tok/s), 256 generated in 11729 ms (21.8 tok/s), drafts accepted 171 of 214, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (143520 hits / 143520 lookups)
+strata serve: expert tiers: GPU 143520 hits this request; since the start RAM 0 blobs, files 0 blobs 69934.3 MB read (the GGUF in place)
+strata serve: suffix drafts: 4 windows, 17 of 20 drafts accepted
+
+== prompt chunks: first 3 and last 3 (stdout PP lines) ==
+PP 8192 32256 30510 268.5
+PP 16384 32256 50509 324.4
+PP 24576 32256 70878 346.7
+PP 16384 32256 50509 324.4
+PP 24576 32256 70878 346.7
+PP 32255 32256 90389 356.8
+
+== the raw protocol answer (stdout) ==
+T lines: 256
+INFO context=32768 kv=int8 kv_resident=0 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=2411 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+READY 32768 stop
+RESUME 0
+DONE 256 32256 92722.2 11729.4 length 171 214 0 143520 143520 0 0 0.0
+-- first 12 and last 4 generated ids --
+T 248068 T 198 T 760 T 1156 T 6587 T 728 T 310 T 3286 T 264 T 3349 T 9417 T 999 
+T 18588 T 1354 T 13 T 271 
+
+== the last 30 lines of the engine's stderr ==
+strata generate: 19 expert-pool workers + the host thread
+strata generate: session is up (engine 0.1.34)
+strata generate: token graph hit path: 24576 resident experts, decided on the device
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve: prompt chunk auto: 8192 tokens
+strata serve:   CUDA0 keeps its own prompt buffers (3.66 GiB of 6.12 GiB free): no loan
+strata serve:   CUDA1 prompt path borrows 1823 of its 12800 slots (3.66 GiB)
+strata hc: CUDA1: the hyper-connection read runs as staged (the norm per token and stream, the down projection's activations staged ahead by cp.async); checked bit for bit against the plain read on this card (STRATA_HC_SPLIT=1 or 0 for the earlier ones)
+strata verify: window up to 6 tokens, 74.1 MiB of device buffers
+strata serve: layer split: layers 0-22 (CUDA0), 23-47 (CUDA1), one hand-off per window
+strata hc: CUDA0: the hyper-connection read runs as staged (the norm per token and stream, the down projection's activations staged ahead by cp.async); checked bit for bit against the plain read on this card (STRATA_HC_SPLIT=1 or 0 for the earlier ones)
+strata verify: window up to 6 tokens, 74.1 MiB of device buffers
+strata serve: 2411 MiB of VRAM free with everything loaded
+qsa_block_scores: no TF32 tc path on this backend (the device refuses tf32 joint_matrix); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3) -> warp kernel
+qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 6-token window (upload no error, sync no error)
+strata verify: captured the 6-token window (upload no error, sync no error)
+strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 137.99 ms/window = verify 115.12 (GPU-reach wait 44.30 + per-layer host 0.49 [plan 0.30 actq 0.23 jobs 0.26 CPU 0.00] + stage 1.19) + commit/emit 2.03 + draft 20.85; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.18, PCIe 0.00
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 92722 ms (347.9 tok/s), 256 generated in 11729 ms (21.8 tok/s), drafts accepted 171 of 214, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (143520 hits / 143520 lookups)
+strata serve: expert tiers: GPU 143520 hits this request; since the start RAM 0 blobs, files 0 blobs 69934.3 MB read (the GGUF in place)
+strata serve: suffix drafts: 4 windows, 17 of 20 drafts accepted
+
+== RAM / SSD tier over the engine tree (m6c_sample.py) ==
+epoch,t_s,nprocs,rss_bytes,max_proc_rss,read_bytes,majflt,minflt,rchar,cached_kb,mlocked_kb,vram0_mib,vram1_mib
+-- peak tree RSS --
+1790994927.296,131.3,3,51871563776,51846848512,1292550144,3,1673676,5210395331,86005532,16,29438.2,31970.2
+-- first and last sample --
+1790994796.018,0.0,3,1478156288,1453441024,0,3,156482,3078285275,86004732,16,3597.2,2334.0
+1790994928.306,132.3,3,10167341056,10142625792,1292689408,3,1673707,5210535517,86005532,16,4203.2,31970.2

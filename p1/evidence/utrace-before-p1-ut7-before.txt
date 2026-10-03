@@ -1,0 +1,72 @@
+P1 unitrace arm p1-ut7-before   2026-10-02T20:35:52-06:00
+mode=7  max-new=16  prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B of ids, ctx=4096)
+HEAD: 3ccb530 P1 (t_44a0ac61): time the #267 verify release's flag publication and drain
+engine binary: 2026-10-02 20:29:32.068463748 -0600  34934512 bytes
+unitrace: /home/michael/pti-gpu/tools/unitrace/build/unitrace (2026-10-02 07:03:18.770238538 -0600)
+unitrace cmd: /home/michael/pti-gpu/tools/unitrace/build/unitrace --start-paused --session p1p1ut7before --device-timing
+== the device check BEFORE the run ==
+-- engines/servers of ours --
+   none
+-- render-node holders --
+                     USER        PID ACCESS COMMAND
+/dev/dri/renderD128: michael    4359 F.... gnome-shell
+                     michael    4867 F...m Xwayland
+                     michael    5200 F...m ibus-x11
+                     michael    5201 F...m mutter-x11-fram
+                     michael   12379 F...m ptyxis
+                     michael   12722 F...m firefox
+                     michael   14495 F...m nautilus
+                     michael   37892 F...m gnome-text-edit
+                     michael   38552 F...m missioncenter
+/dev/dri/renderD129: michael   12379 F.... ptyxis
+                     michael   14495 F.... nautilus
+                     michael   37892 F.... gnome-text-edit
+                     michael   38552 F.... missioncenter
+-- per-process VRAM right now --
+process                      card     VRAM MiB
+12379 ptyxis                 card0        59.8
+12722 firefox                card0       228.7
+14495 nautilus               card0        84.3
+37892 gnome-text-edit        card0        20.7
+38552 missioncenter          card0        62.9
+4359 gnome-shell             card0       411.9
+4867 Xwayland                card0         0.2
+5200 ibus-x11                card0         0.0
+5201 mutter-x11-fram         card0         0.1
+----------------------------------------------
+TOTAL on card0                           868.6 MiB
+TOTAL on card1                             0.0 MiB
+-- load / memory --
+10.75 7.74 11.75 2/1751 767521
+               total        used        free      shared  buff/cache   available
+Mem:             123           6          32           0          84         116
+== end of the device check ==
+ 
+:: initializing oneAPI environment ...
+   p1_utrace.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: p1-ut7-before 7 16
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+-- sycl-ls --
+[level_zero:gpu][level_zero:0] Intel(R) oneAPI Unified Runtime over Level-Zero V2, Intel(R) Graphics [0xe223] 20.2.0 [1.15.37833+4]
+[level_zero:gpu][level_zero:1] Intel(R) oneAPI Unified Runtime over Level-Zero V2, Intel(R) Graphics [0xe223] 20.2.0 [1.15.37833+4]
+[opencl:cpu][opencl:0] Intel(R) OpenCL, Intel(R) Core(TM) Ultra 7 265KF OpenCL 3.0 (Build 0) [2026.21.7.0.24_160000]
+
+== the exact engine command line ==
+cd /home/michael/strata-xpu/strata && ZE_AFFINITY_MASK=<unset> SYCL_CACHE_PERSISTENT=1 SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c \
+  STRATA_DECODE_TIMING=1 STRATA_VERIFY_RELEASE_DEBUG=1 STRATA_VERIFY_TAIL_DEBUG=1 \
+  /home/michael/pti-gpu/tools/unitrace/build/unitrace ./build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /run/media/michael/2208B12208B0F63F/strata-w4a16/mtp-bf16/rt-q2_0 --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.5 --max-context 4096 --no-capture --stats --layer-split auto --prompt-cache 0 --prompt-cache-every 0
+== engine pid 767891; waiting for 'everything loaded' ==
+== loaded=1 after 31s (2026-10-02T20:36:26-06:00) ==
+[INFO] Session p1p1ut7before is resumed
+== unitrace session p1p1ut7before resumed 2026-10-02T20:36:26-06:00 ==
+== the ask was fed at 2026-10-02T20:36:27-06:00 (epoch_ms 1790994987368): GEN 16 <16146 B of ids> ==
+== the engine's watchdog reported a stall at 2026-10-02T20:37:53-06:00; NOT killing it (this arm asks whether it can drain) ==

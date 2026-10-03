@@ -1,0 +1,17 @@
+P1 engine arm p1-4k-stall-beforebin   2026-10-02T20:49:51-06:00
+binary: /home/michael/strata-xpu/p1/strata-before-timed   (2026-10-02 20:29:39.720260136 -0600 34934512 bytes)
+repo: e452dd0 P1 (t_44a0ac61): the #267 release publishes its flag by a submitted copy, not a blocking one
+env: STRATA_TEST_VERIFY_STALL=1 STRATA_VERIFY_RELEASE_DEBUG=1 STRATA_DECODE_TIMING=1
+cmd: /home/michael/strata-xpu/p1/strata-before-timed --serve --pack ... --max-context 4096 --prefill 512 --layer-split auto (config of record, kv-resident off)
+engine exited -6
+== exit 250, wall 116s ==
+45:strata serve: no progress for 60 s during a request (verify window: waiting for the GPU to finish the window (flags A/B/M raised) 1) - stopping the engine so the server starts it again (issue #29)
+56:strata/sycl: memcpy failed: level_zero backend failed with error: 39 (UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY)
+57:strata/sycl: memcpy failed: level_zero backend failed with error: 39 (UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY)
+58:strata/sycl: memcpy failed: level_zero backend failed with error: 39 (UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY)
+59:verify release: flag publication 5.150 ms; drain budget 5000 ms
+60:verify release: the GPU did NOT finish; drain 5000.759 ms, release 5005.912 ms
+61:strata: released the verify window's GPU waits (#267): the GPU did not finish within 5 s
+62:verify release: flag publication 0.171 ms; drain budget 5000 ms
+63:corrupted double-linked list
+-- T lines: 0 --

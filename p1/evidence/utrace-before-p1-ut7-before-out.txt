@@ -1,0 +1,12 @@
+INFO context=4096 kv=int8 kv_resident=0 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=5715 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+READY 4096 stop
+RESUME 0
+PP 512 3832 3892 131.5
+PP 1024 3832 6745 151.8
+PP 1536 3832 10035 153.1
+PP 2048 3832 13476 152.0
+PP 2560 3832 17053 150.1
+PP 3072 3832 20562 149.4
+PP 3584 3832 23729 151.0
+PP 3831 3832 25402 150.8
+REUSED 0
