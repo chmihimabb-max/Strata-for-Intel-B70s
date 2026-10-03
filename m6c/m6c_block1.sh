@@ -10,8 +10,17 @@ R=/home/michael/strata-xpu
 mkdir -p "$R/m6c"
 {
   echo "M6c block 1 start $(date -Is)"
+  # the 4K needle control first: it is the cheap proof that the needle rows' prompt shape is answerable
+  # (the plain-continuation form produced EOS on its first token, and 64 generated ended inside the
+  # model's think block, so the control runs the same 256 max_new as the curve)
+  bash "$R/strata/m6c/m6c_serve.sh" m6c-needle-4k 4096 256 --kvres 0 \
+      --prompt "$R/m6c/prompts/prompt-needle-ctx4096.txt"
   bash "$R/strata/m6c/m6c_serve.sh" m6c-32k  32768  256
   bash "$R/strata/m6c/m6c_serve.sh" m6c-64k  65536  256
+  # --prefill auto arm at 64K: upstream's table was measured with --prefill auto (the engine's own help:
+  # "auto = the largest chunk up to 8192 whose buffers the expert cache can lend"), so this says whether
+  # our --prefill 512 is part of the prefill gap rather than leaving it to speculation
+  bash "$R/strata/m6c/m6c_serve.sh" m6c-64k-auto 65536 256 --prefill-auto
   bash "$R/strata/m6c/m6c_serve.sh" m6c-128k 131072 256
   bash "$R/strata/m6c/m6c_serve.sh" m6c-64k-res 65536 256 --kvres 0
   echo "M6c block 1 end $(date -Is)"

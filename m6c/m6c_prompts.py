@@ -9,6 +9,12 @@ Prompt shape (protocol of record, same as M6/M6b): a NONCE prefix of 8 fixed pse
 prefill cannot be served from any prefix/conversation cache, then the corpus cut inside continuous text.
 Each prompt in the depth curve is a PREFIX of the next one (nested), so the rows are comparable.
 
+The curve rows are a real code-agent turn - a <|im_start|>system / user / assistant chat whose user turn
+is the document and whose task is a code review of it, which is the shape upstream's table used ("a real
+code-review task over long source files").  A plain continuation of the document is NOT usable: at 64K it
+wrote the end-of-turn token after 62 tokens (DONE 62 64512 ... stop), which fails the card's ">=256
+usage-counted generated tokens" per length.
+
 Lengths: 32,256 / 64,512 / 129,024 / 259,943 prompt tokens (the last is upstream's 262K row length, so
 262,144 - 259,943 = 2,201 cells stay free for the generated tokens: 256 of them here).
 
@@ -36,9 +42,9 @@ NONCE = [31337, 1001, 4243, 9871, 271, 12007, 3131, 42]
 
 # ctx -> prompt tokens.  262,144 is the model's window; 259,943 is upstream's 262K prompt length.
 LENGTHS = {32768: 32256, 65536: 64512, 131072: 129024, 262144: 259943}
-# ctx -> prompt tokens for the needle rows (room for the question + 64 generated tokens; the engine
-# refuses prompt + max_new == context, so the 4K control leaves a 64-token margin)
-NEEDLE_LENGTHS = {4096: 3968, 262144: 259943}
+# ctx -> prompt tokens for the needle rows (room for the question + 256 generated tokens; the engine
+# refuses n + max_new + 8 > max-context, so the 4K control's prompt is 3,832 tokens: 3832+256+8 = 4096)
+NEEDLE_LENGTHS = {4096: 3832, 262144: 259943}
 NEEDLE_DEPTH = 0.50
 
 NEEDLE = ("\n\nThe fallback station log for the Diversity Antenna Project array records one access code, "
@@ -46,8 +52,12 @@ NEEDLE = ("\n\nThe fallback station log for the Diversity Antenna Project array 
 # The 4K control with the question as a plain continuation of the document produced EOS on the first
 # token (DONE 1 3968 17384 ... stop), so the needle rows are a real chat turn - the shape a code agent
 # sends - with the question in the user turn and the answer taken from the assistant turn.
-HEADER = ("<|im_start|>system\nYou are a helpful assistant that reads a long document and answers one "
-          "question about it.<|im_end|>\n<|im_start|>user\n")
+REVIEW = ("\n\nPlease review the document above, which is the source tree and the documentation of one C++/CUDA "
+          "engine. List the most important correctness or performance risks you find in it, in order of "
+          "severity, and for each one quote the evidence you saw and give a concrete fix. Take as long as "
+          "you need.<|im_end|>\n<|im_start|>assistant\n")
+HEADER = ("<|im_start|>system\nYou are a senior C++ and GPU engineer reviewing a large repository."
+          "<|im_end|>\n<|im_start|>user\n")
 NONCE_OPEN, NONCE_CLOSE = "\n[document revision marker: ", "]\n"
 QUESTION = ("\n\nQuestion: In the document above, a project log records the access code for the Diversity "
             "Antenna Project array. What is that access code? Answer with the code only.<|im_end|>\n"
@@ -114,18 +124,21 @@ def main() -> int:
         return 2
 
     q_ids = tok.encode(QUESTION, parse_special=True)
+    r_ids = tok.encode(REVIEW, parse_special=True)
     n_ids = tok.encode(NEEDLE, parse_special=False)
     head_ids = tok.encode(HEADER + NONCE_OPEN, parse_special=True) + NONCE + tok.encode(NONCE_CLOSE, parse_special=False)
-    print(f"needle: {len(n_ids)} ids, question+assistant turn: {len(q_ids)} ids, header: {len(head_ids)} ids")
+    print(f"needle: {len(n_ids)} ids, review task: {len(r_ids)} ids, question+assistant turn: {len(q_ids)} ids, "
+          f"header: {len(head_ids)} ids")
 
     for ctx, n in LENGTHS.items():
-        sel = NONCE + ids[:n - len(NONCE)]
-        assert len(sel) == n
+        body = n - len(head_ids) - len(r_ids)
+        sel = head_ids + ids[:body] + r_ids
+        assert len(sel) == n, (len(sel), n)
         row = {"kind": "curve", "ctx": ctx, "max_new": 256, "kv_total": n + 256,
-               "head_text": tok.decode(sel[:40]), "tail_text": tok.decode(sel[-60:])}
+               "task_text": REVIEW, "head_text": tok.decode(sel[:60]), "tail_text": tok.decode(sel[-90:])}
         row.update(write_prompt(OUT / f"prompt-ctx{ctx}.txt", sel))
         man["prompts"].append(row)
-        print(f"  prompt-ctx{ctx}.txt {n} tokens  tail={row['tail_text'][-50:]!r}")
+        print(f"  prompt-ctx{ctx}.txt {n} tokens (body {body})  tail={row['tail_text'][-60:]!r}")
 
     for ctx, n in NEEDLE_LENGTHS.items():
         body = n - len(head_ids) - len(q_ids)
@@ -134,10 +147,10 @@ def main() -> int:
         d = int(body * NEEDLE_DEPTH)
         sel = head_ids + ids[:d] + n_ids + ids[d + len(n_ids):body] + q_ids
         assert len(sel) == n, (len(sel), n)
-        row = {"kind": "needle", "ctx": ctx, "max_new": 64, "depth_frac": NEEDLE_DEPTH,
+        row = {"kind": "needle", "ctx": ctx, "max_new": 256, "depth_frac": NEEDLE_DEPTH,
                "needle_ids": n_ids, "needle_at": len(head_ids) + d, "question_ids": q_ids,
                "question_text": QUESTION, "needle_text": NEEDLE, "answer": "ZK-4471-QX",
-               "head_text": tok.decode(sel[:60]), "tail_text": tok.decode(sel[-80:])}
+               "head_text": tok.decode(sel[:60]), "tail_text": tok.decode(sel[-90:])}
         row.update(write_prompt(OUT / f"prompt-needle-ctx{ctx}.txt", sel))
         man["prompts"].append(row)
         print(f"  prompt-needle-ctx{ctx}.txt {n} tokens  needle at {row['needle_at']} "

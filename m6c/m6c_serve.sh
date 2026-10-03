@@ -21,6 +21,7 @@ MAXNEW=256
 DROP=0
 KVRES=32768
 TRACE=0
+PREFILL=512
 CACHEDIR=$R/sycl-cache/m6c
 PROMPT=""
 EXTRA=()
@@ -29,6 +30,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --drop) DROP=1; shift ;;
     --trace) TRACE=1; shift ;;
+    --prefill-auto) PREFILL=auto; shift ;;
     --kvres) KVRES=$2; shift 2 ;;
     --prompt) PROMPT=$2; shift 2 ;;
     --req) REQS+=("$2"); shift 2 ;;
@@ -109,7 +111,7 @@ fi
 ENGINE=(./build-sycl/strata --serve
   --pack "$PACK" --native "$SH1" --ple-gguf "$SH2" --mtp "$MTP"
   --kv int8 --expert-cache auto --expert-profile data/expert-profile.bin --mmap-experts
-  --prefill 512 --spec 4 --spec-min-p 0.5 --max-context "$CTX" --no-capture --stats --layer-split auto
+  --prefill "$PREFILL" --spec 4 --spec-min-p 0.5 --max-context "$CTX" --no-capture --stats --layer-split auto
   --prompt-cache 0 --prompt-cache-every 0)
 [ "$KVRES" != "0" ] && ENGINE+=(--kv-resident "$KVRES")
 [ ${#EXTRA[@]} -gt 0 ] && ENGINE+=("${EXTRA[@]}")

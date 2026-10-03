@@ -11,7 +11,7 @@ mkdir -p "$R/m6c"
 {
   echo "M6c block 2 start $(date -Is)"
   bash "$R/strata/m6c/m6c_serve.sh" m6c-262k 262144 \
-      --req "256:$P/prompt-ctx262144.txt" --req "64:$P/prompt-needle-ctx262144.txt"
+      --req "256:$P/prompt-ctx262144.txt" --req "256:$P/prompt-needle-ctx262144.txt"
   bash "$R/strata/m6c/m6c_serve.sh" m6c-262k-res 262144 256 --kvres 0
   echo "M6c block 2 end $(date -Is)"
 } > "$R/m6c/BLOCK2-SUMMARY.txt" 2>&1

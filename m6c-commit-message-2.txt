@@ -1,0 +1,14 @@
+m6c: the curve rows are a code-review chat turn, not a document continuation
+
+A plain continuation of the corpus is not a usable depth-curve prompt: at 64K the model wrote the
+end-of-turn token after 62 generated tokens (DONE 62 64512 286513.5 3125.9 stop ...), which fails the
+card's ">=256 usage-counted generated tokens at every length".  The curve rows are now the shape
+upstream's table used - a real code-review task over long source files: a system/user/assistant chat whose
+user turn is the 32K/64K/128K/260K document and whose task is to list the correctness and performance
+risks in it.
+
+Also adds the --prefill auto arm at 64K: upstream measured their table with --prefill auto (the engine's
+own help: the largest chunk up to 8192 whose buffers the expert cache can lend), so whether our
+--prefill 512 is part of the prefill gap becomes a measurement instead of a guess.
+
+The four runs measured with the continuation shape are kept under m6c/runs-plain-continuation/.
