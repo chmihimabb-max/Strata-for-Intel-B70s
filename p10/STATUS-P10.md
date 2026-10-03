@@ -6,10 +6,14 @@ pack IQ3_S `ed59f920`, faithful drafter `~/strata-xpu/mtp/rt`, MTP on, greedy, `
 two-card split, `--stats` for every number below.
 
 **The answer in one line:** the CPU expert path is real and it is busy — on one B70 `--expert-cache auto` keeps
-**52-54%** of the 24,576 profiled experts in VRAM and the pool computes the rest on **15.6-15.8 cores** during
+**52-54%** of the 24,576 profiled experts in VRAM and the pool computes the rest on **14.6-15.8 cores** during
 decode — and it costs **-4.9% decode at 32K** and **-15.5% at 128K** against the two-card split, but it costs
 **-25.8% / -40.3% of prefill**, comes with 8.7-15.3 GB of file reads per request, and the answers are **no longer
-bit-identical** to the model of record (the CPU rounds differently). {{two_instance_sentence}}
+bit-identical** to the model of record (the CPU rounds differently). Two one-card instances, one per card, do
+**not** double the workers: they reach **24.5 tok/s** of aggregate decode against **22.6** for one two-card
+instance (+8%, not +100%), each request runs **1.8x slower**, and for two concurrent 32K prompts the pair takes
+**353.5 s against 303.5 s** — the parallelism is eaten by the shared RAM path, so the honest answer to Mike's
+"might as well run two instances" is **no**.
 
 ## 1. What was run, and the mask rule that is the only difference between the arms
 
