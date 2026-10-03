@@ -220,7 +220,7 @@ For reference, the same prompt on one card **solo**: 260.6 tok/s prefill and 21.
 **The CPU expert path works — that part of the question is answered yes — but running two one-card instances does
 not buy double the workers, and the honest answer to the second question is no.** One B70 with
 `--expert-cache auto` holds **52.3-54.0%** of the 24,576 profiled experts (12,860-13,258 pairs, 24.4-25.2 GiB),
-the pool computes the rest on **15.6-15.8 of the 20 cores** during decode (19 workers plus the host, 70-88% of a
+the pool computes the rest on **14.6-15.8 of the 20 cores** during decode (19 workers plus the host, 70-88% of a
 core each; `CPU experts 1.22-1.98 (1.45-2.43 entries)` per layer-window where the two-card config reports exactly
 0.00), and the price is **-11.5% decode at 4K, -4.9% at 32K and -15.5% at 128K**, plus **-25.8% / -40.3% of
 prefill** at 32K / 128K and **8.6-15.3 GB of file-tier traffic per request** the two-card configuration never
