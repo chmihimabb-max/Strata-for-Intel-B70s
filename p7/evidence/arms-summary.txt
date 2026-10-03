@@ -1,0 +1,162 @@
+================================================================
+ARM p7-4096-headless
+  mtp runtime: <none: headless>
+  -- DONE (serve) --
+  -- serve summary --
+  -- engine's own timing --
+  -- drafter VRAM --
+  strata generate: expert cache auto: 27.55 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10833 slots
+  strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+  strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+  strata generate: layer split: CUDA1 runs layers 23-47, expert cache 12800 slots (25.63 GiB), 12800 of its 12800 profiled pairs; slot 0 verified
+  -- bench summary (if the arm ran the bench path) --
+  -- tokens --
+  T lines: 0  md5 d41d8cd98f00b204e9800998ecf8427e
+  -- peak VRAM/RSS --
+  1791043087.502,27.2,3,51555307520,51530551296,12288,3,1560230,3078274121,96245428,16,25401.0,30444.5
+================================================================
+ARM p7-4096-new
+  INFO context=4096 kv=int8 kv_resident=0 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=5778 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+  mtp runtime: /home/michael/strata-xpu/mtp/rt
+  -- DONE (serve) --
+  DONE 150 3832 15686.6 6662.3 stop 101 140 0 91200 91200 0 0 0.0
+  -- serve summary --
+  strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15687 ms (244.3 tok/s), 150 generated in 6662 ms (22.5 tok/s), drafts accepted 101 of 140, 0 checkpoints
+  strata serve: suffix drafts: 8 windows, 29 of 38 drafts accepted
+  -- engine's own timing --
+  strata decode timing: 50 windows, avg T 3.80, 3.00 tokens/window, 133.25 ms/window = verify 119.57 (GPU-reach wait 45.56 + per-layer host 0.57 [plan 0.31 actq 0.25 jobs 0.28 CPU 0.00] + stage 1.16) + commit/emit 2.02 + draft 11.65; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 38.00, PCIe 0.00
+  -- drafter VRAM --
+  strata mtp: draft layer loaded, 795 MiB of VRAM (experts 675, dense 111), files read in 0.40 s (1980 MiB/s)
+  strata generate: expert cache auto: 27.55 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10834 slots
+  strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+  strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+  strata generate: layer split: CUDA1 runs layers 23-47, expert cache 12800 slots (25.63 GiB), 12800 of its 12800 profiled pairs; slot 0 verified
+  strata mtp: draft head over 106299 tokens (212.9 MiB)
+  -- bench summary (if the arm ran the bench path) --
+  -- tokens --
+  T lines: 150  md5 ad985c23cad68dcf1c462da621fc66e4
+  -- peak VRAM/RSS --
+  1791043055.652,50.4,3,51854786560,51830247424,180449280,0,1690065,4097999667,96242860,16,26134.8,31864.9
+================================================================
+ARM p7-4096-new-b
+  INFO context=4096 kv=int8 kv_resident=0 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=5780 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+  mtp runtime: /home/michael/strata-xpu/mtp/rt
+  mtp draft_vocab: present (425196 B)
+  -- DONE (serve) --
+  DONE 150 3832 15765.8 6669.9 stop 101 140 0 91200 91200 0 0 0.0
+  -- serve summary --
+  strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15766 ms (243.1 tok/s), 150 generated in 6670 ms (22.5 tok/s), drafts accepted 101 of 140, 0 checkpoints
+  strata serve: suffix drafts: 8 windows, 29 of 38 drafts accepted
+  -- engine's own timing --
+  strata decode timing: 50 windows, avg T 3.80, 3.00 tokens/window, 133.40 ms/window = verify 119.89 (GPU-reach wait 45.80 + per-layer host 0.52 [plan 0.32 actq 0.26 jobs 0.28 CPU 0.00] + stage 1.13) + commit/emit 2.04 + draft 11.47; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 38.00, PCIe 0.00
+  -- drafter VRAM --
+  strata mtp: draft layer loaded, 795 MiB of VRAM (experts 675, dense 111), files read in 0.39 s (1998 MiB/s)
+  strata generate: expert cache auto: 27.55 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10835 slots
+  strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+  strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+  strata generate: layer split: CUDA1 runs layers 23-47, expert cache 12800 slots (25.63 GiB), 12800 of its 12800 profiled pairs; slot 0 verified
+  strata mtp: draft head over 106299 tokens (212.9 MiB)
+  -- bench summary (if the arm ran the bench path) --
+  -- tokens --
+  T lines: 150  md5 ad985c23cad68dcf1c462da621fc66e4
+  -- peak VRAM/RSS --
+  1791043999.582,50.4,3,51812200448,51787866112,179564544,0,1686750,4097791717,96038772,16,26134.8,31864.9
+================================================================
+ARM p7-4096-new-nodv
+  INFO context=4096 kv=int8 kv_resident=0 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=5776 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+  mtp runtime: /home/michael/strata-xpu/mtp/rt-noDV
+  mtp draft_vocab: ABSENT (the engine drafts over the whole vocabulary)
+  -- DONE (serve) --
+  DONE 150 3832 15706.3 6986.2 stop 102 139 0 90240 90240 0 0 0.0
+  -- serve summary --
+  strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15706 ms (244.0 tok/s), 150 generated in 6986 ms (21.5 tok/s), drafts accepted 102 of 139, 0 checkpoints
+  strata serve: suffix drafts: 8 windows, 30 of 38 drafts accepted
+  -- engine's own timing --
+  strata decode timing: 49 windows, avg T 3.84, 3.06 tokens/window, 142.58 ms/window = verify 121.29 (GPU-reach wait 46.65 + per-layer host 0.53 [plan 0.31 actq 0.26 jobs 0.28 CPU 0.00] + stage 1.11) + commit/emit 2.08 + draft 19.20; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 38.37, PCIe 0.00
+  -- drafter VRAM --
+  strata mtp: draft layer loaded, 795 MiB of VRAM (experts 675, dense 111), files read in 0.39 s (2036 MiB/s)
+  strata generate: expert cache auto: 27.55 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10833 slots
+  strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+  strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+  strata generate: layer split: CUDA1 runs layers 23-47, expert cache 12800 slots (25.63 GiB), 12800 of its 12800 profiled pairs; slot 0 verified
+  -- bench summary (if the arm ran the bench path) --
+  -- tokens --
+  T lines: 150  md5 ad985c23cad68dcf1c462da621fc66e4
+  -- peak VRAM/RSS --
+  1791043308.461,50.5,3,51815268352,51790618624,179744768,0,1684115,4097513750,96016508,16,26134.8,31651.5
+================================================================
+ARM p7-4096-old
+  INFO context=4096 kv=int8 kv_resident=0 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=5776 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+  mtp runtime: /run/media/michael/2208B12208B0F63F/strata-w4a16/mtp-bf16/rt-q2_0
+  mtp draft_vocab: ABSENT (the engine drafts over the whole vocabulary)
+  -- DONE (serve) --
+  DONE 150 3832 15706.2 7011.1 stop 102 139 0 90240 90240 0 0 0.0
+  -- serve summary --
+  strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15706 ms (244.0 tok/s), 150 generated in 7011 ms (21.4 tok/s), drafts accepted 102 of 139, 0 checkpoints
+  strata serve: suffix drafts: 8 windows, 30 of 38 drafts accepted
+  -- engine's own timing --
+  strata decode timing: 49 windows, avg T 3.84, 3.06 tokens/window, 143.08 ms/window = verify 121.75 (GPU-reach wait 47.03 + per-layer host 0.53 [plan 0.31 actq 0.26 jobs 0.28 CPU 0.00] + stage 1.11) + commit/emit 2.13 + draft 19.19; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 38.37, PCIe 0.00
+  -- drafter VRAM --
+  strata mtp: draft layer loaded, 795 MiB of VRAM (experts 675, dense 111), files read in 0.40 s (1942 MiB/s)
+  strata generate: expert cache auto: 27.55 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10835 slots
+  strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+  strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+  strata generate: layer split: CUDA1 runs layers 23-47, expert cache 12800 slots (25.63 GiB), 12800 of its 12800 profiled pairs; slot 0 verified
+  -- bench summary (if the arm ran the bench path) --
+  -- tokens --
+  T lines: 150  md5 ad985c23cad68dcf1c462da621fc66e4
+  -- peak VRAM/RSS --
+  1791043252.673,49.4,3,51812352000,51787673600,178884608,0,1686794,4096653581,96016160,16,26134.8,31651.5
+================================================================
+ARM p7-bench-32768-mtp
+  mtp runtime: /home/michael/strata-xpu/mtp/rt
+  -- DONE (serve) --
+  -- serve summary --
+  -- engine's own timing --
+  -- drafter VRAM --
+  strata mtp: draft layer loaded, 839 MiB of VRAM (experts 675, dense 111), files read in 0.35 s (2268 MiB/s)
+  strata generate: expert cache auto: 25.77 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 10029 slots
+  strata generate: expert cache 13102 slots, 24.87 GiB of VRAM; policy is
+  strata generate: pre-filled 13102 of 13102 slots from the profile; slot 0 verified
+  strata mtp: draft head over 106299 tokens (212.9 MiB)
+  -- bench summary (if the arm ran the bench path) --
+  -- tokens --
+  -- peak VRAM/RSS --
+================================================================
+ARM p7-bench-4096-headless
+  mtp runtime: <none: headless>
+  -- DONE (serve) --
+  -- serve summary --
+  -- engine's own timing --
+  -- drafter VRAM --
+  strata generate: expert cache auto: 26.97 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10602 slots
+  strata generate: expert cache 13847 slots, 26.29 GiB of VRAM; policy is
+  strata generate: pre-filled 13847 of 13847 slots from the profile; slot 0 verified
+  -- bench summary (if the arm ran the bench path) --
+  speculation              155 rounds of 6, drafts accepted 103 of 448 (0.230), 1.66 tokens per round
+  suffix drafts            45 windows, drafts accepted 103 of 121
+  accepted per round       0:116 1:9 2:3 3:23 4:1 5:3
+  decode                   256 tokens in 19714.8 ms  ->  12.99 tok/s
+  prefill                  3831 tokens in 27659.6 ms  ->  138.51 tok/s  (time to first token 27844.6 ms)
+  -- tokens --
+  -- peak VRAM/RSS --
+================================================================
+ARM p7-bench-4096-mtp
+  mtp runtime: /home/michael/strata-xpu/mtp/rt
+  -- DONE (serve) --
+  -- serve summary --
+  -- engine's own timing --
+  -- drafter VRAM --
+  strata mtp: draft layer loaded, 795 MiB of VRAM (experts 675, dense 111), files read in 0.34 s (2292 MiB/s)
+  strata generate: expert cache auto: 26.20 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 10204 slots
+  strata generate: expert cache 13325 slots, 25.30 GiB of VRAM; policy is
+  strata generate: pre-filled 13325 of 13325 slots from the profile; slot 0 verified
+  strata mtp: draft head over 106299 tokens (212.9 MiB)
+  -- bench summary (if the arm ran the bench path) --
+  speculation              83 rounds of 6, drafts accepted 174 of 233 (0.747), 3.10 tokens per round
+  suffix drafts            28 windows, drafts accepted 92 of 98
+  accepted per round       0:18 1:11 2:9 3:40 4:0 5:5
+  decode                   256 tokens in 11979.9 ms  ->  21.37 tok/s
+  prefill                  3831 tokens in 28260.6 ms  ->  135.56 tok/s  (time to first token 28453.4 ms)
+  -- tokens --
+  -- peak VRAM/RSS --

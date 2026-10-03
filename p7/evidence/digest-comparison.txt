@@ -1,0 +1,61 @@
+====================================================================================================
+A. CANONICAL FETCH  (tools/mtp_fetch.py, pinned revision) : /home/michael/strata-xpu/mtp/canonical
+B. W4A16-DERIVED    (tools/mtp_w4a16_adapter.py)          : /run/media/michael/2208B12208B0F63F/strata-w4a16/mtp-bf16
+====================================================================================================
+canonical source repo : https://huggingface.co/Qwen/Qwen3.8-Flash-Next/resolve/de4b8e4d43b917e7706784d8bb445c9af86a3540/
+canonical tensors     : 31, 5.214 GB
+W4A16 tensors         : 31, 5.214 GB
+
+tensor                                                     MB     canon  adapter  recomputed-from-bytes
+mtp.fc_embedding.weight                                    13.1   ok     ok       IDENTICAL
+mtp.fc_hidden.weight                                       13.1   ok     ok       IDENTICAL
+mtp.hyper_connection_mixer.hc_norm.weight                  0.0    ok     ok       IDENTICAL
+mtp.hyper_connection_mixer.input_mix_weight_down.weight    6.6    ok     ok       IDENTICAL
+mtp.hyper_connection_mixer.input_mix_weight_up.weight      6.6    ok     ok       IDENTICAL
+mtp.layers.0.attn_hyper_connection.block_inject_weight.weight 0.1    ok     ok       IDENTICAL
+mtp.layers.0.attn_hyper_connection.hc_norm.weight          0.0    ok     ok       IDENTICAL
+mtp.layers.0.attn_hyper_connection.input_mix_weight_down.weight 6.6    ok     ok       IDENTICAL
+mtp.layers.0.attn_hyper_connection.input_mix_weight_up.weight 6.6    ok     ok       IDENTICAL
+mtp.layers.0.mlp.experts.down_proj                         1677.7 ok     ok       IDENTICAL
+mtp.layers.0.mlp.experts.gate_up_proj                      3355.4 ok     ok       IDENTICAL
+mtp.layers.0.mlp.gate.weight                               2.6    ok     ok       IDENTICAL
+mtp.layers.0.mlp.shared_expert.down_proj.weight            3.3    ok     ok       IDENTICAL
+mtp.layers.0.mlp.shared_expert.gate_proj.weight            3.3    ok     ok       IDENTICAL
+mtp.layers.0.mlp.shared_expert.up_proj.weight              3.3    ok     ok       IDENTICAL
+mtp.layers.0.mlp.shared_expert_gate.weight                 0.0    ok     ok       IDENTICAL
+mtp.layers.0.mlp_hyper_connection.block_inject_weight.weight 0.1    ok     ok       IDENTICAL
+mtp.layers.0.mlp_hyper_connection.hc_norm.weight           0.0    ok     ok       IDENTICAL
+mtp.layers.0.mlp_hyper_connection.input_mix_weight_down.weight 6.6    ok     ok       IDENTICAL
+mtp.layers.0.mlp_hyper_connection.input_mix_weight_up.weight 6.6    ok     ok       IDENTICAL
+mtp.layers.0.self_attn.indexer.index_qk_proj.weight        3.3    ok     ok       IDENTICAL
+mtp.layers.0.self_attn.indexer.k_layernorm.weight          0.0    ok     ok       IDENTICAL
+mtp.layers.0.self_attn.indexer.q_layernorm.weight          0.0    ok     ok       IDENTICAL
+mtp.layers.0.self_attn.k_norm.weight                       0.0    ok     ok       IDENTICAL
+mtp.layers.0.self_attn.k_proj.weight                       2.6    ok     ok       IDENTICAL
+mtp.layers.0.self_attn.o_proj.weight                       31.5   ok     ok       IDENTICAL
+mtp.layers.0.self_attn.q_norm.weight                       0.0    ok     ok       IDENTICAL
+mtp.layers.0.self_attn.q_proj.weight                       62.9   ok     ok       IDENTICAL
+mtp.layers.0.self_attn.v_proj.weight                       2.6    ok     ok       IDENTICAL
+mtp.pre_fc_norm_embedding.weight                           0.0    ok     ok       IDENTICAL
+mtp.pre_fc_norm_hidden.weight                              0.0    ok     ok       IDENTICAL
+
+digest comparison: 31/31 tensors IDENTICAL, 0 differ, 0 recorded digests stale
+
+====================================================================================================
+RUNTIME DIRS THE ENGINE LOADS
+  canonical -> /home/michael/strata-xpu/mtp/rt
+  W4A16     -> /run/media/michael/2208B12208B0F63F/strata-w4a16/mtp-bf16/rt-q2_0
+====================================================================================================
+dense.bin           116099072 B  IDENTICAL
+    new c724dc0b0822ada5d2977bf5bde821605feabaa64ea2e0045b67ca656329070a
+    old c724dc0b0822ada5d2977bf5bde821605feabaa64ea2e0045b67ca656329070a
+experts.bin         707788800 B  IDENTICAL
+    new 09398406be61f1f54c93861f449e48b8df0bfccbc9ec9b2b7636775a6ea9244f
+    old 09398406be61f1f54c93861f449e48b8df0bfccbc9ec9b2b7636775a6ea9244f
+dense.txt                1851 B  IDENTICAL
+    new 991456cf4eb266eb8a888c349e548d11bc640f5dbd9149439aa9786af0f732fd
+    old 991456cf4eb266eb8a888c349e548d11bc640f5dbd9149439aa9786af0f732fd
+draft_vocab.bin  True       False      (missing on one side)
+
+wrote /home/michael/strata-xpu/strata/p7/p7-digest-comparison.json
+exit=0
