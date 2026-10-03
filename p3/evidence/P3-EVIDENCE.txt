@@ -1,0 +1,94 @@
+====================================================================================================
+ARM p3-4k-closed
+  strata decode timing: 48 windows, avg T 3.79, 3.06 tokens/window, 142.23 ms/window = verify 121.04 (GPU-reach wait 46.51 + per-layer host 0.52 [plan 0.31 actq 0.25 jobs 0.27 CPU 0.00] + stage 1.37) + commit/emit 2.07 + draft 19.13; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.92, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+  DONE 147 3832 15144.2 6827.2 stop 99 134 0 87360 87360 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 147, md5 ac9f16fceed82e5681e4
+  submissions/window layers 0..22 (23 layers): 1769.5 total, 1197.0 kernels, 16.5 barriers, 0.0 graph submissions -> 76.9 per layer   [44 windows]
+  submissions/window layers 23..47 (25 layers): 2072.0 total, 1307.0 kernels, 15.0 barriers, 0.0 graph submissions -> 82.9 per layer   [44 windows]
+  peak tree RSS 48.3 GiB, peak VRAM card0 28.6 GiB card1 30.9 GiB
+  strata serve: decode expert cache hit rate: 100.0% (87360 hits / 87360 lookups)
+  strata serve: expert tiers: GPU 87360 hits this request; since the start RAM 0 blobs, files 0 blobs 54327.8 MB read (the GGUF in place)
+====================================================================================================
+ARM p3-4k-graph2
+  strata decode timing: 48 windows, avg T 3.73, 3.06 tokens/window, 137.17 ms/window = verify 115.82 (GPU-reach wait 47.30 + per-layer host 0.49 [plan 0.30 actq 0.25 jobs 0.25 CPU 0.00] + stage 1.12) + commit/emit 1.94 + draft 19.41; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.29, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata/sycl: STRATA_SYCL_GRAPH=1 - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+  strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+  DONE 147 3832 15159.4 6584.1 stop 99 131 0 85920 85920 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 147, md5 ac9f16fceed82e5681e4
+  submissions/window layers 0..22 (23 layers): 88.5 total, 0.0 kernels, 15.5 barriers, 1.0 graph submissions -> 3.8 per layer   [44 windows]
+  submissions/window layers 23..47 (25 layers): 95.5 total, 0.0 kernels, 16.5 barriers, 1.0 graph submissions -> 3.8 per layer   [44 windows]
+  peak tree RSS 48.3 GiB, peak VRAM card0 28.6 GiB card1 30.9 GiB
+  strata serve: decode expert cache hit rate: 100.0% (85920 hits / 85920 lookups)
+  strata serve: expert tiers: GPU 85920 hits this request; since the start RAM 0 blobs, files 0 blobs 54327.8 MB read (the GGUF in place)
+====================================================================================================
+ARM p3-32k-closed
+  strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 138.29 ms/window = verify 115.40 (GPU-reach wait 44.27 + per-layer host 0.50 [plan 0.30 actq 0.24 jobs 0.25 CPU 0.00] + stage 1.26) + commit/emit 2.04 + draft 20.85; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.18, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.1 MiB of device buffers
+  DONE 256 32256 91644.0 11754.8 length 171 214 0 143520 143520 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 124a3cd39b33f7da31e2
+  submissions/window layers 0..22 (23 layers): 1769 total, 1197 kernels, 16 barriers, 0 graph submissions -> 76.9 per layer   [77 windows]
+  submissions/window layers 23..47 (25 layers): 2073 total, 1307 kernels, 16 barriers, 0 graph submissions -> 82.9 per layer   [77 windows]
+  peak tree RSS 48.3 GiB, peak VRAM card0 28.7 GiB card1 31.2 GiB
+  strata serve: decode expert cache hit rate: 100.0% (143520 hits / 143520 lookups)
+  strata serve: expert tiers: GPU 143520 hits this request; since the start RAM 0 blobs, files 0 blobs 69934.3 MB read (the GGUF in place)
+====================================================================================================
+ARM p3-32k-graph
+  strata decode timing: 87 windows, avg T 3.46, 2.94 tokens/window, 132.38 ms/window = verify 109.52 (GPU-reach wait 45.26 + per-layer host 0.50 [plan 0.30 actq 0.23 jobs 0.22 CPU 0.00] + stage 1.20) + commit/emit 1.91 + draft 20.95; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.60, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata/sycl: STRATA_SYCL_GRAPH=1 - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+  strata verify: window up to 6 tokens, 74.1 MiB of device buffers
+  DONE 256 32256 91780.2 11516.9 length 172 214 0 144480 144480 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 124a3cd39b33f7da31e2
+  submissions/window layers 0..22 (23 layers): 88 total, 0 kernels, 15 barriers, 1 graph submissions -> 3.8 per layer   [79 windows]
+  submissions/window layers 23..47 (25 layers): 96 total, 0 kernels, 17 barriers, 1 graph submissions -> 3.8 per layer   [79 windows]
+  peak tree RSS 48.4 GiB, peak VRAM card0 28.8 GiB card1 31.2 GiB
+  strata serve: decode expert cache hit rate: 100.0% (144480 hits / 144480 lookups)
+  strata serve: expert tiers: GPU 144480 hits this request; since the start RAM 0 blobs, files 0 blobs 69934.3 MB read (the GGUF in place)
+====================================================================================================
+ARM p3-128k-closed
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 132.38 ms/window = verify 110.94 (GPU-reach wait 42.41 + per-layer host 0.48 [plan 0.30 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.71) + commit/emit 1.98 + draft 19.46; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372455.1 13105.6 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  submissions/window layers 0..22 (23 layers): 1778 total, 1207 kernels, 15 barriers, 0 graph submissions -> 77.3 per layer   [81 windows]
+  submissions/window layers 23..47 (25 layers): 2085 total, 1321 kernels, 14 barriers, 0 graph submissions -> 83.4 per layer   [81 windows]
+  peak tree RSS 48.4 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+====================================================================================================
+ARM p3-128k-graph
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 128.31 ms/window = verify 106.83 (GPU-reach wait 43.96 + per-layer host 0.45 [plan 0.29 actq 0.21 jobs 0.20 CPU 0.00] + stage 1.37) + commit/emit 1.86 + draft 19.61; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata/sycl: STRATA_SYCL_GRAPH=1 - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372539.0 12702.3 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  submissions/window layers 0..22 (23 layers): 89 total, 0 kernels, 16 barriers, 1 graph submissions -> 3.9 per layer   [81 windows]
+  submissions/window layers 23..47 (25 layers): 94 total, 0 kernels, 15 barriers, 1 graph submissions -> 3.8 per layer   [81 windows]
+  peak tree RSS 48.4 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+====================================================================================================
+ARM p3-32k-nonimm
+  strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 138.13 ms/window = verify 115.24 (GPU-reach wait 44.38 + per-layer host 0.51 [plan 0.30 actq 0.24 jobs 0.25 CPU 0.00] + stage 1.15) + commit/emit 2.04 + draft 20.85; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.18, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.1 MiB of device buffers
+  DONE 256 32256 91816.5 11741.3 length 171 214 0 143520 143520 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 124a3cd39b33f7da31e2
+  submissions/window layers 0..22 (23 layers): 1769 total, 1197 kernels, 16 barriers, 0 graph submissions -> 76.9 per layer   [77 windows]
+  submissions/window layers 23..47 (25 layers): 2072 total, 1307 kernels, 15 barriers, 0 graph submissions -> 82.9 per layer   [77 windows]
+  peak tree RSS 48.3 GiB, peak VRAM card0 28.7 GiB card1 31.2 GiB
+  strata serve: decode expert cache hit rate: 100.0% (143520 hits / 143520 lookups)
+  strata serve: expert tiers: GPU 143520 hits this request; since the start RAM 0 blobs, files 0 blobs 69934.3 MB read (the GGUF in place)
