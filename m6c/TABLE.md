@@ -2,7 +2,9 @@
 
 Engine 0.1.34, two Intel Arc Pro B70 (31.9 GiB each), ZE_AFFINITY_MASK unset, --layer-split auto,
 --spec 4 --spec-min-p 0.5, --kv int8, --mmap-experts, --prompt-cache 0, warm program cache,
-IQ3_S GSQ-RCO, one request per engine process except m6c-262k (two requests: curve then needle).
+IQ3_S GSQ-RCO, one request per engine process except m6c-262k and m6c-needle-262k-d5 (the 256K
+rows' KV-hit column is the LAST request's line; m6c-262k's first request reported 90.99% of
+790,765 block reads from VRAM / 287.1 MiB from RAM, its second 94.51% of 777,940 / 171.9 MiB).
 
 ## 1. Depth curve, KV streaming on (--kv-resident 32768), --prefill auto
 
