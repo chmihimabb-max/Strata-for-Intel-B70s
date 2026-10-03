@@ -134,7 +134,13 @@ def main() -> int:
                  "engine_id_at_div": (eng[div] if div is not None and div < len(eng) else None),
                  "aligned_matched": matched,
                  "aligned_agreement_pct": (100.0 * matched / max(len(gold), len(eng))) if eng else None,
-                 "diff_blocks": blocks, "serve_stats": st}
+                 "diff_blocks": blocks, "serve_stats": st,
+                # The FIRST divergence is the only one that is evidence about the kernels: after it the two
+                # streams are in different contexts, so a "difference" there is a different continuation, not an
+                # error.  The oracle's own implementation band (I2: it flips its own choice under a -ub change at
+                # margins 0.064-0.106 nats) is what the margin at that first divergence has to be compared with.
+                "first_div_decided": (m_div is not None and m_div >= 0.106) if div is not None else None,
+                "oracle_band_nats": 0.106}
         for t in THRESHOLDS:
             entry["blocks_with_margin_ge_%.2f" % t] = sum(
                 1 for b in blocks if (b["max_margin_in_block"] or -1) >= t)
@@ -169,9 +175,33 @@ def main() -> int:
         print("   blocks whose own oracle margin >= 0.05/0.10/0.15/0.50 nats: %s"
               % [entry["blocks_with_margin_ge_%.2f" % t] for t in THRESHOLDS])
 
+    if len(arms) >= 2:
+        a_streams = {label: (parse_arm(out)[0] if parse_arm(out) else []) for label, out in arms}
+        labels = [lab for lab, _ in arms]
+        x, y = labels[0], labels[1]
+        sm2 = difflib.SequenceMatcher(None, a_streams[x], a_streams[y], autojunk=False)
+        ops = [{"tag": t, "a": [i1, i2], "b": [j1, j2], "a_ids": a_streams[x][i1:i2][:8],
+                "b_ids": a_streams[y][j1:j2][:8]} for t, i1, i2, j1, j2 in sm2.get_opcodes() if t != "equal"]
+        matched2 = sum(i2 - i1 for t, i1, i2, j1, j2 in sm2.get_opcodes() if t == "equal")
+        report["arms_vs_each_other"] = {"a": x, "b": y, "a_gen": len(a_streams[x]), "b_gen": len(a_streams[y]),
+                                       "aligned_matched": matched2, "ops": ops}
+        print("-" * 118)
+        print("ARM-vs-ARM (no oracle): %s(%d ids) vs %s(%d ids) -- aligned matched %d; %d differing op(s):"
+              % (x, len(a_streams[x]), y, len(a_streams[y]), matched2, len(ops)))
+        for o in ops:
+            print("      %-7s %s[%d:%d] %s vs %s[%d:%d] %s"
+                  % (o["tag"], x, o["a"][0], o["a"][1], o["a_ids"], y, o["b"][0], o["b"][1], o["b_ids"]))
+
     out_json = pathlib.Path("p5") / ("compare-%d.json" % ctx)
-    out_json.write_text(json.dumps(report, indent=1), encoding="utf-8")
     print("=" * 118)
+    for label, a in report["arms"].items():
+        if a["first_divergence"] is None:
+            print("ATTRIBUTABLE: %-22s no divergence at all in the first %d positions" % (label, a["gen"]))
+        else:
+            print("ATTRIBUTABLE: %-22s first divergence idx %d at %.4f nats -> %s the oracle's own band (0.106 nats)"
+                  % (label, a["first_divergence"], a["margin_at_div"],
+                     "OUTSIDE" if a["first_div_decided"] else "inside"))
+    out_json.write_text(json.dumps(report, indent=1), encoding="utf-8")
     print("wrote %s" % out_json.resolve())
     return 0
 

@@ -1,0 +1,795 @@
+{
+ "ctx": 4096,
+ "oracle": "/home/michael/strata-xpu/p5/oracle/oracle-4k.json",
+ "oracle_prompt_file": "/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt",
+ "oracle_prompt_tokens": 3832,
+ "oracle_gen": 148,
+ "oracle_timings": {
+  "prompt_n": 3832,
+  "prompt_tok_s": 492.67512177059626,
+  "predicted_n": 148,
+  "predicted_tok_s": 18.010256289622564
+ },
+ "oracle_margin_stats": {
+  "n": 148,
+  "min": 0.04821401834487915,
+  "median": 8.220421265170444,
+  "max": 20.922304153442383,
+  "below": {
+   "0.05": 1,
+   "0.1": 3,
+   "0.15": 3,
+   "0.5": 11
+  }
+ },
+ "arms": {
+  "shipped": {
+   "label": "shipped",
+   "out_file": "/home/michael/strata-xpu/p5/runs/p5-4k-shipped/out.txt",
+   "gen": 150,
+   "oracle_gen": 148,
+   "first_divergence": 78,
+   "compared_prefix": 79,
+   "agreed_in_prefix": 78,
+   "prefix_agreement_pct": 98.73417721518987,
+   "margin_at_div": 0.1730670928955078,
+   "oracle_top1_at_div": 449,
+   "oracle_top2_at_div": 264,
+   "engine_id_at_div": 264,
+   "aligned_matched": 110,
+   "aligned_agreement_pct": 73.33333333333333,
+   "diff_blocks": [
+    {
+     "tag": "replace",
+     "oracle_range": [
+      78,
+      81
+     ],
+     "engine_range": [
+      78,
+      82
+     ],
+     "oracle_ids": [
+      449,
+      39328,
+      7359
+     ],
+     "engine_ids": [
+      264,
+      9640,
+      24277,
+      4621
+     ],
+     "margin_at_block_start": 0.1730670928955078,
+     "max_margin_in_block": 1.055910050868988,
+     "oracle_top1_top2_at_start": [
+      449,
+      264
+     ]
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      85,
+      89
+     ],
+     "engine_range": [
+      86,
+      90
+     ],
+     "oracle_ids": [
+      11,
+      4313,
+      310,
+      615
+     ],
+     "engine_ids": [
+      13,
+      561,
+      3296,
+      16561
+     ],
+     "margin_at_block_start": 0.876991331577301,
+     "max_margin_in_block": 11.958728909274214,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      91,
+      107
+     ],
+     "engine_range": [
+      92,
+      93
+     ],
+     "oracle_ids": [
+      4089,
+      424,
+      430,
+      264,
+      57879,
+      4087
+     ],
+     "engine_ids": [
+      10229
+     ],
+     "margin_at_block_start": 0.09824001789093018,
+     "max_margin_in_block": 16.51558673381804,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "insert",
+     "oracle_range": [
+      110,
+      110
+     ],
+     "engine_range": [
+      96,
+      103
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      11,
+      321,
+      279,
+      2128,
+      20335,
+      5134
+     ],
+     "margin_at_block_start": 6.607948140474036,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      111,
+      112
+     ],
+     "engine_range": [
+      104,
+      122
+     ],
+     "oracle_ids": [
+      3956
+     ],
+     "engine_ids": [
+      328,
+      57,
+      42,
+      12,
+      19,
+      19
+     ],
+     "margin_at_block_start": 1.100379765033722,
+     "max_margin_in_block": 1.100379765033722,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "insert",
+     "oracle_range": [
+      113,
+      113
+     ],
+     "engine_range": [
+      123,
+      126
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      8385,
+      1928,
+      494
+     ],
+     "margin_at_block_start": 5.352455162443221,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "delete",
+     "oracle_range": [
+      116,
+      123
+     ],
+     "engine_range": [
+      129,
+      129
+     ],
+     "oracle_ids": [
+      561,
+      2128,
+      1503,
+      1528,
+      411,
+      1970
+     ],
+     "engine_ids": [],
+     "margin_at_block_start": 2.910551220178604,
+     "max_margin_in_block": 4.435229990631342,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "insert",
+     "oracle_range": [
+      125,
+      125
+     ],
+     "engine_range": [
+      131,
+      133
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      3300,
+      279
+     ],
+     "margin_at_block_start": 1.365287870168686,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "delete",
+     "oracle_range": [
+      126,
+      129
+     ],
+     "engine_range": [
+      134,
+      134
+     ],
+     "oracle_ids": [
+      440,
+      279,
+      1970
+     ],
+     "engine_ids": [],
+     "margin_at_block_start": 1.4393234252929688,
+     "max_margin_in_block": 8.273899385967525,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      130,
+      134
+     ],
+     "engine_range": [
+      135,
+      136
+     ],
+     "oracle_ids": [
+      10661,
+      303,
+      279,
+      2128
+     ],
+     "engine_ids": [
+      10897
+     ],
+     "margin_at_block_start": 0.19633102416992188,
+     "max_margin_in_block": 10.670385479494144,
+     "oracle_top1_top2_at_start": null
+    }
+   ],
+   "serve_stats": {
+    "prompt_tokens": 3832,
+    "reused": 0,
+    "read_tokens": 3832,
+    "prefill_ms": 17939.0,
+    "prefill_tok_s": 213.6,
+    "gen_tokens": 150,
+    "decode_ms": 7031.0,
+    "decode_tok_s": 21.3
+   },
+   "first_div_decided": true,
+   "oracle_band_nats": 0.106,
+   "blocks_with_margin_ge_0.05": 7,
+   "blocks_with_margin_ge_0.10": 7,
+   "blocks_with_margin_ge_0.15": 7,
+   "blocks_with_margin_ge_0.50": 7
+  },
+  "batched": {
+   "label": "batched",
+   "out_file": "/home/michael/strata-xpu/p5/runs/p5-4k-batched/out.txt",
+   "gen": 137,
+   "oracle_gen": 148,
+   "first_divergence": 78,
+   "compared_prefix": 79,
+   "agreed_in_prefix": 78,
+   "prefix_agreement_pct": 98.73417721518987,
+   "margin_at_div": 0.1730670928955078,
+   "oracle_top1_at_div": 449,
+   "oracle_top2_at_div": 264,
+   "engine_id_at_div": 264,
+   "aligned_matched": 109,
+   "aligned_agreement_pct": 73.64864864864865,
+   "diff_blocks": [
+    {
+     "tag": "replace",
+     "oracle_range": [
+      78,
+      81
+     ],
+     "engine_range": [
+      78,
+      82
+     ],
+     "oracle_ids": [
+      449,
+      39328,
+      7359
+     ],
+     "engine_ids": [
+      264,
+      9640,
+      24277,
+      4621
+     ],
+     "margin_at_block_start": 0.1730670928955078,
+     "max_margin_in_block": 1.055910050868988,
+     "oracle_top1_top2_at_start": [
+      449,
+      264
+     ]
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      85,
+      89
+     ],
+     "engine_range": [
+      86,
+      90
+     ],
+     "oracle_ids": [
+      11,
+      4313,
+      310,
+      615
+     ],
+     "engine_ids": [
+      13,
+      561,
+      3296,
+      16561
+     ],
+     "margin_at_block_start": 0.876991331577301,
+     "max_margin_in_block": 11.958728909274214,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      91,
+      107
+     ],
+     "engine_range": [
+      92,
+      93
+     ],
+     "oracle_ids": [
+      4089,
+      424,
+      430,
+      264,
+      57879,
+      4087
+     ],
+     "engine_ids": [
+      10229
+     ],
+     "margin_at_block_start": 0.09824001789093018,
+     "max_margin_in_block": 16.51558673381804,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      110,
+      113
+     ],
+     "engine_range": [
+      96,
+      98
+     ],
+     "oracle_ids": [
+      369,
+      3956,
+      310
+     ],
+     "engine_ids": [
+      11,
+      321
+     ],
+     "margin_at_block_start": 6.607948140474036,
+     "max_margin_in_block": 15.593657016754037,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      115,
+      124
+     ],
+     "engine_range": [
+      100,
+      116
+     ],
+     "oracle_ids": [
+      13,
+      561,
+      2128,
+      1503,
+      1528,
+      411
+     ],
+     "engine_ids": [
+      5134,
+      424,
+      369,
+      328,
+      57,
+      42
+     ],
+     "margin_at_block_start": 1.3018493950366974,
+     "max_margin_in_block": 4.435229990631342,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      130,
+      134
+     ],
+     "engine_range": [
+      122,
+      123
+     ],
+     "oracle_ids": [
+      10661,
+      303,
+      279,
+      2128
+     ],
+     "engine_ids": [
+      10897
+     ],
+     "margin_at_block_start": 0.19633102416992188,
+     "max_margin_in_block": 10.670385479494144,
+     "oracle_top1_top2_at_start": null
+    }
+   ],
+   "serve_stats": {
+    "prompt_tokens": 3832,
+    "reused": 0,
+    "read_tokens": 3832,
+    "prefill_ms": 13624.0,
+    "prefill_tok_s": 281.3,
+    "gen_tokens": 137,
+    "decode_ms": 6302.0,
+    "decode_tok_s": 21.7
+   },
+   "first_div_decided": true,
+   "oracle_band_nats": 0.106,
+   "blocks_with_margin_ge_0.05": 6,
+   "blocks_with_margin_ge_0.10": 6,
+   "blocks_with_margin_ge_0.15": 6,
+   "blocks_with_margin_ge_0.50": 6
+  },
+  "shipped-fp16": {
+   "label": "shipped-fp16",
+   "out_file": "/home/michael/strata-xpu/p5/runs/p5-4k-shipped-fp16/out.txt",
+   "gen": 148,
+   "oracle_gen": 148,
+   "first_divergence": null,
+   "compared_prefix": 148,
+   "agreed_in_prefix": 148,
+   "prefix_agreement_pct": 100.0,
+   "margin_at_div": null,
+   "oracle_top1_at_div": null,
+   "oracle_top2_at_div": null,
+   "engine_id_at_div": null,
+   "aligned_matched": 148,
+   "aligned_agreement_pct": 100.0,
+   "diff_blocks": [],
+   "serve_stats": {
+    "prompt_tokens": 3832,
+    "reused": 0,
+    "read_tokens": 3832,
+    "prefill_ms": 21526.0,
+    "prefill_tok_s": 178.0,
+    "gen_tokens": 148,
+    "decode_ms": 6881.0,
+    "decode_tok_s": 21.5
+   },
+   "first_div_decided": null,
+   "oracle_band_nats": 0.106,
+   "blocks_with_margin_ge_0.05": 0,
+   "blocks_with_margin_ge_0.10": 0,
+   "blocks_with_margin_ge_0.15": 0,
+   "blocks_with_margin_ge_0.50": 0
+  },
+  "batched-fp16": {
+   "label": "batched-fp16",
+   "out_file": "/home/michael/strata-xpu/p5/runs/p5-4k-batched-fp16/out.txt",
+   "gen": 137,
+   "oracle_gen": 148,
+   "first_divergence": 78,
+   "compared_prefix": 79,
+   "agreed_in_prefix": 78,
+   "prefix_agreement_pct": 98.73417721518987,
+   "margin_at_div": 0.1730670928955078,
+   "oracle_top1_at_div": 449,
+   "oracle_top2_at_div": 264,
+   "engine_id_at_div": 264,
+   "aligned_matched": 109,
+   "aligned_agreement_pct": 73.64864864864865,
+   "diff_blocks": [
+    {
+     "tag": "replace",
+     "oracle_range": [
+      78,
+      81
+     ],
+     "engine_range": [
+      78,
+      82
+     ],
+     "oracle_ids": [
+      449,
+      39328,
+      7359
+     ],
+     "engine_ids": [
+      264,
+      9640,
+      24277,
+      4621
+     ],
+     "margin_at_block_start": 0.1730670928955078,
+     "max_margin_in_block": 1.055910050868988,
+     "oracle_top1_top2_at_start": [
+      449,
+      264
+     ]
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      85,
+      89
+     ],
+     "engine_range": [
+      86,
+      90
+     ],
+     "oracle_ids": [
+      11,
+      4313,
+      310,
+      615
+     ],
+     "engine_ids": [
+      13,
+      561,
+      3296,
+      16561
+     ],
+     "margin_at_block_start": 0.876991331577301,
+     "max_margin_in_block": 11.958728909274214,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      91,
+      107
+     ],
+     "engine_range": [
+      92,
+      93
+     ],
+     "oracle_ids": [
+      4089,
+      424,
+      430,
+      264,
+      57879,
+      4087
+     ],
+     "engine_ids": [
+      10229
+     ],
+     "margin_at_block_start": 0.09824001789093018,
+     "max_margin_in_block": 16.51558673381804,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      110,
+      113
+     ],
+     "engine_range": [
+      96,
+      98
+     ],
+     "oracle_ids": [
+      369,
+      3956,
+      310
+     ],
+     "engine_ids": [
+      11,
+      321
+     ],
+     "margin_at_block_start": 6.607948140474036,
+     "max_margin_in_block": 15.593657016754037,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      115,
+      124
+     ],
+     "engine_range": [
+      100,
+      116
+     ],
+     "oracle_ids": [
+      13,
+      561,
+      2128,
+      1503,
+      1528,
+      411
+     ],
+     "engine_ids": [
+      5134,
+      424,
+      369,
+      328,
+      57,
+      42
+     ],
+     "margin_at_block_start": 1.3018493950366974,
+     "max_margin_in_block": 4.435229990631342,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      130,
+      134
+     ],
+     "engine_range": [
+      122,
+      123
+     ],
+     "oracle_ids": [
+      10661,
+      303,
+      279,
+      2128
+     ],
+     "engine_ids": [
+      10897
+     ],
+     "margin_at_block_start": 0.19633102416992188,
+     "max_margin_in_block": 10.670385479494144,
+     "oracle_top1_top2_at_start": null
+    }
+   ],
+   "serve_stats": {
+    "prompt_tokens": 3832,
+    "reused": 0,
+    "read_tokens": 3832,
+    "prefill_ms": 13661.0,
+    "prefill_tok_s": 280.5,
+    "gen_tokens": 137,
+    "decode_ms": 6438.0,
+    "decode_tok_s": 21.3
+   },
+   "first_div_decided": true,
+   "oracle_band_nats": 0.106,
+   "blocks_with_margin_ge_0.05": 6,
+   "blocks_with_margin_ge_0.10": 6,
+   "blocks_with_margin_ge_0.15": 6,
+   "blocks_with_margin_ge_0.50": 6
+  }
+ },
+ "arms_vs_each_other": {
+  "a": "shipped",
+  "b": "batched",
+  "a_gen": 150,
+  "b_gen": 137,
+  "aligned_matched": 131,
+  "ops": [
+   {
+    "tag": "delete",
+    "a": [
+     100,
+     101
+    ],
+    "b": [
+     100,
+     100
+    ],
+    "a_ids": [
+     20335
+    ],
+    "b_ids": []
+   },
+   {
+    "tag": "replace",
+    "a": [
+     114,
+     115
+    ],
+    "b": [
+     113,
+     114
+    ],
+    "a_ids": [
+     1149
+    ],
+    "b_ids": [
+     3158
+    ]
+   },
+   {
+    "tag": "replace",
+    "a": [
+     116,
+     126
+    ],
+    "b": [
+     115,
+     119
+    ],
+    "a_ids": [
+     760,
+     1156,
+     369,
+     4777,
+     9859,
+     728,
+     310,
+     8385
+    ],
+    "b_ids": [
+     40,
+     3172,
+     4087,
+     440
+    ]
+   },
+   {
+    "tag": "replace",
+    "a": [
+     127,
+     134
+    ],
+    "b": [
+     120,
+     121
+    ],
+    "a_ids": [
+     2128,
+     13,
+     353,
+     3172,
+     3300,
+     279,
+     4087
+    ],
+    "b_ids": [
+     1970
+    ]
+   }
+  ]
+ }
+}

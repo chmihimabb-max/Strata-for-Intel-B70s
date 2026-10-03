@@ -1,0 +1,34 @@
+== qsa prompt attention parity, P5's shapes, card 0 (ZE_AFFINITY_MASK=0)
+== binary: /home/michael/strata-xpu/strata/build-sycl/sycl_prompt_attn_parity  2026-10-03 08:14:00.117079304 -0600 1431240 bytes
+== HEAD: bea1cc0 P5 (t_bc967b65): the harness for the oracle-attributed prompt-vs-batched attention A/B
+
+ 
+:: initializing oneAPI environment ...
+   p5_parity.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+--- ./build-sycl/sycl_prompt_attn_parity 3832 2048 3   (ZE_AFFINITY_MASK=0)
+qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+PASS int8 ctx 3832, 2048 queries: vs FP64 old 2.15e-06 new 1.9e-06 (output scale 3.24); new vs old 5.01e-06 (1.3e-06 of scale); 78.053 -> 497.674 ms per chunk (0.16x)
+PASS fp16 ctx 3832, 2048 queries: vs FP64 old 1.33e-06 new 1.62e-06 (output scale 2.71); new vs old 3.58e-06 (7.9e-07 of scale); 80.280 -> 674.707 ms per chunk (0.12x)
+PASS int8 ctx 1500, 1500 queries: vs FP64 old 1.78e-06 new 3.29e-06 (output scale 3.57); new vs old 4.89e-06 (1.3e-06 of scale); 22.440 -> 139.320 ms per chunk (0.16x)
+PASS int8 ctx 2100, 256 queries: vs FP64 old 2.03e-06 new 2.24e-06 (output scale 3.61); new vs old 4.17e-06 (1.2e-06 of scale); 11.312 -> 63.409 ms per chunk (0.18x)
+FAILURES: 0
+    exit 0
+--- ./build-sycl/sycl_prompt_attn_parity 32768 2048 3   (ZE_AFFINITY_MASK=0)
+qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+PASS int8 ctx 32768, 2048 queries: vs FP64 old 2.13e-06 new 2.14e-06 (output scale 3.62); new vs old 4.53e-06 (1.2e-06 of scale); 78.970 -> 503.011 ms per chunk (0.16x)
+PASS fp16 ctx 32768, 2048 queries: vs FP64 old 1.89e-06 new 1.9e-06 (output scale 3.53); new vs old 3.78e-06 (9.2e-07 of scale); 80.776 -> 680.387 ms per chunk (0.12x)
+PASS int8 ctx 1500, 1500 queries: vs FP64 old 1.78e-06 new 3.29e-06 (output scale 3.57); new vs old 4.89e-06 (1.3e-06 of scale); 23.289 -> 140.623 ms per chunk (0.17x)
+PASS int8 ctx 2100, 256 queries: vs FP64 old 2.03e-06 new 2.24e-06 (output scale 3.61); new vs old 4.17e-06 (1.2e-06 of scale); 14.929 -> 63.706 ms per chunk (0.23x)
+FAILURES: 0
+    exit 0

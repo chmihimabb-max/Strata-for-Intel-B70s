@@ -1,0 +1,64 @@
+== the oracle's OWN resolution: the same prompts at -ub 512 (I2's method, I2-STATUS.md 5b)
+== a divergence of ours that the -ub 512 oracle also produces is inside the oracle's own band, not evidence
+
+########## ctx 4096: oracle-ub512 vs oracle-ub2048 ##########
+== ctx 4096  json:oracle-4k-ub512.json (185 ids) vs json:oracle-4k.json (148 ids)
+   replace json:oracle-4k-ub512.json[78:82][264, 9640, 24277, 4621] vs json:oracle-4k.json[78:81][449, 39328, 7359]  oracle-margin@start=0.1731 max-in-block=1.0559
+   insert  json:oracle-4k-ub512.json[86:86][] vs json:oracle-4k.json[85:97][11, 4313, 310, 615, 728, 310]  oracle-margin@start=0.1799 max-in-block=n/a
+   replace json:oracle-4k-ub512.json[87:142][561, 2128, 369, 883, 328, 2495] vs json:oracle-4k.json[98:99][4213]  oracle-margin@start=11.9587 max-in-block=16.5156
+   replace json:oracle-4k-ub512.json[154:159][11, 321, 424, 579, 20335] vs json:oracle-4k.json[111:130][3956, 310, 279, 2128, 13, 561]  oracle-margin@start=n/a max-in-block=n/a
+   delete  json:oracle-4k-ub512.json[163:171][13, 353, 3172, 4087, 279, 3296] vs json:oracle-4k.json[134:134][]  oracle-margin@start=n/a max-in-block=n/a
+   matched 113/185
+   FIRST difference: replace at json:oracle-4k-ub512.json[78] vs json:oracle-4k.json[78]
+-- the streams around the first divergence
+== ctx 4096 positions 74..82
+   idx                74     75     76     77     78     79     80     81
+   ora              1919   7701    310    381    449  39328   7359  22151
+   shipped          1919   7701    310    381    264   9640  24277   4621
+   batched          1919   7701    310    381    264   9640  24277   4621
+   shipped-fp16     1919   7701    310    381    449  39328   7359  22151
+   batched-fp16     1919   7701    310    381    264   9640  24277   4621
+
+-- what -ub 512 does to the oracle's own stream length: ub2048 vs ub512
+== ctx 4096: oracle -ub 512 (185 ids, prefill 241.7 tok/s) vs oracle -ub 2048 (148 ids, prefill 492.7 tok/s)
+   replace ub2048[78:81][449, 39328, 7359] vs ub512[78:82][264, 9640, 24277, 4621]   ub2048 margin at that position: 0.1731 nats
+   replace ub2048[85:87][11, 4313] vs ub512[86:134][13, 561, 2128, 369, 883, 328]   ub2048 margin at that position: 0.8770 nats
+   replace ub2048[88:97][615, 728, 310, 4089, 424, 430] vs ub512[135:139][279, 4880, 10597, 9417]   ub2048 margin at that position: 2.0110 nats
+   replace ub2048[98:99][4213] vs ub512[140:142][271, 10883]   ub2048 margin at that position: 2.5309 nats
+   replace ub2048[111:113][3956, 310] vs ub512[154:161][11, 321, 424, 579, 20335, 10661]   ub2048 margin at that position: 1.1004 nats
+   delete  ub2048[115:122][13, 561, 2128, 1503, 1528, 411] vs ub512[163:163][]   ub2048 margin at that position: 1.3018 nats
+   delete  ub2048[126:127][440] vs ub512[167:167][]   ub2048 margin at that position: 1.4393 nats
+   replace ub2048[128:129][1970] vs ub512[168:169][3296]   ub2048 margin at that position: 8.2739 nats
+   replace ub2048[130:134][10661, 303, 279, 2128] vs ub512[170:171][4439]   ub2048 margin at that position: 0.1963 nats
+   matched 118/185 positions
+   FIRST difference at ub-2048 position 78 (margin 0.1731 nats): oracle chose [449, 39328, 7359], the -ub 512 oracle chose [264, 9640, 24277]
+
+########## ctx 32768: oracle-ub512 vs oracle-ub2048 ##########
+== ctx 32768  json:oracle-32k-ub512.json (256 ids) vs json:oracle-32k.json (256 ids)
+   delete  json:oracle-32k-ub512.json[75:76][3992] vs json:oracle-32k.json[75:75][]  oracle-margin@start=0.0120 max-in-block=0.0120
+   insert  json:oracle-32k-ub512.json[256:256][] vs json:oracle-32k.json[255:256][279]  oracle-margin@start=n/a max-in-block=n/a
+   matched 255/256
+   FIRST difference: delete at json:oracle-32k-ub512.json[75] vs json:oracle-32k.json[75]
+-- the streams around the first divergence
+== ctx 32768 positions 70..80
+   idx                70     71     72     73     74     75     76     77     78     79
+   ora             42903   4560    421   8213   3349   3983    383  11171  11436    539
+   shipped         42903   4560    421   8213   3349   3983    383  11171  11436    539
+   batched         42903   4560    421   8213   3349   3992   3983    383  11171  11436
+   shipped-fp16    42903   4560    421   8213   3349   3992   3983    383  11171  11436
+   batched-fp16    42903   4560    421   8213   3349   3992   3983    383  11171  11436
+
+== ctx 32768 positions 99..112
+   idx                99    100    101    102    103    104    105    106    107    108    109    110    111
+   ora               271    332     16     13  11248   1676  15999   4384   2468    593 202201   3047   4562
+   shipped           271    332  31995   2022  51572   2699  64700    271     16     13   2972   7865   1676
+   batched            25    271    332  31995   2022  51572   2699  64700    271     16     13   2972   7865
+   shipped-fp16       25    271    332  31995   2022  51572   2699  64700    271     16     13   2972   7865
+   batched-fp16       25    271    332     16     13  11248   1676  15999   4384   2468    593 202201   3047
+
+-- what -ub 512 does to the oracle's own stream length: ub2048 vs ub512
+== ctx 32768: oracle -ub 512 (256 ids, prefill 213.9 tok/s) vs oracle -ub 2048 (256 ids, prefill 380.8 tok/s)
+   insert  ub2048[75:75][] vs ub512[75:76][3992]   ub2048 margin at that position: 0.0120 nats
+   delete  ub2048[255:256][279] vs ub512[256:256][]   ub2048 margin at that position: 11.7009 nats
+   matched 255/256 positions
+   FIRST difference at ub-2048 position 75 (margin 0.0120 nats): oracle chose [3983, 383, 11171], the -ub 512 oracle chose [3992, 3983, 383]

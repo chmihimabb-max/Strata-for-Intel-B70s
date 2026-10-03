@@ -1,0 +1,86 @@
+== engine-vs-engine: what the two attention paths do to each other, with no oracle in the loop
+
+########## ctx 4096 ##########
+-- int8 KV (the config of record)
+== ctx 4096  shipped (150 ids) vs batched (137 ids)
+   delete  shipped[100:101][20335] vs batched[100:100][]  oracle-margin@start=0.9847 max-in-block=0.9847
+   replace shipped[114:115][1149] vs batched[113:114][3158]  oracle-margin@start=6.0509 max-in-block=6.0509
+   replace shipped[116:126][760, 1156, 369, 4777, 9859, 728] vs batched[115:119][40, 3172, 4087, 440]  oracle-margin@start=2.9106 max-in-block=4.4352
+   replace shipped[127:134][2128, 13, 353, 3172, 3300, 279] vs batched[120:121][1970]  oracle-margin@start=1.0654 max-in-block=10.6704
+   matched 131/150
+   FIRST difference: delete at shipped[100] vs batched[100]
+-- fp16 KV
+== ctx 4096  shipped-fp16 (148 ids) vs batched-fp16 (137 ids)
+   replace shipped-fp16[78:81][449, 39328, 7359] vs batched-fp16[78:82][264, 9640, 24277, 4621]  oracle-margin@start=0.1731 max-in-block=1.0559
+   replace shipped-fp16[85:89][11, 4313, 310, 615] vs batched-fp16[86:90][13, 561, 3296, 16561]  oracle-margin@start=0.8770 max-in-block=11.9587
+   replace shipped-fp16[91:107][4089, 424, 430, 264, 57879, 4087] vs batched-fp16[92:93][10229]  oracle-margin@start=0.0982 max-in-block=16.5156
+   replace shipped-fp16[110:113][369, 3956, 310] vs batched-fp16[96:98][11, 321]  oracle-margin@start=6.6079 max-in-block=15.5937
+   replace shipped-fp16[115:124][13, 561, 2128, 1503, 1528, 411] vs batched-fp16[100:116][5134, 424, 369, 328, 57, 42]  oracle-margin@start=1.3018 max-in-block=4.4352
+   replace shipped-fp16[130:134][10661, 303, 279, 2128] vs batched-fp16[122:123][10897]  oracle-margin@start=0.1963 max-in-block=10.6704
+   matched 109/148
+   FIRST difference: replace at shipped-fp16[78] vs batched-fp16[78]
+
+########## ctx 32768 ##########
+-- int8 KV (the config of record)
+== ctx 32768  shipped (256 ids) vs batched (256 ids)
+   insert  shipped[75:75][] vs batched[75:76][3992]  oracle-margin@start=0.0120 max-in-block=n/a
+   insert  shipped[191:191][] vs batched[192:196][579, 3278, 3309, 321]  oracle-margin@start=12.7835 max-in-block=n/a
+   replace shipped[192:199][220, 16, 12, 18, 4, 16401] vs batched[197:198][4906]  oracle-margin@start=13.6216 max-in-block=15.8898
+   insert  shipped[256:256][] vs batched[255:256][18]  oracle-margin@start=n/a max-in-block=n/a
+   matched 249/256
+   FIRST difference: insert at shipped[75] vs batched[75]
+-- fp16 KV
+== ctx 32768  shipped-fp16 (256 ids) vs batched-fp16 (256 ids)
+   delete  shipped-fp16[102:108][31995, 2022, 51572, 2699, 64700, 271] vs batched-fp16[102:102][]  oracle-margin@start=14.0961 max-in-block=14.0961
+   replace shipped-fp16[110:112][2972, 7865] vs batched-fp16[104:105][11248]  oracle-margin@start=11.7460 max-in-block=11.7460
+   replace shipped-fp16[116:126][440, 35494, 3983, 318, 25429, 33686] vs batched-fp16[109:116][593, 202201, 3047, 4562, 332, 271]  oracle-margin@start=1.5038 max-in-block=14.6500
+   replace shipped-fp16[129:130][411] vs batched-fp16[119:126][5081, 7916, 314, 2397, 1676, 15999]  oracle-margin@start=1.3048 max-in-block=1.3048
+   insert  shipped-fp16[131:131][] vs batched-fp16[127:129][198, 12]  oracle-margin@start=9.2978 max-in-block=n/a
+   replace shipped-fp16[162:166][1149, 1061, 3254, 279] vs batched-fp16[160:165][1, 198, 12, 328, 1719]  oracle-margin@start=3.6841 max-in-block=6.9672
+   replace shipped-fp16[173:174][7936] vs batched-fp16[172:175][809, 303, 264]  oracle-margin@start=9.5254 max-in-block=9.5254
+   replace shipped-fp16[175:214][10926, 13, 561, 4884, 369, 1510] vs batched-fp16[176:197][318, 24507, 722, 1603, 8, 4087]  oracle-margin@start=7.4695 max-in-block=15.8898
+   replace shipped-fp16[215:244][4058, 279, 1581, 45559, 6009, 25165] vs batched-fp16[198:199][1719]  oracle-margin@start=13.4667 max-in-block=16.6297
+   replace shipped-fp16[253:256][13, 271, 18] vs batched-fp16[208:256][318, 1719, 21966, 321, 279, 13540]  oracle-margin@start=13.4687 max-in-block=13.4687
+   matched 161/256
+   FIRST difference: delete at shipped-fp16[102] vs batched-fp16[102]
+
+########## ctx 131072 ##########
+-- int8 KV (the config of record)
+== ctx 131072  shipped (256 ids) vs batched (256 ids)
+   insert  shipped[53:53][] vs batched[53:55][21851, 11]  oracle-margin@start=n/a max-in-block=n/a
+   insert  shipped[54:54][] vs batched[56:61][4562, 11, 4906, 14832, 11]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[55:57][4906, 4562] vs batched[62:64][2790, 5154]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[59:65][332, 31995, 2022, 51572, 2699, 64700] vs batched[66:74][9764, 728, 708, 1472, 279, 1970]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[70:74][71376, 15248, 41571, 24337] vs batched[79:82][442, 29456, 6982]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[76:82][31084, 709, 593, 4499, 4011, 16000] vs batched[84:91][1167, 17, 62, 15, 23016, 55687]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[84:86][709, 506] vs batched[93:161][1716, 47029, 85, 606, 471, 67]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[87:90][1546, 809, 314] vs batched[162:182][401, 29456, 1954, 11, 411, 1362]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[91:101][1970, 369, 3799, 974, 4937, 12] vs batched[183:186][2663, 513, 6681]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[102:107][74, 5786, 4127, 23758, 283] vs batched[187:195][67, 348, 28700, 16, 11, 220]  oracle-margin@start=n/a max-in-block=n/a
+   insert  shipped[109:109][] vs batched[197:199][11, 220]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[110:111][23] vs batched[200:222][5368, 748, 4581, 11960, 1220, 944]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[112:138][321, 1510, 10272, 51, 348, 220] vs batched[223:224][5972]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[140:153][70938, 24337, 16871, 1148, 2073, 516] vs batched[226:228][478, 293]  oracle-margin@start=n/a max-in-block=n/a
+   delete  shipped[154:159][5533, 1510, 74, 63, 864] vs batched[229:229][]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[160:206][381, 685, 310, 220, 16, 15] vs batched[230:234][1684, 303, 6607, 4886]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[208:222][3655, 471, 424, 577, 4603, 310] vs batched[236:241][364, 1167, 17, 62, 15]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped[223:256][1428, 3136, 579, 1331, 13, 1921] vs batched[242:256][2663, 513, 6681, 3875, 470, 430]  oracle-margin@start=n/a max-in-block=n/a
+   matched 80/256
+   FIRST difference: insert at shipped[53] vs batched[53]
+-- fp16 KV
+== ctx 131072  shipped-fp16 (256 ids) vs batched-fp16 (256 ids)
+   replace shipped-fp16[59:65][332, 31995, 2022, 51572, 2699, 64700] vs batched-fp16[59:67][9764, 728, 708, 1472, 279, 1970]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[70:74][71376, 15248, 41571, 24337] vs batched-fp16[72:148][3431, 53683, 20123, 21849, 29456, 6982]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[76:86][31084, 709, 593, 4499, 4011, 16000] vs batched-fp16[150:178][1061, 5533, 4581, 18484, 16086, 21106]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[87:90][1546, 809, 314] vs batched-fp16[179:199][401, 29456, 1954, 11, 411, 1362]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[91:92][1970] vs batched-fp16[200:222][2663, 513, 6681, 1510, 19390, 67]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[93:98][3799, 974, 4937, 12, 13957] vs batched-fp16[223:226][3404, 4252, 1532]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[99:101][1049, 14619] vs batched-fp16[227:228][1921]  oracle-margin@start=n/a max-in-block=n/a
+   delete  shipped-fp16[102:155][74, 5786, 4127, 23758, 283, 220] vs batched-fp16[229:229][]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[157:158][2972] vs batched-fp16[231:235][15, 69, 348, 293]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[159:168][21558, 47440, 88194, 4306, 6982, 63] vs batched-fp16[236:237][1362]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[169:243][4499, 92217, 733, 1510, 1960, 19197] vs batched-fp16[238:244][466, 1172, 4804, 364, 13818, 2663]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[245:253][21558, 47440, 35196, 4747, 63, 4290] vs batched-fp16[246:251][67, 27653, 198, 5690, 256]  oracle-margin@start=n/a max-in-block=n/a
+   replace shipped-fp16[254:256][413, 424] vs batched-fp16[252:256][561, 1510, 1234, 89]  oracle-margin@start=n/a max-in-block=n/a
+   matched 78/256
+   FIRST difference: replace at shipped-fp16[59] vs batched-fp16[59]

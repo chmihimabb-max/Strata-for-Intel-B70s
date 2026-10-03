@@ -1,0 +1,1208 @@
+{
+ "ctx": 32768,
+ "oracle": "/home/michael/strata-xpu/p5/oracle/oracle-32k.json",
+ "oracle_prompt_file": "/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt",
+ "oracle_prompt_tokens": 32256,
+ "oracle_gen": 256,
+ "oracle_timings": {
+  "prompt_n": 32256,
+  "prompt_tok_s": 380.80207854467875,
+  "predicted_n": 256,
+  "predicted_tok_s": 15.028729626788905
+ },
+ "oracle_margin_stats": {
+  "n": 256,
+  "min": 0.01203542947769165,
+  "median": 9.482291814507334,
+  "max": 24.015113830566406,
+  "below": {
+   "0.05": 2,
+   "0.1": 2,
+   "0.15": 3,
+   "0.5": 11
+  }
+ },
+ "arms": {
+  "shipped": {
+   "label": "shipped",
+   "out_file": "/home/michael/strata-xpu/p5/runs/p5-32k-shipped/out.txt",
+   "gen": 256,
+   "oracle_gen": 256,
+   "first_divergence": 101,
+   "compared_prefix": 102,
+   "agreed_in_prefix": 101,
+   "prefix_agreement_pct": 99.01960784313725,
+   "margin_at_div": 0.04363250732421875,
+   "oracle_top1_at_div": 16,
+   "oracle_top2_at_div": 31995,
+   "engine_id_at_div": 31995,
+   "aligned_matched": 162,
+   "aligned_agreement_pct": 63.28125,
+   "diff_blocks": [
+    {
+     "tag": "insert",
+     "oracle_range": [
+      101,
+      101
+     ],
+     "engine_range": [
+      101,
+      107
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      31995,
+      2022,
+      51572,
+      2699,
+      64700,
+      271
+     ],
+     "margin_at_block_start": 0.04363250732421875,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": [
+      16,
+      31995
+     ]
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      103,
+      104
+     ],
+     "engine_range": [
+      109,
+      111
+     ],
+     "oracle_ids": [
+      11248
+     ],
+     "engine_ids": [
+      2972,
+      7865
+     ],
+     "margin_at_block_start": 0.3554612398147583,
+     "max_margin_in_block": 0.3554612398147583,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      108,
+      115
+     ],
+     "engine_range": [
+      115,
+      125
+     ],
+     "oracle_ids": [
+      593,
+      202201,
+      3047,
+      4562,
+      332,
+      271
+     ],
+     "engine_ids": [
+      440,
+      35494,
+      3983,
+      318,
+      25429,
+      33686
+     ],
+     "margin_at_block_start": 0.9636802077293396,
+     "max_margin_in_block": 11.745968222545343,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      118,
+      125
+     ],
+     "engine_range": [
+      128,
+      129
+     ],
+     "oracle_ids": [
+      5081,
+      7916,
+      314,
+      2397,
+      1676,
+      15999
+     ],
+     "engine_ids": [
+      411
+     ],
+     "margin_at_block_start": 0.7401695251464844,
+     "max_margin_in_block": 14.650002360343365,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "delete",
+     "oracle_range": [
+      126,
+      128
+     ],
+     "engine_range": [
+      130,
+      130
+     ],
+     "oracle_ids": [
+      198,
+      12
+     ],
+     "engine_ids": [],
+     "margin_at_block_start": 1.402849242091179,
+     "max_margin_in_block": 11.893690109136514,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      159,
+      164
+     ],
+     "engine_range": [
+      161,
+      165
+     ],
+     "oracle_ids": [
+      1,
+      198,
+      12,
+      328,
+      1719
+     ],
+     "engine_ids": [
+      1149,
+      1061,
+      3254,
+      279
+     ],
+     "margin_at_block_start": 3.4956911858171225,
+     "max_margin_in_block": 17.232055544853196,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      171,
+      173
+     ],
+     "engine_range": [
+      172,
+      222
+     ],
+     "oracle_ids": [
+      809,
+      303
+     ],
+     "engine_ids": [
+      7936,
+      2086,
+      10926,
+      13,
+      561,
+      4884
+     ],
+     "margin_at_block_start": 15.623989224433558,
+     "max_margin_in_block": 15.623989224433558,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      174,
+      182
+     ],
+     "engine_range": [
+      223,
+      234
+     ],
+     "oracle_ids": [
+      2086,
+      318,
+      24507,
+      722,
+      1603,
+      8
+     ],
+     "engine_ids": [
+      47241,
+      1067,
+      369,
+      524,
+      50949,
+      75600
+     ],
+     "margin_at_block_start": 13.645794629993361,
+     "max_margin_in_block": 13.778617382040466,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      183,
+      184
+     ],
+     "engine_range": [
+      235,
+      242
+     ],
+     "oracle_ids": [
+      55956
+     ],
+     "engine_ids": [
+      21966,
+      321,
+      13540,
+      4625,
+      449,
+      6009
+     ],
+     "margin_at_block_start": 11.521762608816061,
+     "max_margin_in_block": 11.521762608816061,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "insert",
+     "oracle_range": [
+      185,
+      185
+     ],
+     "engine_range": [
+      243,
+      244
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      321
+     ],
+     "margin_at_block_start": 13.171573996517509,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "delete",
+     "oracle_range": [
+      186,
+      198
+     ],
+     "engine_range": [
+      245,
+      245
+     ],
+     "oracle_ids": [
+      6297,
+      1528,
+      466,
+      264,
+      55483,
+      10125
+     ],
+     "engine_ids": [],
+     "margin_at_block_start": 12.218888041985338,
+     "max_margin_in_block": 15.889822602271977,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      207,
+      256
+     ],
+     "engine_range": [
+      254,
+      256
+     ],
+     "oracle_ids": [
+      318,
+      1719,
+      21966,
+      321,
+      279,
+      13540
+     ],
+     "engine_ids": [
+      13,
+      271
+     ],
+     "margin_at_block_start": 8.55953243955446,
+     "max_margin_in_block": 16.629732012748704,
+     "oracle_top1_top2_at_start": null
+    }
+   ],
+   "serve_stats": {
+    "prompt_tokens": 32256,
+    "reused": 0,
+    "read_tokens": 32256,
+    "prefill_ms": 94094.0,
+    "prefill_tok_s": 342.8,
+    "gen_tokens": 256,
+    "decode_ms": 11750.0,
+    "decode_tok_s": 21.8
+   },
+   "first_div_decided": false,
+   "oracle_band_nats": 0.106,
+   "blocks_with_margin_ge_0.05": 10,
+   "blocks_with_margin_ge_0.10": 10,
+   "blocks_with_margin_ge_0.15": 10,
+   "blocks_with_margin_ge_0.50": 9
+  },
+  "batched": {
+   "label": "batched",
+   "out_file": "/home/michael/strata-xpu/p5/runs/p5-32k-batched/out.txt",
+   "gen": 256,
+   "oracle_gen": 256,
+   "first_divergence": 75,
+   "compared_prefix": 76,
+   "agreed_in_prefix": 75,
+   "prefix_agreement_pct": 98.6842105263158,
+   "margin_at_div": 0.01203542947769165,
+   "oracle_top1_at_div": 3983,
+   "oracle_top2_at_div": 3992,
+   "engine_id_at_div": 3992,
+   "aligned_matched": 162,
+   "aligned_agreement_pct": 63.28125,
+   "diff_blocks": [
+    {
+     "tag": "insert",
+     "oracle_range": [
+      75,
+      75
+     ],
+     "engine_range": [
+      75,
+      76
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      3992
+     ],
+     "margin_at_block_start": 0.01203542947769165,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": [
+      3983,
+      3992
+     ]
+    },
+    {
+     "tag": "insert",
+     "oracle_range": [
+      101,
+      101
+     ],
+     "engine_range": [
+      102,
+      108
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      31995,
+      2022,
+      51572,
+      2699,
+      64700,
+      271
+     ],
+     "margin_at_block_start": 0.04363250732421875,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      103,
+      104
+     ],
+     "engine_range": [
+      110,
+      112
+     ],
+     "oracle_ids": [
+      11248
+     ],
+     "engine_ids": [
+      2972,
+      7865
+     ],
+     "margin_at_block_start": 0.3554612398147583,
+     "max_margin_in_block": 0.3554612398147583,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      108,
+      115
+     ],
+     "engine_range": [
+      116,
+      126
+     ],
+     "oracle_ids": [
+      593,
+      202201,
+      3047,
+      4562,
+      332,
+      271
+     ],
+     "engine_ids": [
+      440,
+      35494,
+      3983,
+      318,
+      25429,
+      33686
+     ],
+     "margin_at_block_start": 0.9636802077293396,
+     "max_margin_in_block": 11.745968222545343,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      118,
+      125
+     ],
+     "engine_range": [
+      129,
+      130
+     ],
+     "oracle_ids": [
+      5081,
+      7916,
+      314,
+      2397,
+      1676,
+      15999
+     ],
+     "engine_ids": [
+      411
+     ],
+     "margin_at_block_start": 0.7401695251464844,
+     "max_margin_in_block": 14.650002360343365,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "delete",
+     "oracle_range": [
+      126,
+      128
+     ],
+     "engine_range": [
+      131,
+      131
+     ],
+     "oracle_ids": [
+      198,
+      12
+     ],
+     "engine_ids": [],
+     "margin_at_block_start": 1.402849242091179,
+     "max_margin_in_block": 11.893690109136514,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      159,
+      164
+     ],
+     "engine_range": [
+      162,
+      166
+     ],
+     "oracle_ids": [
+      1,
+      198,
+      12,
+      328,
+      1719
+     ],
+     "engine_ids": [
+      1149,
+      1061,
+      3254,
+      279
+     ],
+     "margin_at_block_start": 3.4956911858171225,
+     "max_margin_in_block": 17.232055544853196,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      171,
+      173
+     ],
+     "engine_range": [
+      173,
+      221
+     ],
+     "oracle_ids": [
+      809,
+      303
+     ],
+     "engine_ids": [
+      7936,
+      2086,
+      10926,
+      13,
+      561,
+      4884
+     ],
+     "margin_at_block_start": 15.623989224433558,
+     "max_margin_in_block": 15.623989224433558,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      174,
+      182
+     ],
+     "engine_range": [
+      222,
+      233
+     ],
+     "oracle_ids": [
+      2086,
+      318,
+      24507,
+      722,
+      1603,
+      8
+     ],
+     "engine_ids": [
+      47241,
+      1067,
+      369,
+      524,
+      50949,
+      75600
+     ],
+     "margin_at_block_start": 13.645794629993361,
+     "max_margin_in_block": 13.778617382040466,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      183,
+      184
+     ],
+     "engine_range": [
+      234,
+      241
+     ],
+     "oracle_ids": [
+      55956
+     ],
+     "engine_ids": [
+      21966,
+      321,
+      13540,
+      4625,
+      449,
+      6009
+     ],
+     "margin_at_block_start": 11.521762608816061,
+     "max_margin_in_block": 11.521762608816061,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "insert",
+     "oracle_range": [
+      185,
+      185
+     ],
+     "engine_range": [
+      242,
+      243
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      321
+     ],
+     "margin_at_block_start": 13.171573996517509,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "delete",
+     "oracle_range": [
+      186,
+      198
+     ],
+     "engine_range": [
+      244,
+      244
+     ],
+     "oracle_ids": [
+      6297,
+      1528,
+      466,
+      264,
+      55483,
+      10125
+     ],
+     "engine_ids": [],
+     "margin_at_block_start": 12.218888041985338,
+     "max_margin_in_block": 15.889822602271977,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      207,
+      256
+     ],
+     "engine_range": [
+      253,
+      256
+     ],
+     "oracle_ids": [
+      318,
+      1719,
+      21966,
+      321,
+      279,
+      13540
+     ],
+     "engine_ids": [
+      13,
+      271,
+      18
+     ],
+     "margin_at_block_start": 8.55953243955446,
+     "max_margin_in_block": 16.629732012748704,
+     "oracle_top1_top2_at_start": null
+    }
+   ],
+   "serve_stats": {
+    "prompt_tokens": 32256,
+    "reused": 0,
+    "read_tokens": 32256,
+    "prefill_ms": 42152.0,
+    "prefill_tok_s": 765.2,
+    "gen_tokens": 256,
+    "decode_ms": 11505.0,
+    "decode_tok_s": 22.3
+   },
+   "first_div_decided": false,
+   "oracle_band_nats": 0.106,
+   "blocks_with_margin_ge_0.05": 10,
+   "blocks_with_margin_ge_0.10": 10,
+   "blocks_with_margin_ge_0.15": 10,
+   "blocks_with_margin_ge_0.50": 9
+  },
+  "shipped-fp16": {
+   "label": "shipped-fp16",
+   "out_file": "/home/michael/strata-xpu/p5/runs/p5-32k-shipped-fp16/out.txt",
+   "gen": 256,
+   "oracle_gen": 256,
+   "first_divergence": 75,
+   "compared_prefix": 76,
+   "agreed_in_prefix": 75,
+   "prefix_agreement_pct": 98.6842105263158,
+   "margin_at_div": 0.01203542947769165,
+   "oracle_top1_at_div": 3983,
+   "oracle_top2_at_div": 3992,
+   "engine_id_at_div": 3992,
+   "aligned_matched": 162,
+   "aligned_agreement_pct": 63.28125,
+   "diff_blocks": [
+    {
+     "tag": "insert",
+     "oracle_range": [
+      75,
+      75
+     ],
+     "engine_range": [
+      75,
+      76
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      3992
+     ],
+     "margin_at_block_start": 0.01203542947769165,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": [
+      3983,
+      3992
+     ]
+    },
+    {
+     "tag": "insert",
+     "oracle_range": [
+      101,
+      101
+     ],
+     "engine_range": [
+      102,
+      108
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      31995,
+      2022,
+      51572,
+      2699,
+      64700,
+      271
+     ],
+     "margin_at_block_start": 0.04363250732421875,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      103,
+      104
+     ],
+     "engine_range": [
+      110,
+      112
+     ],
+     "oracle_ids": [
+      11248
+     ],
+     "engine_ids": [
+      2972,
+      7865
+     ],
+     "margin_at_block_start": 0.3554612398147583,
+     "max_margin_in_block": 0.3554612398147583,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      108,
+      115
+     ],
+     "engine_range": [
+      116,
+      126
+     ],
+     "oracle_ids": [
+      593,
+      202201,
+      3047,
+      4562,
+      332,
+      271
+     ],
+     "engine_ids": [
+      440,
+      35494,
+      3983,
+      318,
+      25429,
+      33686
+     ],
+     "margin_at_block_start": 0.9636802077293396,
+     "max_margin_in_block": 11.745968222545343,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      118,
+      125
+     ],
+     "engine_range": [
+      129,
+      130
+     ],
+     "oracle_ids": [
+      5081,
+      7916,
+      314,
+      2397,
+      1676,
+      15999
+     ],
+     "engine_ids": [
+      411
+     ],
+     "margin_at_block_start": 0.7401695251464844,
+     "max_margin_in_block": 14.650002360343365,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "delete",
+     "oracle_range": [
+      126,
+      128
+     ],
+     "engine_range": [
+      131,
+      131
+     ],
+     "oracle_ids": [
+      198,
+      12
+     ],
+     "engine_ids": [],
+     "margin_at_block_start": 1.402849242091179,
+     "max_margin_in_block": 11.893690109136514,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      159,
+      164
+     ],
+     "engine_range": [
+      162,
+      166
+     ],
+     "oracle_ids": [
+      1,
+      198,
+      12,
+      328,
+      1719
+     ],
+     "engine_ids": [
+      1149,
+      1061,
+      3254,
+      279
+     ],
+     "margin_at_block_start": 3.4956911858171225,
+     "max_margin_in_block": 17.232055544853196,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      171,
+      173
+     ],
+     "engine_range": [
+      173,
+      221
+     ],
+     "oracle_ids": [
+      809,
+      303
+     ],
+     "engine_ids": [
+      7936,
+      2086,
+      10926,
+      13,
+      561,
+      4884
+     ],
+     "margin_at_block_start": 15.623989224433558,
+     "max_margin_in_block": 15.623989224433558,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      174,
+      182
+     ],
+     "engine_range": [
+      222,
+      233
+     ],
+     "oracle_ids": [
+      2086,
+      318,
+      24507,
+      722,
+      1603,
+      8
+     ],
+     "engine_ids": [
+      47241,
+      1067,
+      369,
+      524,
+      50949,
+      75600
+     ],
+     "margin_at_block_start": 13.645794629993361,
+     "max_margin_in_block": 13.778617382040466,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      183,
+      184
+     ],
+     "engine_range": [
+      234,
+      241
+     ],
+     "oracle_ids": [
+      55956
+     ],
+     "engine_ids": [
+      21966,
+      321,
+      13540,
+      4625,
+      449,
+      6009
+     ],
+     "margin_at_block_start": 11.521762608816061,
+     "max_margin_in_block": 11.521762608816061,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "insert",
+     "oracle_range": [
+      185,
+      185
+     ],
+     "engine_range": [
+      242,
+      243
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      321
+     ],
+     "margin_at_block_start": 13.171573996517509,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "delete",
+     "oracle_range": [
+      186,
+      198
+     ],
+     "engine_range": [
+      244,
+      244
+     ],
+     "oracle_ids": [
+      6297,
+      1528,
+      466,
+      264,
+      55483,
+      10125
+     ],
+     "engine_ids": [],
+     "margin_at_block_start": 12.218888041985338,
+     "max_margin_in_block": 15.889822602271977,
+     "oracle_top1_top2_at_start": null
+    },
+    {
+     "tag": "replace",
+     "oracle_range": [
+      207,
+      256
+     ],
+     "engine_range": [
+      253,
+      256
+     ],
+     "oracle_ids": [
+      318,
+      1719,
+      21966,
+      321,
+      279,
+      13540
+     ],
+     "engine_ids": [
+      13,
+      271,
+      18
+     ],
+     "margin_at_block_start": 8.55953243955446,
+     "max_margin_in_block": 16.629732012748704,
+     "oracle_top1_top2_at_start": null
+    }
+   ],
+   "serve_stats": {
+    "prompt_tokens": 32256,
+    "reused": 0,
+    "read_tokens": 32256,
+    "prefill_ms": 117207.0,
+    "prefill_tok_s": 275.2,
+    "gen_tokens": 256,
+    "decode_ms": 11842.0,
+    "decode_tok_s": 21.6
+   },
+   "first_div_decided": false,
+   "oracle_band_nats": 0.106,
+   "blocks_with_margin_ge_0.05": 10,
+   "blocks_with_margin_ge_0.10": 10,
+   "blocks_with_margin_ge_0.15": 10,
+   "blocks_with_margin_ge_0.50": 9
+  },
+  "batched-fp16": {
+   "label": "batched-fp16",
+   "out_file": "/home/michael/strata-xpu/p5/runs/p5-32k-batched-fp16/out.txt",
+   "gen": 256,
+   "oracle_gen": 256,
+   "first_divergence": 75,
+   "compared_prefix": 76,
+   "agreed_in_prefix": 75,
+   "prefix_agreement_pct": 98.6842105263158,
+   "margin_at_div": 0.01203542947769165,
+   "oracle_top1_at_div": 3983,
+   "oracle_top2_at_div": 3992,
+   "engine_id_at_div": 3992,
+   "aligned_matched": 255,
+   "aligned_agreement_pct": 99.609375,
+   "diff_blocks": [
+    {
+     "tag": "insert",
+     "oracle_range": [
+      75,
+      75
+     ],
+     "engine_range": [
+      75,
+      76
+     ],
+     "oracle_ids": [],
+     "engine_ids": [
+      3992
+     ],
+     "margin_at_block_start": 0.01203542947769165,
+     "max_margin_in_block": null,
+     "oracle_top1_top2_at_start": [
+      3983,
+      3992
+     ]
+    },
+    {
+     "tag": "delete",
+     "oracle_range": [
+      255,
+      256
+     ],
+     "engine_range": [
+      256,
+      256
+     ],
+     "oracle_ids": [
+      279
+     ],
+     "engine_ids": [],
+     "margin_at_block_start": 11.700929879816613,
+     "max_margin_in_block": 11.700929879816613,
+     "oracle_top1_top2_at_start": null
+    }
+   ],
+   "serve_stats": {
+    "prompt_tokens": 32256,
+    "reused": 0,
+    "read_tokens": 32256,
+    "prefill_ms": 42149.0,
+    "prefill_tok_s": 765.3,
+    "gen_tokens": 256,
+    "decode_ms": 11840.0,
+    "decode_tok_s": 21.6
+   },
+   "first_div_decided": false,
+   "oracle_band_nats": 0.106,
+   "blocks_with_margin_ge_0.05": 1,
+   "blocks_with_margin_ge_0.10": 1,
+   "blocks_with_margin_ge_0.15": 1,
+   "blocks_with_margin_ge_0.50": 1
+  }
+ },
+ "arms_vs_each_other": {
+  "a": "shipped",
+  "b": "batched",
+  "a_gen": 256,
+  "b_gen": 256,
+  "aligned_matched": 249,
+  "ops": [
+   {
+    "tag": "insert",
+    "a": [
+     75,
+     75
+    ],
+    "b": [
+     75,
+     76
+    ],
+    "a_ids": [],
+    "b_ids": [
+     3992
+    ]
+   },
+   {
+    "tag": "insert",
+    "a": [
+     191,
+     191
+    ],
+    "b": [
+     192,
+     196
+    ],
+    "a_ids": [],
+    "b_ids": [
+     579,
+     3278,
+     3309,
+     321
+    ]
+   },
+   {
+    "tag": "replace",
+    "a": [
+     192,
+     199
+    ],
+    "b": [
+     197,
+     198
+    ],
+    "a_ids": [
+     220,
+     16,
+     12,
+     18,
+     4,
+     16401,
+     4478
+    ],
+    "b_ids": [
+     4906
+    ]
+   },
+   {
+    "tag": "insert",
+    "a": [
+     256,
+     256
+    ],
+    "b": [
+     255,
+     256
+    ],
+    "a_ids": [],
+    "b_ids": [
+     18
+    ]
+   }
+  ]
+ }
+}

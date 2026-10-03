@@ -1,0 +1,37 @@
+== the 128K oracle: the wall, measured twice
+== (the ub-2048 arm crashed twice at ~49,152 of 129,024 prompt tokens; see the server logs)
+
+########## /home/michael/strata-xpu/p5/oracle/oracle-128k-server.log
+50:1.41.000.318 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  26624, progress = 0.21, t =  65.59 s / 405.93 tokens per second
+51:1.47.583.897 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  28672, progress = 0.22, t =  72.17 s / 397.28 tokens per second
+52:1.54.495.337 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  30720, progress = 0.24, t =  79.08 s / 388.46 tokens per second
+53:2.01.655.006 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  32768, progress = 0.25, t =  86.24 s / 379.95 tokens per second
+54:2.08.961.582 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  34816, progress = 0.27, t =  93.55 s / 372.17 tokens per second
+55:2.16.566.863 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  36864, progress = 0.29, t = 101.15 s / 364.44 tokens per second
+56:2.24.353.380 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  38912, progress = 0.30, t = 108.94 s / 357.19 tokens per second
+57:2.32.453.647 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  40960, progress = 0.32, t = 117.04 s / 349.96 tokens per second
+58:2.40.772.885 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  43008, progress = 0.33, t = 125.36 s / 343.08 tokens per second
+59:3.22.207.959 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  45056, progress = 0.35, t = 166.79 s / 270.13 tokens per second
+60:4.19.438.711 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  47104, progress = 0.37, t = 224.03 s / 210.26 tokens per second
+61:5.17.077.493 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  49152, progress = 0.38, t = 281.66 s / 174.51 tokens per second
+62:level_zero backend failed with error: 20 (UR_RESULT_ERROR_DEVICE_LOST)Exception caught at file:/home/michael/llama.cpp-qwen4-exp/ggml/src/ggml-sycl/ggml-sycl.cpp, line:5436
+63:Error OP FLASH_ATTN_EXT
+
+########## /home/michael/strata-xpu/p5/oracle/oracle-128k-r2-server.log
+51:5.12.301.296 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  28672, progress = 0.22, t =  71.85 s / 399.05 tokens per second
+52:5.19.179.325 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  30720, progress = 0.24, t =  78.73 s / 390.20 tokens per second
+53:5.26.309.986 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  32768, progress = 0.25, t =  85.86 s / 381.64 tokens per second
+54:5.33.576.356 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  34816, progress = 0.27, t =  93.13 s / 373.86 tokens per second
+55:5.41.150.449 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  36864, progress = 0.29, t = 100.70 s / 366.08 tokens per second
+56:5.48.957.968 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  38912, progress = 0.30, t = 108.51 s / 358.61 tokens per second
+57:5.57.059.331 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  40960, progress = 0.32, t = 116.61 s / 351.26 tokens per second
+58:6.05.413.146 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  43008, progress = 0.33, t = 124.96 s / 344.17 tokens per second
+59:6.50.675.291 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  45056, progress = 0.35, t = 170.22 s / 264.69 tokens per second
+60:7.48.618.058 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  47104, progress = 0.37, t = 228.17 s / 206.44 tokens per second
+61:8.46.557.378 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens =  49152, progress = 0.38, t = 286.11 s / 171.80 tokens per second
+62:level_zero backend failed with error: 20 (UR_RESULT_ERROR_DEVICE_LOST)
+120:#5  0x000072ae96f26d49 in ggml_abort () from /home/michael/llama.cpp-qwen4-exp/build/bin/libggml-base.so.0
+121:#6  0x000072ae9181bf38 in ggml_sycl_error(char const*, char const*, char const*, int, char const*) () from /home/michael/llama.cpp-qwen4-exp/build/bin/libggml-sycl.so.0
+
+-- the ub-512 attempt (bounded to 1500 s of prompt processing)
+=== P5 oracle 128K attempt at -ub 512 (bounded)  2026-10-03T09:22:40-06:00 ===
