@@ -81,7 +81,9 @@ median 9.48 (3 of 256); 128K min 0.0195 / median 3.35 (12 of 256) — 128K is a 
 
 "decided by the oracle" = the margin at the first divergence clears the oracle's own measured band (0.106 nats,
 I2's `-ub` measurement) **and** the oracle's `-ub 512` instantiation does not itself emit our token there. Exactly
-one arm-run in the card has one: the batched-fp16 arm at 128K/59 (0.1436 nats, odds 1.15:1).
+one arm-run in the card has one: the batched-fp16 arm at 128K/59 (0.1436 nats, odds 1.15:1). (The raw
+`p5/p5_compare.py` line `ATTRIBUTABLE: ... OUTSIDE the oracle's own band` is the margin test alone; the table's
+column is the margin test plus the `-ub 512` cross-check, which is why the 4K rows read `no` there.)
 
 **The aligned column is not an accuracy column and must not be read as one.** After the first divergence the two
 streams are in different contexts, so every later position is a different continuation; the batched-fp16 arm's
