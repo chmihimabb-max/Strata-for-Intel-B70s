@@ -51,3 +51,7 @@ build-vision.bat
 /third_party/*.zip
 
 /.rocm-win/
+
+# S4 (t_30d9ccfb): the arm runner writes its raw output under s4/runs/ (kept on disk; the committed write-up
+# names the paths, as p10 and d1 keep theirs)
+s4/runs/
