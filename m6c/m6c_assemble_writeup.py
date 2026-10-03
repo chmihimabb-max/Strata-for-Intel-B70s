@@ -14,6 +14,7 @@ W = pathlib.Path("/home/michael/strata-xpu/WRITEUP.md")
 PART = pathlib.Path("/home/michael/strata-xpu/m6c/WRITEUP-M6C.md")
 MARK = "## M6c: the 256K block (Part II of this file)"
 ANCHOR = "## 1. What was run, and the device check"
+PART_HEAD = "# Part II -- M6c: IQ3_S at 256K context with KV streaming on two Arc Pro B70"
 
 POINTER = f"""{MARK}
 
@@ -37,16 +38,20 @@ def main() -> int:
     write = "--write" in sys.argv
     doc = W.read_text(encoding="utf-8")
     part = PART.read_text(encoding="utf-8")
-    if MARK in doc:
-        # replace an earlier assembly: drop everything from the marker on
-        doc = doc[:doc.index(MARK)].rstrip() + "\n"
+    # idempotent: strip a previous Part II and a previous pointer block, then re-insert both
+    if PART_HEAD in doc:
+        doc = doc[:doc.index(PART_HEAD)].rstrip() + "\n"
+    if MARK in doc and ANCHOR in doc:
+        i, j = doc.index(MARK), doc.index(ANCHOR)
+        doc = doc[:i] + doc[j:]
     if ANCHOR not in doc:
         print("FATAL: anchor not found:", ANCHOR)
         return 2
+    before = len(doc)
     doc = doc.replace(ANCHOR, POINTER + ANCHOR, 1)
     doc = doc.rstrip() + "\n\n" + part.rstrip() + "\n"
-    print("current %d chars -> %d chars; pointer inserted before %r; Part II appended (%d chars)"
-          % (len(W.read_text(encoding='utf-8')), len(doc), ANCHOR, len(part)))
+    print("base %d chars -> %d chars; pointer inserted before %r; Part II appended (%d chars)"
+          % (before, len(doc), ANCHOR, len(part)))
     if write:
         W.write_text(doc, encoding="utf-8")
         print("wrote", W)
