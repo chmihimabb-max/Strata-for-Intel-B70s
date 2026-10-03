@@ -474,7 +474,9 @@ these rows.
   fork. Left at its default f16 KV (~6.35 GB at 262,144 cells) beside 53.7 GiB of GPU experts it does not
   fit, so four MoE layers went to the CPU (`-ncmoe 4`) and the run then processed 6,144 prompt tokens in
   85.7 s -- **71.7 tok/s, about 60 minutes for the 259,943-token prompt**, against our engine's 316.9 --
-  and was stopped there. Log: `m6c/oracle/m6c-oracle-262k-server.log`. **So the 256K needle result stays
+  and was stopped there. Logs: `m6c/oracle-kvq-crash.log` (the abort, 7,127 bytes with the assert above at
+  line 14) and `m6c/oracle/m6c-oracle-262k-server.log` (the slow `-ncmoe 4` run, 6,144 tokens at 71.7
+  tok/s). **So the 256K needle result stays
   unattributed between our engine and the quantisation at this length**, which is why §7 adds the
   5%-depth arm (a position effect) rather than claiming an engine defect.
 - **Not pushed.** The work is on the local branch `sycl-xpu`; `origin` (`github.com/Niko1221/Strata`) has

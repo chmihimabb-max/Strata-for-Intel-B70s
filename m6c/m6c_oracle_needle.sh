@@ -15,6 +15,9 @@ TAG=${1:?tag}
 PORT=${PORT:-58244}
 CTX=${CTX:-262144}
 NCMOE=${NCMOE:-4}
+KVQ=${KVQ:-0}
+KVARGS=()
+if [ "$KVQ" = 1 ]; then KVARGS=(-ctk q8_0 -ctv q8_0); fi
 SNAP=$HOME/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S
 SH1=$SNAP/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf
 BIN=$HOME/llama.cpp-qwen4-exp/build/bin/llama-server
@@ -36,7 +39,7 @@ export GGML_SCHED_DEBUG=0
 } > "$LOG"
 cd "$HOME/llama.cpp-qwen4-exp" || exit 1
 setsid nohup "$BIN" -m "$SH1" -ngl 99 -ncmoe "$NCMOE" -ot "per_layer_token_embd=CPU" -c "$CTX" -fa on -t 18 \
-  -ts 0.50,0.50 --parallel 1 -ub 2048 --host 127.0.0.1 --port "$PORT" --jinja \
+  -ts 0.50,0.50 "${KVARGS[@]}" --parallel 1 -ub 2048 --host 127.0.0.1 --port "$PORT" --jinja \
   >> "$LOG" 2>&1 &
 echo $! > "$D/$TAG-server.pid"
 echo "launched pid $(cat "$D/$TAG-server.pid") port $PORT ctx $CTX (KV at its default f16, -ncmoe $NCMOE); log $LOG"
