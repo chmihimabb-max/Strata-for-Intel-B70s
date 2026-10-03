@@ -56,6 +56,8 @@ constexpr float EPS = 1e-6f;
 using Clock = std::chrono::steady_clock;
 double ms_since(Clock::time_point t) { return std::chrono::duration<double, std::milli>(Clock::now() - t).count(); }
 const bool g_dbg = std::getenv("STRATA_VERIFY_DEBUG") != nullptr;
+// P1 (card t_44a0ac61): time the #267 release path (STRATA_VERIFY_RELEASE_DEBUG=1).
+const bool g_release_dbg = std::getenv("STRATA_VERIFY_RELEASE_DEBUG") != nullptr;
 #define VDBG(...) do { if (g_dbg) { std::fprintf(stderr, "verify dbg: " __VA_ARGS__); std::fflush(stderr); } } while (0)
 
 struct Bump {
@@ -176,6 +178,7 @@ void Verifier::raise_flag_dev(uint32_t* host_word, uint32_t* dev_word, uint32_t 
 
 bool Verifier::release_gpu_waits(int timeout_ms) {
     released_.store(true);
+    const Clock::time_point r0 = Clock::now();
     // the host's own words: UINT32_MAX is past every ring.  (E-6's skip words are device memory, but
     // wait_flag_ge_or also returns on its flag.)  A host function raising flag B later only raises.
     for (uint32_t* p : {h_flag_, h_flagA_, h_flagB_})
@@ -188,18 +191,33 @@ bool Verifier::release_gpu_waits(int timeout_ms) {
     // layer is a global flag, and an async copy would be recorded as a node instead of submitted).
     uint32_t* const flag_host[3] = {h_flag_, h_flagA_, h_flagB_};
     uint32_t* const flag_dev[3] = {m_flag_, m_flagA_, m_flagB_};
+    const Clock::time_point t_pub = Clock::now();
     for (int i = 0; i < 3; ++i)
         if (flag_host[i] != nullptr && flag_dev[i] != nullptr)
             cudaMemcpy(flag_dev[i], flag_host[i], sizeof(uint32_t), cudaMemcpyHostToDevice);
+    // P1 (card t_44a0ac61) instrumentation, off by default: this path only ever runs after something has
+    // already failed, so without a line here its cost - the publication of the flag to the DEVICE words above,
+    // and the drain below - is invisible in a log.  STRATA_VERIFY_RELEASE_DEBUG=1 prints both.
+    if (g_release_dbg)
+        std::fprintf(stderr, "verify release: flag publication %.3f ms; drain budget %d ms\n",
+                     ms_since(t_pub), timeout_ms);
     const OnDevice on_device(device_);
     const Clock::time_point t0 = Clock::now();
     for (cudaStream_t s : {cs_, copy_}) {
         if (s == nullptr) continue;
         while (cudaStreamQuery(s) == cudaErrorNotReady) {
-            if (ms_since(t0) > timeout_ms) return false;
+            if (ms_since(t0) > timeout_ms) {
+                if (g_release_dbg)
+                    std::fprintf(stderr, "verify release: the GPU did NOT finish; drain %.3f ms, release %.3f ms\n",
+                                 ms_since(t0), ms_since(r0));
+                return false;
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
+    if (g_release_dbg)
+        std::fprintf(stderr, "verify release: the GPU finished; drain %.3f ms, release %.3f ms (publication %.3f ms)\n",
+                     ms_since(t0), ms_since(r0), ms_since(t_pub));
     return true;
 }
 
