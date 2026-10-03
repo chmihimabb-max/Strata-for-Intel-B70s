@@ -1,0 +1,477 @@
+======================================================================================
+ARM 1c-4k      dir /home/michael/strata-xpu/p10/runs/1c-4k
+======================================================================================
+P10 arm 1c-4k   2026-10-03T13:08:25-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768 pool=default
+onecard=0  ZE_AFFINITY_MASK=0
+-- the exact command --
+cd /home/michael/strata-xpu/p10/runs/1c-4k && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 4096 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --kv-resident 32768   (stdin from /home/michael/strata-xpu/p10/runs/1c-4k/stdin.fifo)
+
+-- the engine's own lines --
+strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+strata generate: expert cache auto: 26.07 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 10153 slots
+strata generate: expert cache 13258 slots, 25.17 GiB of VRAM; policy is
+strata generate: pre-filled 13258 of 13258 slots from the profile; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata generate: token graph hit path: 13258 resident experts, decided on the device
+strata serve: 315 MiB of VRAM free with everything loaded
+INFO context=4096 kv=int8 kv_resident=0 expert_slots=13258 expert_cache_mib=25778 expert_slots_primary=13258 expert_cache_primary_mib=25778 spec=6 mtp_max=4 lookup=3 vram_free_mib=315 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+strata decode timing: 50 windows, avg T 3.80, 3.00 tokens/window, 149.04 ms/window = verify 131.78 (GPU-reach wait 86.77 + per-layer host 25.40 [plan 0.54 actq 0.29 jobs 15.70 CPU 4.13] + stage 1.16 + tail 9.57) + commit/emit 0.55 + draft 13.03; per layer-window: CPU experts 1.98 (2.43 entries), VRAM hits 35.57, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 14542 ms (263.5 tok/s), 150 generated in 7452 ms (20.1 tok/s), drafts accepted 101 of 140, 0 checkpoints
+strata serve: decode expert cache hit rate: 93.6% (85371 hits / 91200 lookups)
+strata serve: expert tiers: GPU 85371 hits this request; since the start RAM 0 blobs, files 0 blobs 63089.6 MB read (the GGUF in place)
+DONE 150 3832 14542.1 7452.0 stop 101 140 0 85371 91200 0 0 8698.8
+PP 3831 3832 14178 270.2
+
+-- per-thread CPU: top -b -H, busiest sample --
+[top] top-H.txt: busiest sample 13:08:51: 74 engine threads, 20 at >=50% of one core, 21 above 1%
+[top]    tid  1104204   92.0% cpu     18.10s cpu-time
+[top]    tid  1104300   56.0% cpu      0.58s cpu-time
+[top]    tid  1104303   56.0% cpu      0.58s cpu-time
+[top]    tid  1104310   56.0% cpu      0.58s cpu-time
+[top]    tid  1104311   56.0% cpu      0.58s cpu-time
+[top]    tid  1104314   56.0% cpu      0.58s cpu-time
+[top]    tid  1104302   55.0% cpu      0.57s cpu-time
+[top]    tid  1104304   55.0% cpu      0.57s cpu-time
+[top]    tid  1104305   55.0% cpu      0.57s cpu-time
+[top]    tid  1104309   55.0% cpu      0.56s cpu-time
+[top]    tid  1104312   55.0% cpu      0.57s cpu-time
+[top]    tid  1104313   55.0% cpu      0.56s cpu-time
+[top]    tid  1104315   55.0% cpu      0.57s cpu-time
+[top]    tid  1104316   54.0% cpu      0.56s cpu-time
+[top]    tid  1104301   53.0% cpu      0.55s cpu-time
+[top]    tid  1104307   53.0% cpu      0.54s cpu-time
+[top]    tid  1104308   53.0% cpu      0.54s cpu-time
+[top]    tid  1104299   52.0% cpu      0.54s cpu-time
+[top]    tid  1104317   52.0% cpu      0.54s cpu-time
+[top]    tid  1104306   50.0% cpu      0.52s cpu-time
+[top]    tid  1104386   10.0% cpu      0.10s cpu-time
+[top]    tid  1104284    1.0% cpu      0.01s cpu-time
+[pidstat] pidstat.txt: busiest sample 01:08:57: process aggregate %CPU 1782 (17.82 cores) against the MAXIMUM of any single thread 90.10% in the same sample
+[pidstat] samples where any thread read above 1%: 23 of 26
+
+-- per-thread CPU by phase (p10_threads.py deltas, phase boundaries from the engine's own DONE line) --
+[cpu] 1c-4k/threads.csv: 1790 thread-ticks, 75 distinct threads; prompt 14.5s
+load           no samples
+prefill           14.5s  cores busy  0.89   threads>=50%:   1  >=10%:   1  of 75 alive
+               busiest: 1104204:67%, 1104443:4%, 1104391:1%, 1104414:1%, 1104387:1%, 1104398:1%, 1104407:1%, 1104410:1%, 1104412:1%, 1104413:1%, 1104416:1%, 1104388:1%, 1104390:1%, 1104394:1%, 1104400:1%, 1104401:1%, 1104402:1%, 1104405:1%, 1104406:1%, 1104408:1%, 1104409:1%, 1104415:1%
+decode             7.7s  cores busy 15.57   threads>=50%:  20  >=10%:  21  of 74 alive
+               busiest: 1104204:86%, 1104310:78%, 1104311:78%, 1104314:78%, 1104316:78%, 1104312:78%, 1104302:78%, 1104309:78%, 1104313:78%, 1104315:78%, 1104317:78%, 1104303:77%, 1104305:77%, 1104304:77%, 1104301:77%, 1104308:76%, 1104300:76%, 1104306:74%, 1104307:72%, 1104299:70%, 1104386:14%, 1104284:0%
+whole request     22.2s  cores busy  5.99   threads>=50%:   1  >=10%:  20  of 75 alive
+               busiest: 1104204:74%, 1104310:27%, 1104311:27%, 1104314:27%, 1104316:27%, 1104312:27%, 1104302:27%, 1104309:27%, 1104313:27%, 1104315:27%, 1104317:27%, 1104303:27%, 1104305:27%, 1104304:27%, 1104301:27%, 1104308:27%, 1104300:26%, 1104306:26%, 1104307:25%, 1104299:24%, 1104386:5%, 1104443:4%
+
+-- VRAM / RSS peaks (driver fdinfo) --
+== monitor peak (driver fdinfo / RSS) ==
+== monitor peak (driver fdinfo / RSS) ==
+-rw-rw-r-- 1 michael michael    902 Oct  3 13:09 monitor.csv
+  tiers_line               strata serve: expert tiers: GPU 85371 hits this request; since the start RAM 0 blobs, files 0 blobs 63089.6 MB read (the GGUF in place)
+  vram_free_loaded         315
+  peak_card0_gib           30.83
+  peak_card1_gib           0.0
+  peak_rss_gib             48.18
+  peak_gtt0_gib            1.4
+  req_ram_blobs            0
+  req_file_blobs           0
+  req_file_mb              8698.8
+
+======================================================================================
+ARM 2c-4k      dir /home/michael/strata-xpu/p10/runs/2c-4k
+======================================================================================
+P10 arm 2c-4k   2026-10-03T13:11:43-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768 pool=default
+onecard=<none>  ZE_AFFINITY_MASK=<unset>
+-- the exact command --
+cd /home/michael/strata-xpu/p10/runs/2c-4k && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 4096 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --layer-split auto --kv-resident 32768   (stdin from /home/michael/strata-xpu/p10/runs/2c-4k/stdin.fifo)
+
+-- the engine's own lines --
+strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
+strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+strata generate: expert cache auto: 27.52 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10822 slots
+strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata generate: token graph hit path: 24576 resident experts, decided on the device
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve: 2610 MiB of VRAM free with everything loaded
+INFO context=4096 kv=int8 kv_resident=0 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=2610 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+strata decode timing: 49 windows, avg T 3.76, 3.00 tokens/window, 132.32 ms/window = verify 118.83 (GPU-reach wait 93.95 + per-layer host 1.08 [plan 0.31 actq 0.25 jobs 0.26 CPU 0.00] + stage 1.32 + tail 12.84) + commit/emit 2.02 + draft 11.46; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.55, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15219 ms (251.8 tok/s), 147 generated in 6483 ms (22.7 tok/s), drafts accepted 98 of 135, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (88320 hits / 88320 lookups)
+strata serve: expert tiers: GPU 88320 hits this request; since the start RAM 0 blobs, files 0 blobs 54327.8 MB read (the GGUF in place)
+DONE 147 3832 15218.9 6483.5 stop 98 135 0 88320 88320 0 0 0.0
+PP 3831 3832 13819 277.2
+
+-- per-thread CPU: top -b -H, busiest sample --
+[top] top-H.txt: busiest sample 13:12:17: 105 engine threads, 1 at >=50% of one core, 2 above 1%
+[top]    tid  1111823   66.0% cpu     24.50s cpu-time
+[top]    tid  1111921    5.0% cpu      0.06s cpu-time
+[top]    tid  1111905    1.0% cpu      0.01s cpu-time
+[top]    tid  1111910    1.0% cpu      0.01s cpu-time
+[top]    tid  1111915    1.0% cpu      0.01s cpu-time
+[top]    tid  1111901    0.0% cpu      0.05s cpu-time
+[top]    tid  1111906    0.0% cpu      0.00s cpu-time
+[top]    tid  1111907    0.0% cpu      0.00s cpu-time
+[top]    tid  1111908    0.0% cpu      0.00s cpu-time
+[top]    tid  1111909    0.0% cpu      0.00s cpu-time
+[top]    tid  1111911    0.0% cpu      0.00s cpu-time
+[top]    tid  1111912    0.0% cpu      0.00s cpu-time
+[top]    tid  1111913    0.0% cpu      0.00s cpu-time
+[top]    tid  1111914    0.0% cpu      0.00s cpu-time
+[top]    tid  1111916    0.0% cpu      0.00s cpu-time
+[top]    tid  1111917    0.0% cpu      0.00s cpu-time
+[top]    tid  1111918    0.0% cpu      0.00s cpu-time
+[top]    tid  1111919    0.0% cpu      0.00s cpu-time
+[top]    tid  1111920    0.0% cpu      0.00s cpu-time
+[top]    tid  1111946    0.0% cpu      0.02s cpu-time
+[top]    tid  1111947    0.0% cpu      0.02s cpu-time
+[top]    tid  1111948    0.0% cpu      0.02s cpu-time
+[pidstat] pidstat.txt: busiest sample 01:12:36: process aggregate %CPU 118 (1.18 cores) against the MAXIMUM of any single thread 99.00% in the same sample
+[pidstat] samples where any thread read above 1%: 22 of 26
+
+-- per-thread CPU by phase (p10_threads.py deltas, phase boundaries from the engine's own DONE line) --
+[cpu] 2c-4k/threads.csv: 2534 thread-ticks, 107 distinct threads; prompt 15.2s
+load           no samples
+prefill           15.2s  cores busy  0.82   threads>=50%:   1  >=10%:   2  of 107 alive
+               busiest: 1112329:84%, 1111823:38%, 1111921:0%, 1111901:0%, 1112330:0%, 1111905:0%, 1111910:0%, 1111915:0%, 1111919:0%, 1112172:0%, 1112173:0%, 1112174:0%, 1112175:0%, 1112176:0%, 1111906:0%, 1111907:0%, 1111908:0%, 1111909:0%, 1111911:0%, 1111912:0%, 1111913:0%, 1111914:0%
+decode             7.0s  cores busy  1.10   threads>=50%:   1  >=10%:   2  of 105 alive
+               busiest: 1111823:94%, 1112144:15%, 1111901:0%, 1111907:0%, 1111908:0%, 1111909:0%, 1111911:0%, 1111912:0%, 1111913:0%, 1111916:0%, 1111918:0%, 1111905:0%, 1111906:0%, 1111910:0%, 1111914:0%, 1111915:0%, 1111917:0%, 1111919:0%, 1111920:0%, 1111921:0%, 1111946:0%, 1111947:0%
+whole request     22.2s  cores busy  0.90   threads>=50%:   2  >=10%:   2  of 107 alive
+               busiest: 1112329:84%, 1111823:55%, 1112144:5%, 1111921:0%, 1111901:0%, 1112330:0%, 1111905:0%, 1111907:0%, 1111908:0%, 1111909:0%, 1111910:0%, 1111911:0%, 1111912:0%, 1111913:0%, 1111915:0%, 1111916:0%, 1111918:0%, 1111919:0%, 1112172:0%, 1112173:0%, 1112174:0%, 1112175:0%
+
+-- VRAM / RSS peaks (driver fdinfo) --
+== monitor peak (driver fdinfo / RSS) ==
+== monitor peak (driver fdinfo / RSS) ==
+-rw-rw-r-- 1 michael michael   1182 Oct  3 13:12 monitor.csv
+  tiers_line               strata serve: expert tiers: GPU 88320 hits this request; since the start RAM 0 blobs, files 0 blobs 54327.8 MB read (the GGUF in place)
+  vram_free_loaded         2610
+  peak_card0_gib           28.58
+  peak_card1_gib           31.14
+  peak_rss_gib             48.24
+  peak_gtt0_gib            2.28
+  req_ram_blobs            0
+  req_file_blobs           0
+  req_file_mb              0.0
+
+======================================================================================
+ARM 1c-32k      dir /home/michael/strata-xpu/p10/runs/1c-32k
+======================================================================================
+P10 arm 1c-32k   2026-10-03T13:09:07-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768 pool=default
+onecard=0  ZE_AFFINITY_MASK=0
+-- the exact command --
+cd /home/michael/strata-xpu/p10/runs/1c-32k && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 32768 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --kv-resident 32768   (stdin from /home/michael/strata-xpu/p10/runs/1c-32k/stdin.fifo)
+
+-- the engine's own lines --
+strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+strata generate: expert cache auto: 25.47 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 9911 slots
+strata generate: expert cache 12943 slots, 24.57 GiB of VRAM; policy is
+strata generate: pre-filled 12943 of 12943 slots from the profile; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata generate: token graph hit path: 12943 resident experts, decided on the device
+strata serve: 527 MiB of VRAM free with everything loaded
+INFO context=32768 kv=int8 kv_resident=0 expert_slots=12943 expert_cache_mib=25164 expert_slots_primary=12943 expert_cache_primary_mib=25164 spec=6 mtp_max=4 lookup=3 vram_free_mib=527 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+strata decode timing: 87 windows, avg T 3.53, 2.94 tokens/window, 136.84 ms/window = verify 118.59 (GPU-reach wait 83.19 + per-layer host 16.52 [plan 0.44 actq 0.26 jobs 9.46 CPU 2.90] + stage 1.44 + tail 8.95) + commit/emit 0.74 + draft 14.84; per layer-window: CPU experts 1.22 (1.45 entries), VRAM hits 33.84, PCIe 0.00
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 123753 ms (260.6 tok/s), 256 generated in 11905 ms (21.5 tok/s), drafts accepted 171 of 220, 0 checkpoints
+strata serve: decode expert cache hit rate: 95.9% (141322 hits / 147360 lookups)
+strata serve: expert tiers: GPU 141322 hits this request; since the start RAM 0 blobs, files 0 blobs 150155.3 MB read (the GGUF in place)
+DONE 256 32256 123752.8 11904.7 length 171 220 0 141322 147360 0 0 8562.3
+PP 24576 32256 92359 266.1
+PP 32255 32256 123101 262.0
+
+-- per-thread CPU: top -b -H, busiest sample --
+[top] top-H.txt: busiest sample 13:09:20: 75 engine threads, 1 at >=50% of one core, 10 above 1%
+[top]    tid  1107666   79.0% cpu      8.02s cpu-time
+[top]    tid  1107762   11.0% cpu      0.26s cpu-time
+[top]    tid  1107922    6.0% cpu      0.07s cpu-time
+[top]    tid  1107746    2.0% cpu      0.03s cpu-time
+[top]    tid  1107747    2.0% cpu      0.03s cpu-time
+[top]    tid  1107753    2.0% cpu      0.03s cpu-time
+[top]    tid  1107754    2.0% cpu      0.03s cpu-time
+[top]    tid  1107755    2.0% cpu      0.03s cpu-time
+[top]    tid  1107759    2.0% cpu      0.03s cpu-time
+[top]    tid  1107760    2.0% cpu      0.03s cpu-time
+[top]    tid  1107748    1.0% cpu      0.03s cpu-time
+[top]    tid  1107749    1.0% cpu      0.03s cpu-time
+[top]    tid  1107750    1.0% cpu      0.03s cpu-time
+[top]    tid  1107751    1.0% cpu      0.03s cpu-time
+[top]    tid  1107752    1.0% cpu      0.03s cpu-time
+[top]    tid  1107756    1.0% cpu      0.02s cpu-time
+[top]    tid  1107757    1.0% cpu      0.03s cpu-time
+[top]    tid  1107758    1.0% cpu      0.03s cpu-time
+[top]    tid  1107761    1.0% cpu      0.03s cpu-time
+[top]    tid  1107889    1.0% cpu      0.01s cpu-time
+[top]    tid  1107890    1.0% cpu      0.01s cpu-time
+[top]    tid  1107891    1.0% cpu      0.01s cpu-time
+[pidstat] pidstat.txt: busiest sample 01:09:19: process aggregate %CPU 144 (1.44 cores) against the MAXIMUM of any single thread 69.00% in the same sample
+[pidstat] samples where any thread read above 1%: 59 of 60
+
+-- per-thread CPU by phase (p10_threads.py deltas, phase boundaries from the engine's own DONE line) --
+[cpu] 1c-32k/threads.csv: 10263 thread-ticks, 81 distinct threads; prompt 123.8s
+load           no samples
+prefill          123.8s  cores busy  0.99   threads>=50%:   1  >=10%:   1  of 80 alive
+               busiest: 1107666:85%, 1108890:3%, 1108252:3%, 1107922:3%, 1108559:3%, 1107762:0%, 1107875:0%, 1107882:0%, 1107880:0%, 1107883:0%, 1107893:0%, 1107870:0%, 1107877:0%, 1107887:0%, 1107889:0%, 1107890:0%, 1107866:0%, 1107876:0%, 1107878:0%, 1107892:0%, 1107742:0%, 1107867:0%
+decode            12.3s  cores busy 15.78   threads>=50%:  20  >=10%:  21  of 75 alive
+               busiest: 1107666:90%, 1107778:79%, 1107774:79%, 1107781:79%, 1107779:79%, 1107767:79%, 1107773:78%, 1107777:78%, 1107780:78%, 1107766:78%, 1107770:78%, 1107768:78%, 1107775:78%, 1107769:78%, 1107765:78%, 1107776:78%, 1107764:78%, 1107772:77%, 1107771:75%, 1107763:67%, 1107864:15%, 1107742:0%
+whole request    136.1s  cores busy  2.30   threads>=50%:   1  >=10%:   1  of 81 alive
+               busiest: 1107666:86%, 1107778:7%, 1107774:7%, 1107781:7%, 1107779:7%, 1107767:7%, 1107773:7%, 1107777:7%, 1107780:7%, 1107766:7%, 1107770:7%, 1107768:7%, 1107775:7%, 1107769:7%, 1107765:7%, 1107776:7%, 1107764:7%, 1107772:7%, 1107771:7%, 1107763:6%, 1108890:3%, 1108252:3%
+
+-- VRAM / RSS peaks (driver fdinfo) --
+== monitor peak (driver fdinfo / RSS) ==
+== monitor peak (driver fdinfo / RSS) ==
+-rw-rw-r-- 1 michael michael   4229 Oct  3 13:11 monitor.csv
+  tiers_line               strata serve: expert tiers: GPU 141322 hits this request; since the start RAM 0 blobs, files 0 blobs 150155.3 MB read (the GGUF in place)
+  vram_free_loaded         527
+  peak_card0_gib           30.62
+  peak_card1_gib           0.0
+  peak_rss_gib             48.24
+  peak_gtt0_gib            1.4
+  req_ram_blobs            0
+  req_file_blobs           0
+  req_file_mb              8562.3
+
+======================================================================================
+ARM 2c-32k      dir /home/michael/strata-xpu/p10/runs/2c-32k
+======================================================================================
+P10 arm 2c-32k   2026-10-03T13:12:47-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768 pool=default
+onecard=<none>  ZE_AFFINITY_MASK=<unset>
+-- the exact command --
+cd /home/michael/strata-xpu/p10/runs/2c-32k && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 32768 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --layer-split auto --kv-resident 32768   (stdin from /home/michael/strata-xpu/p10/runs/2c-32k/stdin.fifo)
+
+-- the engine's own lines --
+strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
+strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+strata generate: expert cache auto: 27.35 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10755 slots
+strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata generate: token graph hit path: 24576 resident experts, decided on the device
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve: 2440 MiB of VRAM free with everything loaded
+INFO context=32768 kv=int8 kv_resident=0 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=2440 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+strata decode timing: 87 windows, avg T 3.51, 2.94 tokens/window, 129.94 ms/window = verify 114.61 (GPU-reach wait 90.63 + per-layer host 1.04 [plan 0.30 actq 0.23 jobs 0.25 CPU 0.00] + stage 1.36 + tail 12.33) + commit/emit 2.07 + draft 13.26; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.06, PCIe 0.00
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91861 ms (351.1 tok/s), 256 generated in 11305 ms (22.6 tok/s), drafts accepted 172 of 218, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 69934.3 MB read (the GGUF in place)
+DONE 256 32256 91861.1 11304.8 length 172 218 0 146400 146400 0 0 0.0
+PP 24576 32256 70019 351.0
+PP 32255 32256 89293 361.2
+
+-- per-thread CPU: top -b -H, busiest sample --
+[top] top-H.txt: busiest sample 13:14:18: 107 engine threads, 2 at >=50% of one core, 2 above 1%
+[top]    tid  1113035   50.0% cpu     51.52s cpu-time
+[top]    tid  1113918   50.0% cpu      3.60s cpu-time
+[top]    tid  1113200    1.0% cpu      0.18s cpu-time
+[top]    tid  1113239    0.0% cpu      0.05s cpu-time
+[top]    tid  1113240    0.0% cpu      0.06s cpu-time
+[top]    tid  1113241    0.0% cpu      0.06s cpu-time
+[top]    tid  1113242    0.0% cpu      0.06s cpu-time
+[top]    tid  1113243    0.0% cpu      0.05s cpu-time
+[top]    tid  1113244    0.0% cpu      0.06s cpu-time
+[top]    tid  1113245    0.0% cpu      0.06s cpu-time
+[top]    tid  1113246    0.0% cpu      0.06s cpu-time
+[top]    tid  1113247    0.0% cpu      0.06s cpu-time
+[top]    tid  1113248    0.0% cpu      0.05s cpu-time
+[top]    tid  1113249    0.0% cpu      0.06s cpu-time
+[top]    tid  1113250    0.0% cpu      0.06s cpu-time
+[top]    tid  1113251    0.0% cpu      0.05s cpu-time
+[top]    tid  1113252    0.0% cpu      0.05s cpu-time
+[top]    tid  1113253    0.0% cpu      0.06s cpu-time
+[top]    tid  1113254    0.0% cpu      0.05s cpu-time
+[top]    tid  1113255    0.0% cpu      0.45s cpu-time
+[top]    tid  1113375    0.0% cpu      0.02s cpu-time
+[top]    tid  1113376    0.0% cpu      0.02s cpu-time
+[pidstat] pidstat.txt: busiest sample 01:13:23: process aggregate %CPU 144 (1.44 cores) against the MAXIMUM of any single thread 97.00% in the same sample
+[pidstat] samples where any thread read above 1%: 59 of 60
+
+-- per-thread CPU by phase (p10_threads.py deltas, phase boundaries from the engine's own DONE line) --
+[cpu] 2c-32k/threads.csv: 11164 thread-ticks, 115 distinct threads; prompt 91.9s
+load           no samples
+prefill           91.9s  cores busy  0.96   threads>=50%:   4  >=10%:   5  of 115 alive
+               busiest: 1114021:92%, 1113918:62%, 1113831:61%, 1113737:59%, 1113035:34%, 1113255:1%, 1113200:0%, 1113740:0%, 1113834:0%, 1114022:0%, 1113239:0%, 1113240:0%, 1113241:0%, 1113242:0%, 1113243:0%, 1113244:0%, 1113245:0%, 1113246:0%, 1113247:0%, 1113249:0%, 1113250:0%, 1113252:0%
+decode            11.9s  cores busy  1.14   threads>=50%:   1  >=10%:   2  of 105 alive
+               busiest: 1113035:97%, 1113579:16%, 1113200:0%, 1113239:0%, 1113242:0%, 1113248:0%, 1113251:0%, 1113254:0%, 1113240:0%, 1113241:0%, 1113243:0%, 1113244:0%, 1113245:0%, 1113246:0%, 1113247:0%, 1113249:0%, 1113250:0%, 1113252:0%, 1113253:0%, 1113255:0%, 1113375:0%, 1113376:0%
+whole request    103.7s  cores busy  0.98   threads>=50%:   4  >=10%:   5  of 115 alive
+               busiest: 1114021:92%, 1113918:62%, 1113831:61%, 1113737:59%, 1113035:41%, 1113579:2%, 1113255:0%, 1113200:0%, 1113740:0%, 1113239:0%, 1113242:0%, 1113254:0%, 1113834:0%, 1114022:0%, 1113920:0%, 1113240:0%, 1113241:0%, 1113243:0%, 1113244:0%, 1113245:0%, 1113246:0%, 1113247:0%
+
+-- VRAM / RSS peaks (driver fdinfo) --
+== monitor peak (driver fdinfo / RSS) ==
+== monitor peak (driver fdinfo / RSS) ==
+-rw-rw-r-- 1 michael michael   4306 Oct  3 13:15 monitor.csv
+  tiers_line               strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 69934.3 MB read (the GGUF in place)
+  vram_free_loaded         2440
+  peak_card0_gib           28.75
+  peak_card1_gib           31.43
+  peak_rss_gib             48.29
+  peak_gtt0_gib            2.28
+  req_ram_blobs            0
+  req_file_blobs           0
+  req_file_mb              0.0
+
+======================================================================================
+ARM 1c-128k      dir /home/michael/strata-xpu/p10/runs/1c-128k
+======================================================================================
+P10 arm 1c-128k   2026-10-03T13:15:15-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768 pool=default
+onecard=0  ZE_AFFINITY_MASK=0
+-- the exact command --
+cd /home/michael/strata-xpu/p10/runs/1c-128k && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 131072 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --kv-resident 32768   (stdin from /home/michael/strata-xpu/p10/runs/1c-128k/stdin.fifo)
+
+-- the engine's own lines --
+strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+strata generate: expert cache auto: 25.31 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 9845 slots
+strata generate: expert cache 12860 slots, 24.41 GiB of VRAM; policy is
+strata generate: pre-filled 12860 of 12860 slots from the profile; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata generate: token graph hit path: 12860 resident experts, decided on the device
+strata serve: 537 MiB of VRAM free with everything loaded
+INFO context=131072 kv=int8 kv_resident=32768 expert_slots=12860 expert_cache_mib=24996 expert_slots_primary=12860 expert_cache_primary_mib=24996 spec=6 mtp_max=4 lookup=3 vram_free_mib=537 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+strata decode timing: 101 windows, avg T 3.20, 2.53 tokens/window, 144.63 ms/window = verify 126.65 (GPU-reach wait 85.26 + per-layer host 22.56 [plan 0.43 actq 0.25 jobs 13.69 CPU 3.39] + stage 1.71 + tail 8.85) + commit/emit 0.77 + draft 14.10; per layer-window: CPU experts 1.75 (2.15 entries), VRAM hits 29.83, PCIe 0.00
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 623941 ms (206.8 tok/s), 256 generated in 14608 ms (17.5 tok/s), drafts accepted 156 of 222, 0 checkpoints
+strata serve: decode expert cache hit rate: 93.3% (144636 hits / 155040 lookups)
+strata serve: expert tiers: GPU 144636 hits this request; since the start RAM 0 blobs, files 0 blobs 495993.6 MB read (the GGUF in place)
+strata serve: KV streaming: 93.91% of 1990344 block reads hit VRAM, 488.6 MiB read from RAM
+DONE 256 129024 623940.7 14607.8 length 156 222 0 144636 155040 0 0 15264.7
+PP 122880 129024 587388 209.2
+PP 129023 129024 623257 207.0
+
+-- per-thread CPU: top -b -H, busiest sample --
+[top] top-H.txt: busiest sample 13:15:28: 75 engine threads, 1 at >=50% of one core, 17 above 1%
+[top]    tid  1114554   73.0% cpu      7.74s cpu-time
+[top]    tid  1114647   14.0% cpu      0.27s cpu-time
+[top]    tid  1114742    7.0% cpu      0.07s cpu-time
+[top]    tid  1114631    2.0% cpu      0.03s cpu-time
+[top]    tid  1114632    2.0% cpu      0.03s cpu-time
+[top]    tid  1114633    2.0% cpu      0.03s cpu-time
+[top]    tid  1114634    2.0% cpu      0.03s cpu-time
+[top]    tid  1114635    2.0% cpu      0.03s cpu-time
+[top]    tid  1114636    2.0% cpu      0.03s cpu-time
+[top]    tid  1114637    2.0% cpu      0.03s cpu-time
+[top]    tid  1114638    2.0% cpu      0.03s cpu-time
+[top]    tid  1114639    2.0% cpu      0.03s cpu-time
+[top]    tid  1114640    2.0% cpu      0.03s cpu-time
+[top]    tid  1114642    2.0% cpu      0.03s cpu-time
+[top]    tid  1114643    2.0% cpu      0.03s cpu-time
+[top]    tid  1114645    2.0% cpu      0.03s cpu-time
+[top]    tid  1114646    2.0% cpu      0.03s cpu-time
+[top]    tid  1114641    1.0% cpu      0.02s cpu-time
+[top]    tid  1114644    1.0% cpu      0.02s cpu-time
+[top]    tid  1114710    1.0% cpu      0.01s cpu-time
+[top]    tid  1114711    1.0% cpu      0.01s cpu-time
+[top]    tid  1114627    0.0% cpu      0.02s cpu-time
+[pidstat] pidstat.txt: busiest sample 01:15:27: process aggregate %CPU 143 (1.43 cores) against the MAXIMUM of any single thread 58.00% in the same sample
+[pidstat] samples where any thread read above 1%: 58 of 59
+
+-- per-thread CPU by phase (p10_threads.py deltas, phase boundaries from the engine's own DONE line) --
+[cpu] 1c-128k/threads.csv: 47912 thread-ticks, 105 distinct threads; prompt 623.9s
+load           no samples
+prefill          623.9s  cores busy  1.00   threads>=50%:   1  >=10%:   1  of 100 alive
+               busiest: 1114554:86%, 1115079:6%, 1115430:6%, 1116281:6%, 1115592:3%, 1115915:3%, 1115235:3%, 1114925:3%, 1114742:3%, 1116083:3%, 1115752:2%, 1116860:2%, 1117447:2%, 1117239:2%, 1116451:2%, 1116621:2%, 1117048:2%, 1114627:0%, 1114702:0%, 1114701:0%, 1114708:0%, 1114705:0%
+decode            15.0s  cores busy 15.61   threads>=50%:  20  >=10%:  21  of 79 alive
+               busiest: 1114554:89%, 1114654:78%, 1114659:78%, 1114651:77%, 1114658:77%, 1114655:77%, 1114661:77%, 1114665:77%, 1114662:77%, 1114652:77%, 1114653:77%, 1114666:77%, 1114660:77%, 1114664:77%, 1114656:77%, 1114663:77%, 1114650:77%, 1114657:77%, 1114649:77%, 1114648:69%, 1114682:14%, 1114627:0%
+whole request    639.0s  cores busy  1.35   threads>=50%:   1  >=10%:   1  of 105 alive
+               busiest: 1114554:86%, 1115079:6%, 1115430:6%, 1116281:6%, 1115592:3%, 1115915:3%, 1115235:3%, 1114925:3%, 1114742:3%, 1116083:3%, 1115752:2%, 1116860:2%, 1117447:2%, 1117239:2%, 1116451:2%, 1116621:2%, 1117048:2%, 1114654:2%, 1114659:2%, 1114651:2%, 1114658:2%, 1114655:2%
+
+-- VRAM / RSS peaks (driver fdinfo) --
+== monitor peak (driver fdinfo / RSS) ==
+== monitor peak (driver fdinfo / RSS) ==
+-rw-rw-r-- 1 michael michael   19038 Oct  3 13:26 monitor.csv
+  tiers_line               strata serve: expert tiers: GPU 144636 hits this request; since the start RAM 0 blobs, files 0 blobs 495993.6 MB read (the GGUF in place)
+  vram_free_loaded         537
+  peak_card0_gib           30.67
+  peak_card1_gib           0.0
+  peak_rss_gib             48.29
+  peak_gtt0_gib            2.97
+  req_ram_blobs            0
+  req_file_blobs           0
+  req_file_mb              15264.7
+
+======================================================================================
+ARM 2c-128k      dir /home/michael/strata-xpu/p10/runs/2c-128k
+======================================================================================
+P10 arm 2c-128k   2026-10-03T13:26:14-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768 pool=default
+onecard=<none>  ZE_AFFINITY_MASK=<unset>
+-- the exact command --
+cd /home/michael/strata-xpu/p10/runs/2c-128k && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 131072 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --layer-split auto --kv-resident 32768   (stdin from /home/michael/strata-xpu/p10/runs/2c-128k/stdin.fifo)
+
+-- the engine's own lines --
+strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
+strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+strata generate: expert cache auto: 27.24 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10710 slots
+strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata generate: token graph hit path: 24576 resident experts, decided on the device
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve: 2218 MiB of VRAM free with everything loaded
+INFO context=131072 kv=int8 kv_resident=32768 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=2218 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 124.94 ms/window = verify 110.62 (GPU-reach wait 88.09 + per-layer host 0.96 [plan 0.30 actq 0.21 jobs 0.22 CPU 0.00] + stage 1.50 + tail 11.27) + commit/emit 1.96 + draft 12.35; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372395 ms (346.5 tok/s), 256 generated in 12369 ms (20.7 tok/s), drafts accepted 159 of 205, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (145920 hits / 145920 lookups)
+strata serve: expert tiers: GPU 145920 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+strata serve: KV streaming: 92.13% of 780510 block reads hit VRAM, 247.6 MiB read from RAM
+DONE 256 129024 372395.5 12368.6 length 159 205 0 145920 145920 0 0 0.0
+PP 122880 129024 349086 352.0
+PP 129023 129024 369997 348.7
+
+-- per-thread CPU: top -b -H, busiest sample --
+[top] top-H.txt: busiest sample 13:27:04: 107 engine threads, 2 at >=50% of one core, 2 above 1%
+[top]    tid  1122438   50.0% cpu     37.93s cpu-time
+[top]    tid  1122785   50.0% cpu      0.99s cpu-time
+[top]    tid  1122520    1.0% cpu      0.08s cpu-time
+[top]    tid  1122523    0.0% cpu      0.04s cpu-time
+[top]    tid  1122524    0.0% cpu      0.04s cpu-time
+[top]    tid  1122525    0.0% cpu      0.04s cpu-time
+[top]    tid  1122526    0.0% cpu      0.04s cpu-time
+[top]    tid  1122527    0.0% cpu      0.05s cpu-time
+[top]    tid  1122528    0.0% cpu      0.04s cpu-time
+[top]    tid  1122529    0.0% cpu      0.05s cpu-time
+[top]    tid  1122530    0.0% cpu      0.04s cpu-time
+[top]    tid  1122531    0.0% cpu      0.04s cpu-time
+[top]    tid  1122532    0.0% cpu      0.04s cpu-time
+[top]    tid  1122533    0.0% cpu      0.04s cpu-time
+[top]    tid  1122534    0.0% cpu      0.04s cpu-time
+[top]    tid  1122535    0.0% cpu      0.05s cpu-time
+[top]    tid  1122536    0.0% cpu      0.05s cpu-time
+[top]    tid  1122537    0.0% cpu      0.05s cpu-time
+[top]    tid  1122538    0.0% cpu      0.05s cpu-time
+[top]    tid  1122539    0.0% cpu      0.37s cpu-time
+[top]    tid  1122544    0.0% cpu      0.02s cpu-time
+[top]    tid  1122545    0.0% cpu      0.02s cpu-time
+[pidstat] pidstat.txt: busiest sample 01:26:49: process aggregate %CPU 142 (1.42 cores) against the MAXIMUM of any single thread 90.00% in the same sample
+[pidstat] samples where any thread read above 1%: 59 of 60
+
+-- per-thread CPU by phase (p10_threads.py deltas, phase boundaries from the engine's own DONE line) --
+[cpu] 2c-128k/threads.csv: 41235 thread-ticks, 142 distinct threads; prompt 372.4s
+load           no samples
+prefill          372.4s  cores busy  0.98   threads>=50%:  16  >=10%:  17  of 142 alive
+               busiest: 1124371:90%, 1124253:68%, 1124023:62%, 1124137:62%, 1123919:60%, 1123759:59%, 1123661:58%, 1123090:58%, 1123455:58%, 1123271:58%, 1123364:58%, 1123556:57%, 1122968:57%, 1122880:57%, 1123180:56%, 1122785:52%, 1122438:34%, 1123274:0%, 1122539:0%, 1122520:0%, 1124255:0%, 1123093:0%
+decode            13.0s  cores busy  1.13   threads>=50%:   1  >=10%:   2  of 105 alive
+               busiest: 1122438:97%, 1122628:15%, 1122520:0%, 1122527:0%, 1122528:0%, 1122529:0%, 1122532:0%, 1122535:0%, 1122537:0%, 1122539:0%, 1122523:0%, 1122524:0%, 1122525:0%, 1122526:0%, 1122530:0%, 1122531:0%, 1122533:0%, 1122534:0%, 1122536:0%, 1122538:0%, 1122544:0%, 1122545:0%
+whole request    385.4s  cores busy  0.98   threads>=50%:  16  >=10%:  17  of 142 alive
+               busiest: 1124371:90%, 1124253:68%, 1124023:62%, 1124137:62%, 1123919:60%, 1123759:59%, 1123661:58%, 1123090:58%, 1123455:58%, 1123271:58%, 1123364:58%, 1123556:57%, 1122968:57%, 1122880:57%, 1123180:56%, 1122785:52%, 1122438:37%, 1122628:1%, 1123274:0%, 1122539:0%, 1122520:0%, 1124255:0%
+
+-- VRAM / RSS peaks (driver fdinfo) --
+== monitor peak (driver fdinfo / RSS) ==
+== monitor peak (driver fdinfo / RSS) ==
+-rw-rw-r-- 1 michael michael   15445 Oct  3 13:33 monitor.csv
+  tiers_line               strata serve: expert tiers: GPU 145920 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+  vram_free_loaded         2218
+  peak_card0_gib           28.97
+  peak_card1_gib           31.54
+  peak_rss_gib             48.31
+  peak_gtt0_gib            3.98
+  req_ram_blobs            0
+  req_file_blobs           0
+  req_file_mb              0.0
+

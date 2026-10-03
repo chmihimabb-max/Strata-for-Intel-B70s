@@ -41,20 +41,23 @@ case "$MODE" in
     for n in a b; do
       port=$([ "$n" = a ] && echo 8101 || echo 8102)
       log=$R/logs/p10-$TAG-$n-server.log
-      nohup setsid /usr/bin/python3 -m serve.server --engine strata --config "$D/cfg-$n.json" \
+      nohup /usr/bin/python3 -m serve.server --engine strata --config "$D/cfg-$n.json" \
           --port "$port" --api-monitor >> "$log" 2>&1 &
       SERVERS+=($!); PORTS+=("$port")
       echo "started server $n pid $! port $port log $log" >> "$LOG"
     done ;;
   1x2)
     log=$R/logs/p10-$TAG-1x2-server.log
-    nohup setsid /usr/bin/python3 -m serve.server --engine strata --config "$D/cfg-1x2.json" \
+    nohup /usr/bin/python3 -m serve.server --engine strata --config "$D/cfg-1x2.json" \
         --port 8103 --api-monitor >> "$log" 2>&1 &
     SERVERS+=($!); PORTS+=("8103")
     echo "started server 1x2 pid $! port 8103 log $log" >> "$LOG" ;;
   *) echo "mode must be 2i or 1x2"; exit 2 ;;
 esac
 printf '%s\tload_start\n' "$(date +%s.%N)" >> "$MK"
+# the SSD tier under this arm (the pack's device), for the interference question
+/usr/bin/python3 "$SRC/p10/p10_disk.py" nvme0n1 "$D/disk.csv" 2 --stopfile "$D/threads.stop" >> "$LOG" 2>&1 &
+DSK=$!
 
 # readiness: /v1/models answers only when the engine has loaded
 for i in $(seq 1 1800); do
@@ -93,12 +96,19 @@ for idx in "${!EPIDS[@]}"; do
 done
 sleep 2
 
-# fire every request at the same instant
+# fire every request at the same instant.  In 1x2 mode BOTH clients go to the one two-card server (it serves
+# one sequence at a time, so what is measured is the queue); in 2i mode one client per instance.
+CL=()
+case "$MODE" in
+  2i)  CL=("0:8101" "1:8102") ;;
+  1x2) CL=("0:8103" "1:8103") ;;
+esac
 printf '%s\ttask_start\n' "$(date +%s.%N)" >> "$MK"
 CPIDS=()
-for idx in "${!PORTS[@]}"; do
-  /usr/bin/python3 "$SRC/p10/p10_client.py" --port "${PORTS[$idx]}" --prompt-file "$PROMPTFILE" \
-      --max-new "$MAXNEW" --out "$D/resp-$idx.json" --tag "$TAG-$idx" --label concurrent >> "$LOG" 2>&1 &
+for spec in "${CL[@]}"; do
+  cidx=${spec%%:*}; cport=${spec##*:}
+  /usr/bin/python3 "$SRC/p10/p10_client.py" --port "$cport" --prompt-file "$PROMPTFILE" \
+      --max-new "$MAXNEW" --out "$D/resp-$cidx.json" --tag "$TAG-$cidx" --label concurrent >> "$LOG" 2>&1 &
   CPIDS+=($!)
 done
 echo "== fired ${#CPIDS[@]} concurrent requests at $(date -Is) ==" >> "$LOG"
@@ -109,11 +119,14 @@ echo "== all clients returned $(date -Is) ==" >> "$LOG"
 sleep 3
 touch "$D/threads.stop"
 KPIDS=()
-for v in "${SAMP0:-}" "${SAMP1:-}" "${MON0:-}" "${MON1:-}" "${PS0:-}" "${PS1:-}" "${TS0:-}" "${TS1:-}"; do
+for v in "${SAMP0:-}" "${SAMP1:-}" "${MON0:-}" "${MON1:-}" "${PS0:-}" "${PS1:-}" "${TS0:-}" "${TS1:-}" "${DSK:-}"; do
   [ -n "$v" ] && [ "$v" != 0 ] && KPIDS+=("$v")
 done
 [ ${#KPIDS[@]} -gt 0 ] && kill "${KPIDS[@]}" 2>/dev/null
-wait 2>/dev/null
+# NEVER a bare `wait` here: the servers are background jobs of THIS shell too, and a bare wait would block
+# until they exit - which is exactly backwards (the servers are stopped below).  Measured: the 2i-32k-9 arm
+# hung here for 4 minutes with both servers still alive.
+for v in "${KPIDS[@]}"; do wait "$v" 2>/dev/null; done
 
 # stop the servers the way p6_stop.sh does: SIGTERM (the server QUITs its engine), then reap the engines
 for s in "${SERVERS[@]}"; do kill -TERM "$s" 2>/dev/null; done
@@ -123,6 +136,15 @@ for i in $(seq 1 60); do
   [ "$alive" = 0 ] && break
   sleep 2
 done
+# the servers take the Ctrl+C path on SIGTERM and QUIT their engines; if one is still there (a stuck engine
+# teardown), match it by its own config path and then the engines by name - both anchored, so this rig's own
+# shell cannot match
+if pgrep -f "serve\.server --engine strata --config $D/cfg" >/dev/null; then
+  echo "== servers survived SIGTERM; escalating by config path ==" >> "$LOG"
+  pkill -TERM -f "serve\.server --engine strata --config $D/cfg" 2>/dev/null
+  sleep 10
+  pkill -KILL -f "serve\.server --engine strata --config $D/cfg" 2>/dev/null
+fi
 pgrep -x strata >/dev/null && { pkill -INT -x strata; sleep 10; pgrep -x strata >/dev/null && pkill -KILL -x strata; }
 sleep 2
 printf '%s\tservers_stopped\n' "$(date +%s.%N)" >> "$MK"
@@ -141,6 +163,13 @@ printf '%s\tservers_stopped\n' "$(date +%s.%N)" >> "$MK"
   for n in "${!PORTS[@]}"; do
     echo "--- client $n:"; cat "$D/resp-$n.json.timing.json" 2>/dev/null
   done
+  echo "== this arm's report =="
+  /usr/bin/python3 "$SRC/p10/p10_two_report.py" "$D" 2>&1 | tail -6
+  for n in "${!PORTS[@]}"; do
+    /usr/bin/python3 "$SRC/p10/p10_cpu_report.py" "$D" "$n" 2>&1 | head -7
+    /usr/bin/python3 "$SRC/p10/p10_top_evidence.py" "$D" "$n" 2>&1 | head -4
+  done
+  grep -h "^\[disk\]" "$LOG" 2>/dev/null | tail -1
   echo "== what is left =="
   pgrep -a -x strata || echo "   no engine"
   pgrep -a -f "^/usr/bin/python3 -m serve\.server" || echo "   no server"

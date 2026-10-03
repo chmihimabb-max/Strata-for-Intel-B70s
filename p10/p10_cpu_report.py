@@ -14,6 +14,7 @@ many threads averaged >=50%% and >=10%% of a core, and the busiest threads.
 from __future__ import annotations
 
 import csv
+import json
 import os
 import sys
 
@@ -53,6 +54,13 @@ def main() -> int:
                     if line.startswith("DONE"):
                         prompt_ms = float(line.split()[3])
         except OSError:
+            pass
+    if prompt_ms is None and idx is not None:
+        # the server arms have no out.txt: the engine's own prompt time is echoed in the client's response
+        try:
+            t = json.loads(open(os.path.join(d, f"resp-{idx}.json.timing.json")).read())
+            prompt_ms = (t.get("timings") or {}).get("prompt_ms")
+        except (OSError, ValueError):
             pass
     if prompt_ms is None:
         print(f"[cpu] {os.path.basename(d)}: no prompt time (no DONE line and no --prompt-ms)")
