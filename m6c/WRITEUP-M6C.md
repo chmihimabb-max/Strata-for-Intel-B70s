@@ -394,10 +394,13 @@ one code-agent prompt per length):
 | upstream IQ3_S decode tok/s | 52.4 | 53.3 | 48.3 | 46.3 | 45.5 | not published |
 
 **This block** (2x B70, `--prefill auto`, int8 KV, `--kv-resident 32768`, same 256 generated tokens,
-code-review prompt): prefill `{{CURVE_PRE}}`, decode `{{CURVE_DEC}}` at 32K/64K/128K/262K. So at 64K our
-prefill is `{{GAP_PRE_64K}}`x upstream's 1,640 tok/s and our decode is `{{GAP_DEC_64K}}`x upstream's 46.3.
-That is a **different machine** (12 GB CUDA card against 2x31.9 GiB Intel, 64 GB RAM against 123 GB) and a
-**different engine generation** for that table, so the ratio is a pointer, not a like-for-like row.
+code-review prompt): prefill **344.8 / 339.6 / 342.6 / 316.9** and decode **21.71 / 18.67 / 19.55 / 18.45**
+tok/s at 32K / 64K / 128K / 262K. So at 64K our prefill is **0.21x** upstream's 1,640 tok/s and our decode
+is **0.40x** upstream's 46.3 -- a 4.8x prefill gap and a 2.5x decode gap. That is a **different machine**
+(12 GB CUDA card against 2x31.9 GiB Intel, 64 GB RAM against 123 GB, a mature CUDA kernel set against a
+SYCL port) and a **different engine generation** for that table, so the ratio is a pointer, not a
+like-for-like row -- and note that upstream's own 262K IQ3_S row does not exist, so this block is the only
+IQ3_S-at-256K row either side has published, with the config and the caveats above attached to it.
 
 **The same file, same box, independent oracle** (I2, `~/strata-xpu/I2-STATUS.md`, commit `3234202`): the
 llama.cpp-SYCL qwen4exp fork on the *same* IQ3_S shards, at 4,096 context. Oracle prefill
@@ -451,12 +454,13 @@ these rows.
 - **No `--prefill auto` 4K arm**, so the oracle comparison at matched chunking is not available; the
   1.47x/1.56x chunk-size term was measured at 32K and 64K only.
 - **One prompt per length** (upstream's protocol), so there is no per-length variance estimate. The
-  repeated lengths (32K/64K at 512 and at auto, plus the streaming on/off pair at 64K) give the spread:
-  prefill reproduces to ~1% within an arm, decode varies by ~5% between runs of the *same* arm
-  (draft acceptance depends on the text).
-- **No quality sweep.** Correctness evidence is the two needle rows (4K and 262K) and the fact that the
-  256-token answers are coherent code reviews; perplexity, long-document quality and the q4/hybrid KV's
-  accuracy are not measured here.
+  repeated lengths give the spread that is there: the warm and page-cache-dropped 256K rows agree to
+  **0.02%** on prefill (316.9 against 316.9 tok/s, 820,364 against 820,171 ms) and the two 262K streaming
+  arms' decode differ by 3% (18.45 against 17.92), which is what draft acceptance moving with the text
+  does.
+- **No quality sweep.** Correctness evidence is the three needle rows (4K at 50% depth, 256K at 50% and
+  at 5%) plus the fact that the 256-token answers are coherent code reviews; perplexity, long-document
+  quality as a function of position and the q4/hybrid KV's accuracy are not measured here.
 - **No instrumentation.** Per S3 (card `t_7e1307a6`) Level-Zero tracing stalls this engine's verify
   window, so there is no kernel-level attribution of the prefill or decode gap; everything above is the
   engine's own counters and `/proc`.
