@@ -419,6 +419,12 @@ layer spin loop, where the host is spinning anyway, for +3.0% of the window.
   (`p6/server.pid`) is deleted in this card's commit.  Every arm in this card ran one engine at a time on both
   B70s with `ZE_AFFINITY_MASK` unset.
 * `build-sycl/strata` is the binary this card measured (md5 `9eff0675…`); the arms' own md5s are in their logs.
+* **The engine's test suite is unchanged by this card**: `ZE_AFFINITY_MASK=0 ctest` on the shipped build is
+  `90% tests passed, 5 tests failed out of 49` in 96.95 s — the SAME five the parent HEAD failed in P3
+  (`platform_memory_test`, `elementwise_parity`, `quantize_act_parity`, `iq_multi_parity`, `expert_multi_test`,
+  with `iq_parity`/`iq_parity_fixtures` skipped), so the profiler's default-off path is not a regression
+  (`/home/michael/strata-xpu/p9/ctest-p9.log`; the repo's `.gitignore` excludes `*.log`, so it stays beside the
+  runs rather than in the commit).
 * The engine changes are opt-in: **`STRATA_VERIFY_PROFILE` is the only switch, and the default path is unchanged**
   (`p9-ctl3-4k` against `p9-ctl-4k-150b`: 133.59 against 132.38 ms/window, 22.46 against 22.66 tok/s decode,
   identical token ids — i.e. the fold and the `tail` field cost nothing, and the 0.9% is the two binaries' noise).
