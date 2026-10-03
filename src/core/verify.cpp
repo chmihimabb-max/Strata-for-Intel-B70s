@@ -58,6 +58,49 @@ double ms_since(Clock::time_point t) { return std::chrono::duration<double, std:
 const bool g_dbg = std::getenv("STRATA_VERIFY_DEBUG") != nullptr;
 // P1 (card t_44a0ac61): time the #267 release path (STRATA_VERIFY_RELEASE_DEBUG=1).
 const bool g_release_dbg = std::getenv("STRATA_VERIFY_RELEASE_DEBUG") != nullptr;
+// P1b (card t_58d5592c) RIG-ONLY KNOB: every call site of release_gpu_waits passes a literal 5000 ms bound.  This
+// lets a run set that bound from the environment so "does the window EVER finish after the release?" can be
+// answered without editing the call sites (STRATA_RELEASE_DRAIN_MS=<ms>; unset = the call site's own bound).
+int64_t release_drain_ms(int64_t timeout_ms) {
+    const char* e = std::getenv("STRATA_RELEASE_DRAIN_MS");
+    if (e == nullptr) return timeout_ms;
+    const long long v = std::atoll(e);
+    return v > 0 ? (int64_t) v : timeout_ms;
+}
+// P1b (card t_58d5592c): the teardown's own bound, and the knob that sets it (STRATA_TEARDOWN_WAIT_MS).
+int teardown_wait_ms() {
+    const char* e = std::getenv("STRATA_TEARDOWN_WAIT_MS");
+    if (e == nullptr) return 5000;
+    const long long v = std::atoll(e);
+    return v >= 0 ? (int) v : 5000;
+}
+/// P1b (card t_58d5592c): A BOUNDED, TRUTHFUL "has this stream finished?".  Returns true if the stream was
+/// observed complete within `budget_ms`; false if the budget ran out.  ONE recorded event, polled with
+/// cudaEventQuery - deliberately NOT cudaStreamQuery, which is not a "is the stream done" spelling on this
+/// backend: the shim's cudaStreamQuery submits a FRESH BARRIER on every call and then reports THAT barrier's
+/// status (include/strata/sycl_compat/cuda_runtime.h:806-813), so a poll loop built on it re-arms its own
+/// obstacle on every iteration and can report not-ready for as long as it runs.  MEASURED, this rig, the same
+/// stream in the same instant: 30000.709 ms of cudaStreamQuery not-ready in the release's drain, while the
+/// destructor's blocking cudaStreamSynchronize of that stream returned in 0.003 ms and 1.023 ms (two verifiers,
+/// ~/strata-xpu/p1/runs/p1b-a-longdrain/err.txt lines 59-69).  That false negative is what made the release
+/// report "the GPU did NOT finish" at every bound, and it is also why the release's drain used to leave
+/// thousands of useless barriers queued on the stream it was asking about.
+bool wait_stream_bounded(cudaStream_t s, int budget_ms, double* waited_ms) {
+    if (s == nullptr) { if (waited_ms != nullptr) *waited_ms = 0.0; return true; }
+    cudaEvent_t ev = nullptr;
+    if (cudaEventCreate(&ev) != cudaSuccess) { if (waited_ms != nullptr) *waited_ms = -1.0; return false; }
+    cudaEventRecord(ev, s);
+    const Clock::time_point t0 = Clock::now();
+    bool done = false;
+    for (;;) {
+        if (cudaEventQuery(ev) == cudaSuccess) { done = true; break; }
+        if (ms_since(t0) > (double) budget_ms) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    cudaEventDestroy(ev);
+    if (waited_ms != nullptr) *waited_ms = ms_since(t0);
+    return done;
+}
 #define VDBG(...) do { if (g_dbg) { std::fprintf(stderr, "verify dbg: " __VA_ARGS__); std::fflush(stderr); } } while (0)
 
 struct Bump {
@@ -186,8 +229,13 @@ void diag_active_verifier(std::FILE* f) {
 constexpr int kLiveMax = 16;
 std::atomic<Verifier*> g_live[kLiveMax];
 void release_live_verifiers(std::FILE* f) {
+    int slot_i = 0;
     for (auto& slot : g_live)
         if (Verifier* v = slot.load()) {
+            if (f != nullptr)
+                std::fprintf(f, "strata: #267 release pass over live verifier slot %d (thread %llu)\n", slot_i,
+                             (unsigned long long) std::hash<std::thread::id>{}(std::this_thread::get_id()));
+            ++slot_i;
             const Clock::time_point t0 = Clock::now();
             const bool done = v->release_gpu_waits(5000);
             if (f != nullptr)
@@ -228,6 +276,10 @@ void Verifier::raise_flag_dev(uint32_t* host_word, uint32_t* dev_word, uint32_t 
 
 bool Verifier::release_gpu_waits(int timeout_ms) {
     released_.store(true);
+    timeout_ms = (int) release_drain_ms(timeout_ms);
+    if (g_release_dbg)
+        std::fprintf(stderr, "verify release: enter (thread %llu, budget %d ms)\n",
+                     (unsigned long long) std::hash<std::thread::id>{}(std::this_thread::get_id()), timeout_ms);
     const Clock::time_point r0 = Clock::now();
     // the host's own words: UINT32_MAX is past every ring.  (E-6's skip words are device memory, but
     // wait_flag_ge_or also returns on its flag.)  A host function raising flag B later only raises.
@@ -256,17 +308,30 @@ bool Verifier::release_gpu_waits(int timeout_ms) {
                      ms_since(t_pub), timeout_ms);
     const OnDevice on_device(device_);
     const Clock::time_point t0 = Clock::now();
+    bool finished = true;
+    double bad_wait = 0.0;
     for (cudaStream_t s : {cs_, copy_}) {
         if (s == nullptr) continue;
-        while (cudaStreamQuery(s) == cudaErrorNotReady) {
-            if (ms_since(t0) > timeout_ms) {
-                if (g_release_dbg)
-                    std::fprintf(stderr, "verify release: the GPU did NOT finish; drain %.3f ms, release %.3f ms\n",
-                                 ms_since(t0), ms_since(r0));
-                return false;
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        double w = 0.0;
+        if (!wait_stream_bounded(s, timeout_ms, &w)) { finished = false; bad_wait = w; break; }
+    }
+    if (!finished) {
+        if (g_release_dbg) {
+            std::fprintf(stderr, "verify release: the GPU did NOT finish; drain %.3f ms, release %.3f ms\n",
+                         bad_wait, ms_since(r0));
+            // P1b (card t_58d5592c): what the window looks like when the GPU has not finished.  HOST words only:
+            // they are mapped and always readable, and this branch must not add a copy of its own to a stream it
+            // has just failed to observe (the device-word read-back that proved the release lands is a separate,
+            // explicitly-flagged probe; see p1/STATUS-P1B.md).
+            const uint32_t* const hw[3] = {h_flag_, h_flagA_, h_flagB_};
+            std::fprintf(stderr, "verify release: host flag words %u %u %u; window state:\n",
+                         hw[0] ? *(const volatile uint32_t*) hw[0] : 0u,
+                         hw[1] ? *(const volatile uint32_t*) hw[1] : 0u,
+                         hw[2] ? *(const volatile uint32_t*) hw[2] : 0u);
+            diag(stderr);
+            std::fflush(stderr);
         }
+        return false;
     }
     if (g_release_dbg)
         std::fprintf(stderr, "verify release: the GPU finished; drain %.3f ms, release %.3f ms (publication %.3f ms)\n",
@@ -296,12 +361,41 @@ Verifier::~Verifier() {
         Verifier* me = this;
         slot.compare_exchange_strong(me, nullptr);
     }
-    if (cs_) cudaStreamSynchronize(cs_);
+    // ---- P1b (card t_58d5592c): THE TEARDOWN MUST NOT BLOCK UNBOUNDED ON A STREAM WHOSE WINDOW FAILED.
+    // Up to P1 this was the bare `if (cs_) cudaStreamSynchronize(cs_);` and it is where the host parked: P1's
+    // instrument run (`~/strata-xpu/p1/logs/p1-gdb7-after-out.log`) caught the only user-space thread in
+    // ~Verifier -> cudaStreamSynchronize -> urQueueFinish inside libze_intel_gpu for 6+ minutes, on a stream whose
+    // window had already failed and whose flags the release had already raised to UINT32_MAX.  Measured here, in
+    // the STRATA_TEST_VERIFY_STALL=1 rig: once the release has run, that stream does not finish at all (the
+    // release's drain did not end it in 30 s), and a process that is ending cannot wait for the GPU.  So the
+    // blocking sync stays on the clean path - a healthy window's stream is idle by then, and this is the
+    // measured-cheaper spelling - and a window that was released gets the bounded ONE-EVENT wait instead.
+    if (cs_) {
+        if (!released_.load()) {
+            cudaStreamSynchronize(cs_);
+        } else {
+            double w = 0.0;
+            const bool done = wait_stream_bounded(cs_, teardown_wait_ms(), &w);
+            std::fprintf(stderr, "verify teardown: the window on cs_ was released (#267); %s (%.3f ms of a %d ms budget)\n",
+                         done ? "it finished" : "it did NOT finish and is NOT waited for - the process is ending",
+                         w, teardown_wait_ms());
+            std::fflush(stderr);
+        }
+    }
     for (auto& e : exec_)
         if (e) cudaGraphExecDestroy(e);
     if (commit_exec_) cudaGraphExecDestroy(commit_exec_);
     if (cs_) cudaStreamDestroy(cs_);
-    if (copy_) { cudaStreamSynchronize(copy_); cudaStreamDestroy(copy_); }
+    if (copy_) {
+        // P1b: the copy stream's teardown is bounded for the same reason as cs_ above (the release publishes on it).
+        if (released_.load()) {
+            double w = 0.0;
+            (void) wait_stream_bounded(copy_, teardown_wait_ms(), &w);
+        } else {
+            cudaStreamSynchronize(copy_);
+        }
+        cudaStreamDestroy(copy_);
+    }
     if (commit_done_) cudaEventDestroy(commit_done_);
     if (arena_) cudaFree(arena_);
     if (lad_) cudaFree(lad_);
