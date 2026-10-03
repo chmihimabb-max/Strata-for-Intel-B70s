@@ -1,0 +1,27 @@
+P9 (t_2403e6f6): the rig, the chrome-timeline parser, and the device-clock probe
+
+p9/ is the card's reproducible rig.  Nothing in src/ is touched by this commit (the engine side of the card is
+the next one, after it is built and measured).
+
+  p9_run_arm.sh   one engine arm at the config of record: the tracer mode (0/9/1/H), the graph switch, the KV
+                  residency, --env for an A/B switch, a FIFO for the ask so a tracer can be resumed between the
+                  model load and the request, and the trace landing in the arm's own directory (unitrace writes
+                  the chrome timeline into the traced app's CWD).
+  p9_chain.sh     the arm chain (4K ablations, 32K, 128K), resumable: an arm whose log already has the rig's exit
+                  line is skipped.
+  p9_drive.py     spawns the engine (optionally under unitrace), timestamps every stdout/stderr line, feeds stdin
+                  from the FIFO.  m6c_drive.py reads its payload up front, which cannot be used with a tracer.
+  p9_report.py    one row per arm out of the arms' own logs: the decode timing line's parts, the submission
+                  composition per stage, the greedy token-id md5, the prefill.
+  p9_extract.py   chrome JSON (0.6-1.3 GB) -> a TSV of the DEVICE rows, with the shim's wrapper stripped off the
+                  kernel names.
+  p9_scan_trace.py / p9_scan2.py   what is in a timeline at all (pseudo-processes, threads, categories, names)
+  p9_tsv.py       one card's rows -> a ts-sorted .npz (every later step reads the cache, not the TSV)
+  p9_prep.py      trace -> dev TSV + per-card npz + the pid->device map, learning the device pseudo-processes
+                  from the trace's own metadata instead of hardcoding them
+  p9_summary.py   per-tag totals for a cache (the per-kernel table)
+  p9_timeline.py  coarse busy profile (where the phases are)
+  p9_window.py    the prefill/decode boundary by kernel size, and the census of what follows it
+  p9_clock_probe.cpp  asks the device directly which clock it can read.  This is why the profiler fix in the next
+                  commit is a publish + a host sampler and not a device clock.
+  STATUS-P9.md    the write-up (finished with the arms).
