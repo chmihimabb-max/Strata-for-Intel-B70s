@@ -1,0 +1,63 @@
+P4 (t_63cc226b): the GPU-assisted I/O mechanism measured - the curves, the quota, and the null
+
+The card's premise was that the port reproduced the paper's GPU-assisted I/O (a device-driven gather
+beating a host-side scattered copy, 26.57 against 1.59 GB/s) without ever characterising it.  It is now
+characterised on the paper's axes, with the engine's own kernel as the instrument (p4/kv_io_probe.cu
+links build-sycl/libstrata_kernels.a, so `copy_kernel` itself is what moves the bytes).
+
+1. THE KERNEL AND ITS HOST MEMORY.  `copy_kernel`, src/kernels/cuda/kv_stream.cu:161-171, launched from
+   `kv_stream_resolve` (:242-246) at 96 blocks x 128 threads once per QSA layer per streamed decode
+   window; one 16 B uint4 per thread; the host side is PINNED and device-mapped (cudaHostAlloc(Mapped)
+   -> sycl::malloc_host, src/core/layer.cpp:634-635), which is the mechanism's requirement.  The prompt
+   path does not use it (kv_stage_from_host is DMA).  Volume at 128K, from the engine's own counters:
+   621 blocks = 2.50 MiB per decode window.
+
+2. BANDWIDTH vs BLOCKS (one B70, 132 MiB per pass).  H2D 1/2/4/8/16/32/64/96/128 blocks x 1024 threads
+   = 1.07/2.15/4.36/8.91/17.00/21.90/24.65/25.64/25.77 GB/s; the shipped 96 x 128 = 25.55 GB/s = 96% of
+   this box's 26.5 GB/s contiguous figure.  D2H 2.72 -> 22.6.  ~1.07 GB/s per block up to 16 blocks
+   (2 KB in flight per block, ~1.9 us effective latency - the paper's X = C*S/L), saturating at ~64.
+   The paper's 2-block quota would give 2.12 GB/s here: 8% of our link, against their ~78%.
+
+3. INTERFERENCE.  Concurrent with the engine's own prompt attention: normalized throughput 0.984-0.999 at
+   every block count 1..128 - inside the paper's <5% bar even at one block.  Concurrent with the engine's
+   own Q5_K expert GEMV the compute reads 0.392-0.402, flat from 1 to 128 blocks; the `conc` and `order`
+   controls show that is QUEUE TURN-TAKING, not contention (two equal full-GPU workloads on two queues =
+   0.994/0.996 of sequential; the prefill-like compute keeps its speed when it is submitted first, the
+   small-kernel decode-like one pays up to +32%).  No SM quota can be justified from this.
+
+4. QUOTA = NO CONFINEMENT.  The shape stays 96 x 128 and is now env-overridable
+   (STRATA_KV_COPY_BLOCKS/THREADS, read once per process, unset = previous behaviour byte for byte): the
+   copy runs on the layer's own in-order stream (src/core/verify.cpp:999-1002), so there is no concurrent
+   compute to protect and a confined kernel's slower duration lands straight on the critical path.
+
+5. TRANSFER SIZE.  512 B..1 MiB is a flat 26.7 H2D / 22.7 D2H GB/s at 32 x 1024 threads; 128 B holds
+   25.3 (95%).  The read side degrades below 64 B and by half when sub-64 B units are scattered.  The WRITE
+   side has a cliff between 32 B and 64 B: 0.07-0.11 GB/s below it against 22.7 above.  Our 4-cell page
+   (4,224 B in four runs: 2,048+2,048+64+64) sits in the flat region - it is the identity layout, not the
+   scattered page-32 layout the paper's 22%-of-peak figure describes.  For the fragmentation lesson
+   itself, the DMA road (one cudaMemcpyAsync per chunk, 3.8 us of host submission each) delivers 1.05 GB/s
+   at 4 KiB against the kernel's 25.5: 24x at our actual granule size.
+
+6. LAYOUT: a measured null.  A page-first host copy at the same page size gives 24.15 GB/s against the
+   identity layout's 25.58 (96 x 128) - no gain, 5.6% worse; the transform itself is free (one extra
+   multiply per block).  The four runs are already sequential in their own arrays, so packing them loses
+   the per-array stream.  Not adopted.
+
+7. END TO END (both GPUs, config of record, 129,024-token prompt, 256 tokens, 99 windows per arm, all arms
+   with identical window structure and identical KV hit rates).  Prefill is identical across arms
+   (372.4-372.7 s, spread 0.08%).  Decode: 96 x 128 = 19.56/19.59 tok/s, 1 x 128 = 19.01/18.89/18.83 (so
+   the confined shape costs 3.4% - the 2.4 ms the bandwidth curve predicts for its 2.50 MiB/window against
+   103 us at the shipped shape, measured as ~4.5 ms), 4 x 128 = 19.49, 16 x 128 = 19.59.  Greedy token ids
+   IDENTICAL everywhere: 4K 147/147 md5 ac9f16fceed82e5681e4, 32K 256/256 124a3cd39b33f7da31e2, 128K
+   256/256 c60e72d397e9b1cd44da - the hashes P1/P2/P3 measured on the unchanged paths.  The `--kvres
+   20480` amplification raised the miss volume only 1.24x (the selection is recency-dominated) and
+   separated the shapes by the same 4%.  A 4K and a 32K arm were run as equality controls (no KV-streaming
+   line at all: with --kv-resident 32768 every layer is fully resident there, so the kernel never launches).
+
+Correctness: kv_stream_parity passes (306 batches, 89.9% hit, bitwise-equal attention output); the full
+suite serially is 5 failed out of 49 - the same five the parent HEAD failed - 90.0 s against P3's 91.5 s.
+The probe verifies its own copies in four layout/direction combinations (0 mismatches over 67,108,864
+bytes each) before any curve is quoted.
+
+Deliverable: p4/STATUS-P4.md (in-repo; /home/michael/strata-xpu/P4-STATUS.md), raw output
+p4/evidence/P4-EVIDENCE.txt plus the arm table and the probe runs kept for the record.

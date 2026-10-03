@@ -1,0 +1,16 @@
+== P4 arm p4-128k-default: shape=default blocks=96 threads=128 ctx=131072 maxnew=256
+== binary f9f9c8b6857faaeb HEAD 8bb7aad P3 (t_d8afe53f): the write-up, the evidence, and the harness for the decode-submission card
+== P4 arm p4-128k-1x128: shape=1x128 blocks=1 threads=128 ctx=131072 maxnew=256
+== binary f9f9c8b6857faaeb HEAD c744cb5 P4 (t_63cc226b): the copy kernel's launch shape is a measured quantity, and the probe that measures it
+== P4 arm p4-128k-4x128: shape=4x128 blocks=4 threads=128 ctx=131072 maxnew=256
+== binary f9f9c8b6857faaeb HEAD c744cb5 P4 (t_63cc226b): the copy kernel's launch shape is a measured quantity, and the probe that measures it
+== P4 arm p4-128k-16x128: shape=16x128 blocks=16 threads=128 ctx=131072 maxnew=256
+== binary f9f9c8b6857faaeb HEAD c744cb5 P4 (t_63cc226b): the copy kernel's launch shape is a measured quantity, and the probe that measures it
+== P4 arm p4-128k-default2: shape=default blocks=96 threads=128 ctx=131072 maxnew=256
+== binary f9f9c8b6857faaeb HEAD c744cb5 P4 (t_63cc226b): the copy kernel's launch shape is a measured quantity, and the probe that measures it
+== P4 arm p4-128k-1x128b: shape=1x128 blocks=1 threads=128 ctx=131072 maxnew=256
+== binary f9f9c8b6857faaeb HEAD c744cb5 P4 (t_63cc226b): the copy kernel's launch shape is a measured quantity, and the probe that measures it
+== P4 arm p4-32k-1x128: shape=1x128 blocks=1 threads=128 ctx=32768 maxnew=256
+== binary f9f9c8b6857faaeb HEAD c744cb5 P4 (t_63cc226b): the copy kernel's launch shape is a measured quantity, and the probe that measures it
+== P4 arm p4-4k-1x128: shape=1x128 blocks=1 threads=128 ctx=4096 maxnew=150
+== binary f9f9c8b6857faaeb HEAD c744cb5 P4 (t_63cc226b): the copy kernel's launch shape is a measured quantity, and the probe that measures it

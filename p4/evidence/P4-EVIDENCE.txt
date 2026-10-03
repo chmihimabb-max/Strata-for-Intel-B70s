@@ -1,0 +1,361 @@
+P4 (t_63cc226b) raw evidence   2026-10-03T02:32:25-06:00
+host: Linux 7.0.0-34-generic  20 cores  123 GiB RAM
+binary in every engine arm: build-sycl/strata sha256 f9f9c8b6857faaeb98c7b9e044ecdd6fb0a2c104469882d2ef844b09aa57023a
+git HEAD: c744cb5 P4 (t_63cc226b): the copy kernel's launch shape is a measured quantity, and the probe that measures it
+
+===============================================================
+1. THE PROBE (one B70, ZE_AFFINITY_MASK=0): p4/out-all-run1.txt
+===============================================================
+P4 head devices=1 shipped_shape=96x128
+P4 fixture pages=32768 block_bytes=4224 run_bytes=2048,2048,64,64 run_off=0,2048,4096,4160 n_head_kv=2 page_size=4 head_dim=256
+P4 verify case=identity_h2d checked=67108864 mismatches=0 expect=p1
+P4 verify case=packed_h2d checked=67108864 mismatches=0 expect=p1
+P4 verify case=identity_d2h checked=67108864 mismatches=0 expect=p2
+P4 verify case=packed_d2h checked=67108864 mismatches=0 expect=p2
+P4 diag case=dev_to_pinned chunk=4096 blocks=32 moved_MiB=64 ms=20.413 GBs=3.29
+P4 diag case=dev_to_pinned chunk=4096 blocks=160 moved_MiB=64 ms=2.958 GBs=22.68
+P4 diag case=dev_to_dev chunk=4096 blocks=32 moved_MiB=64 ms=0.071 GBs=946.73
+P4 diag case=dev_to_dev chunk=4096 blocks=160 moved_MiB=64 ms=0.065 GBs=1038.52
+P4 diag case=pinned_to_dev chunk=4096 blocks=32 moved_MiB=64 ms=2.517 GBs=26.66
+P4 diag case=pinned_to_dev chunk=4096 blocks=160 moved_MiB=64 ms=2.515 GBs=26.68
+P4 diag case=pinned_to_pinned chunk=4096 blocks=32 moved_MiB=64 ms=3.254 GBs=20.62
+P4 diag case=pinned_to_pinned chunk=4096 blocks=160 moved_MiB=64 ms=3.257 GBs=20.61
+P4 diag case=dev_to_pinned_threadper chunk=4096 blocks=32 moved_MiB=64 ms=676.978 GBs=0.10
+P4 diag case=dev_to_pinned_threadper chunk=4096 blocks=160 moved_MiB=64 ms=638.202 GBs=0.11
+P4 diag engine_copy H2D GBs=25.57 D2H GBs=22.57 (96x128)
+P4 diag case=dev_to_pinned chunk=1048576 blocks=32 moved_MiB=64 ms=2.962 GBs=22.66
+P4 diag case=dev_to_pinned chunk=1048576 blocks=160 moved_MiB=64 ms=2.963 GBs=22.65
+P4 diag case=dev_to_dev chunk=1048576 blocks=32 moved_MiB=64 ms=0.388 GBs=173.12
+P4 diag case=dev_to_dev chunk=1048576 blocks=160 moved_MiB=64 ms=0.388 GBs=172.92
+P4 diag case=pinned_to_dev chunk=1048576 blocks=32 moved_MiB=64 ms=2.523 GBs=26.60
+P4 diag case=pinned_to_dev chunk=1048576 blocks=160 moved_MiB=64 ms=2.526 GBs=26.57
+P4 diag case=pinned_to_pinned chunk=1048576 blocks=32 moved_MiB=64 ms=3.244 GBs=20.68
+P4 diag case=pinned_to_pinned chunk=1048576 blocks=160 moved_MiB=64 ms=3.245 GBs=20.68
+P4 diag case=dev_to_pinned_threadper chunk=1048576 blocks=32 moved_MiB=64 ms=668.009 GBs=0.10
+P4 diag case=dev_to_pinned_threadper chunk=1048576 blocks=160 moved_MiB=64 ms=668.873 GBs=0.10
+P4 diag engine_copy H2D GBs=25.57 D2H GBs=22.57 (96x128)
+P4 bw dir=H2D blocks=1 threads=1024 passes=2 bytes=276824064 ms=258.006 GBs=1.07
+P4 bw dir=H2D blocks=2 threads=1024 passes=3 bytes=415236096 ms=193.279 GBs=2.15
+P4 bw dir=H2D blocks=4 threads=1024 passes=5 bytes=692060160 ms=158.757 GBs=4.36
+P4 bw dir=H2D blocks=8 threads=1024 passes=10 bytes=1384120320 ms=155.293 GBs=8.91
+P4 bw dir=H2D blocks=16 threads=1024 passes=19 bytes=2629828608 ms=154.683 GBs=17.00
+P4 bw dir=H2D blocks=32 threads=1024 passes=24 bytes=3321888768 ms=151.663 GBs=21.90
+P4 bw dir=H2D blocks=64 threads=1024 passes=27 bytes=3737124864 ms=151.617 GBs=24.65
+P4 bw dir=H2D blocks=96 threads=1024 passes=28 bytes=3875536896 ms=151.130 GBs=25.64
+P4 bw dir=H2D blocks=128 threads=1024 passes=28 bytes=3875536896 ms=150.405 GBs=25.77
+P4 bw dir=H2D blocks=96 threads=128 passes=28 bytes=3875536896 ms=151.677 GBs=25.55
+P4 bw dir=H2D blocks=96 threads=256 passes=28 bytes=3875536896 ms=151.672 GBs=25.55
+P4 bw dir=H2D blocks=96 threads=512 passes=28 bytes=3875536896 ms=152.062 GBs=25.49
+P4 bw dir=H2D blocks=96 threads=1024 passes=28 bytes=3875536896 ms=151.239 GBs=25.63
+P4 bw dir=H2D blocks=1 threads=128 passes=2 bytes=276824064 ms=257.626 GBs=1.07
+P4 bw dir=H2D blocks=2 threads=128 passes=3 bytes=415236096 ms=195.745 GBs=2.12
+P4 bw dir=H2D blocks=4 threads=128 passes=5 bytes=692060160 ms=156.678 GBs=4.42
+P4 bw dir=H2D blocks=8 threads=128 passes=10 bytes=1384120320 ms=154.478 GBs=8.96
+P4 bw dir=H2D blocks=16 threads=128 passes=19 bytes=2629828608 ms=153.504 GBs=17.13
+P4 bw dir=H2D blocks=32 threads=128 passes=24 bytes=3321888768 ms=151.487 GBs=21.93
+P4 bw dir=H2D blocks=64 threads=128 passes=27 bytes=3737124864 ms=151.613 GBs=24.65
+P4 bw dir=D2H blocks=1 threads=1024 passes=3 bytes=415236096 ms=152.705 GBs=2.72
+P4 bw dir=D2H blocks=2 threads=1024 passes=6 bytes=830472192 ms=163.834 GBs=5.07
+P4 bw dir=D2H blocks=4 threads=1024 passes=10 bytes=1384120320 ms=152.055 GBs=9.10
+P4 bw dir=D2H blocks=8 threads=1024 passes=19 bytes=2629828608 ms=154.765 GBs=16.99
+P4 bw dir=D2H blocks=16 threads=1024 passes=21 bytes=2906652672 ms=150.263 GBs=19.34
+P4 bw dir=D2H blocks=32 threads=1024 passes=23 bytes=3183476736 ms=150.079 GBs=21.21
+P4 bw dir=D2H blocks=64 threads=1024 passes=25 bytes=3460300800 ms=153.377 GBs=22.56
+P4 bw dir=D2H blocks=96 threads=1024 passes=24 bytes=3321888768 ms=151.122 GBs=21.98
+P4 bw dir=D2H blocks=128 threads=1024 passes=25 bytes=3460300800 ms=155.673 GBs=22.23
+P4 bw dir=D2H blocks=96 threads=128 passes=25 bytes=3460300800 ms=153.331 GBs=22.57
+P4 bw dir=D2H blocks=96 threads=256 passes=25 bytes=3460300800 ms=153.205 GBs=22.59
+P4 bw dir=D2H blocks=96 threads=512 passes=25 bytes=3460300800 ms=153.206 GBs=22.59
+P4 bw dir=D2H blocks=96 threads=1024 passes=25 bytes=3460300800 ms=154.504 GBs=22.40
+P4 bw dir=D2H blocks=1 threads=128 passes=3 bytes=415236096 ms=151.533 GBs=2.74
+P4 bw dir=D2H blocks=2 threads=128 passes=6 bytes=830472192 ms=162.851 GBs=5.10
+P4 bw dir=D2H blocks=4 threads=128 passes=10 bytes=1384120320 ms=151.258 GBs=9.15
+P4 bw dir=D2H blocks=8 threads=128 passes=19 bytes=2629828608 ms=154.638 GBs=17.01
+P4 bw dir=D2H blocks=16 threads=128 passes=22 bytes=3045064704 ms=156.963 GBs=19.40
+P4 bw dir=D2H blocks=32 threads=128 passes=24 bytes=3321888768 ms=155.384 GBs=21.38
+P4 bw dir=D2H blocks=64 threads=128 passes=25 bytes=3460300800 ms=153.676 GBs=22.52
+P4 chunk dir=H2D bytes=16 stride=16 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=6.455 GBs_best=20.79 mean_ms=6.671 GBs_mean=20.12
+P4 chunk dir=H2D bytes=16 stride=32 blocks=32 threads=1024 passes=9 moved_per_pass=134217728 best_ms=11.399 GBs_best=11.77 mean_ms=11.403 GBs_mean=11.77
+P4 chunk dir=H2D bytes=32 stride=32 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.706 GBs_best=23.52 mean_ms=5.714 GBs_mean=23.49
+P4 chunk dir=H2D bytes=32 stride=64 blocks=32 threads=1024 passes=9 moved_per_pass=134217728 best_ms=11.361 GBs_best=11.81 mean_ms=11.363 GBs_mean=11.81
+P4 chunk dir=H2D bytes=64 stride=64 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.684 GBs_best=23.61 mean_ms=5.690 GBs_mean=23.59
+P4 chunk dir=H2D bytes=64 stride=128 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.683 GBs_best=23.62 mean_ms=5.684 GBs_mean=23.61
+P4 chunk dir=H2D bytes=128 stride=128 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.306 GBs_best=25.30 mean_ms=5.568 GBs_mean=24.11
+P4 chunk dir=H2D bytes=128 stride=256 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.302 GBs_best=25.31 mean_ms=5.305 GBs_mean=25.30
+P4 chunk dir=H2D bytes=256 stride=256 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.024 GBs_best=26.72 mean_ms=5.027 GBs_mean=26.70
+P4 chunk dir=H2D bytes=256 stride=512 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.028 GBs_best=26.69 mean_ms=5.030 GBs_mean=26.68
+P4 chunk dir=H2D bytes=512 stride=512 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.023 GBs_best=26.72 mean_ms=5.027 GBs_mean=26.70
+P4 chunk dir=H2D bytes=512 stride=1024 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.021 GBs_best=26.73 mean_ms=5.023 GBs_mean=26.72
+P4 chunk dir=H2D bytes=4096 stride=4096 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.023 GBs_best=26.72 mean_ms=5.027 GBs_mean=26.70
+P4 chunk dir=H2D bytes=4096 stride=8192 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.022 GBs_best=26.73 mean_ms=5.023 GBs_mean=26.72
+P4 chunk dir=H2D bytes=65536 stride=65536 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.022 GBs_best=26.73 mean_ms=5.268 GBs_mean=25.48
+P4 chunk dir=H2D bytes=65536 stride=131072 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.023 GBs_best=26.72 mean_ms=5.025 GBs_mean=26.71
+P4 chunk dir=H2D bytes=262144 stride=262144 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.022 GBs_best=26.72 mean_ms=5.027 GBs_mean=26.70
+P4 chunk dir=H2D bytes=262144 stride=524288 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.003 GBs_best=26.83 mean_ms=5.005 GBs_mean=26.82
+P4 chunk dir=H2D bytes=1048576 stride=1048576 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.033 GBs_best=26.67 mean_ms=5.038 GBs_mean=26.64
+P4 chunk dir=H2D bytes=1048576 stride=2097152 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.018 GBs_best=26.75 mean_ms=5.019 GBs_mean=26.74
+P4 chunk dir=D2H bytes=16 stride=16 blocks=32 threads=1024 passes=5 moved_per_pass=134217728 best_ms=1277.643 GBs_best=0.11 mean_ms=1287.092 GBs_mean=0.10
+P4 chunk dir=D2H bytes=16 stride=32 blocks=32 threads=1024 passes=5 moved_per_pass=134217728 best_ms=1285.784 GBs_best=0.10 mean_ms=1301.181 GBs_mean=0.10
+P4 chunk dir=D2H bytes=32 stride=32 blocks=32 threads=1024 passes=5 moved_per_pass=134217728 best_ms=2024.078 GBs_best=0.07 mean_ms=2025.639 GBs_mean=0.07
+P4 chunk dir=D2H bytes=32 stride=64 blocks=32 threads=1024 passes=5 moved_per_pass=134217728 best_ms=2024.133 GBs_best=0.07 mean_ms=2024.792 GBs_mean=0.07
+P4 chunk dir=D2H bytes=64 stride=64 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.910 GBs_best=22.71 mean_ms=5.919 GBs_mean=22.68
+P4 chunk dir=D2H bytes=64 stride=128 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=6.139 GBs_best=21.86 mean_ms=6.153 GBs_mean=21.81
+P4 chunk dir=D2H bytes=128 stride=128 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.909 GBs_best=22.72 mean_ms=5.912 GBs_mean=22.70
+P4 chunk dir=D2H bytes=128 stride=256 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=6.155 GBs_best=21.81 mean_ms=6.161 GBs_mean=21.79
+P4 chunk dir=D2H bytes=256 stride=256 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.909 GBs_best=22.72 mean_ms=5.913 GBs_mean=22.70
+P4 chunk dir=D2H bytes=256 stride=512 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=6.396 GBs_best=20.98 mean_ms=6.406 GBs_mean=20.95
+P4 chunk dir=D2H bytes=512 stride=512 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.909 GBs_best=22.72 mean_ms=5.912 GBs_mean=22.70
+P4 chunk dir=D2H bytes=512 stride=1024 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.909 GBs_best=22.72 mean_ms=5.910 GBs_mean=22.71
+P4 chunk dir=D2H bytes=4096 stride=4096 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.908 GBs_best=22.72 mean_ms=5.912 GBs_mean=22.70
+P4 chunk dir=D2H bytes=4096 stride=8192 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.908 GBs_best=22.72 mean_ms=5.909 GBs_mean=22.71
+P4 chunk dir=D2H bytes=65536 stride=65536 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.908 GBs_best=22.72 mean_ms=5.912 GBs_mean=22.70
+P4 chunk dir=D2H bytes=65536 stride=131072 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.959 GBs_best=22.52 mean_ms=5.995 GBs_mean=22.39
+P4 chunk dir=D2H bytes=262144 stride=262144 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.909 GBs_best=22.72 mean_ms=5.912 GBs_mean=22.70
+P4 chunk dir=D2H bytes=262144 stride=524288 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=8.723 GBs_best=15.39 mean_ms=8.810 GBs_mean=15.23
+P4 chunk dir=D2H bytes=1048576 stride=1048576 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=5.910 GBs_best=22.71 mean_ms=5.914 GBs_mean=22.69
+P4 chunk dir=D2H bytes=1048576 stride=2097152 blocks=32 threads=1024 passes=12 moved_per_pass=134217728 best_ms=7.358 GBs_best=18.24 mean_ms=7.385 GBs_mean=18.17
+P4 layout tag=identity dir=H2D blocks=32 threads=1024 passes=24 bytes=3321888768 ms=153.326 GBs=21.67
+P4 layout tag=identity dir=H2D blocks=96 threads=128 passes=28 bytes=3875536896 ms=151.535 GBs=25.58
+P4 layout tag=packed_host dir=H2D blocks=32 threads=1024 passes=23 bytes=3183476736 ms=151.248 GBs=21.05
+P4 layout tag=packed_host dir=H2D blocks=96 threads=128 passes=27 bytes=3737124864 ms=154.753 GBs=24.15
+P4 layout tag=packed_both dir=H2D blocks=32 threads=1024 passes=23 bytes=3183476736 ms=151.264 GBs=21.05
+P4 layout tag=packed_both dir=H2D blocks=96 threads=128 passes=27 bytes=3737124864 ms=154.760 GBs=24.15
+P4 layout tag=identity dir=D2H blocks=32 threads=1024 passes=24 bytes=3321888768 ms=156.471 GBs=21.23
+P4 layout tag=identity dir=D2H blocks=96 threads=128 passes=25 bytes=3460300800 ms=155.192 GBs=22.30
+P4 layout tag=packed_host dir=D2H blocks=32 threads=1024 passes=24 bytes=3321888768 ms=156.239 GBs=21.26
+P4 layout tag=packed_host dir=D2H blocks=96 threads=128 passes=25 bytes=3460300800 ms=153.550 GBs=22.54
+P4 layout tag=packed_both dir=D2H blocks=32 threads=1024 passes=24 bytes=3321888768 ms=156.329 GBs=21.25
+P4 layout tag=packed_both dir=D2H blocks=96 threads=128 passes=25 bytes=3460300800 ms=153.965 GBs=22.47
+P4 hostcopy bytes=16 stride=16 passes=8 moved=536870912 ms=53.389 GBs=10.06
+P4 hostcopy bytes=16 stride=32 passes=8 moved=536870912 ms=80.583 GBs=6.66
+P4 hostcopy bytes=32 stride=32 passes=8 moved=536870912 ms=40.270 GBs=13.33
+P4 hostcopy bytes=32 stride=64 passes=8 moved=536870912 ms=67.578 GBs=7.94
+P4 hostcopy bytes=64 stride=64 passes=8 moved=536870912 ms=37.024 GBs=14.50
+P4 hostcopy bytes=64 stride=128 passes=8 moved=536870912 ms=71.923 GBs=7.46
+P4 hostcopy bytes=128 stride=128 passes=8 moved=536870912 ms=34.797 GBs=15.43
+P4 hostcopy bytes=128 stride=256 passes=8 moved=536870912 ms=59.784 GBs=8.98
+P4 hostcopy bytes=256 stride=256 passes=8 moved=536870912 ms=31.318 GBs=17.14
+P4 hostcopy bytes=256 stride=512 passes=8 moved=536870912 ms=56.566 GBs=9.49
+P4 hostcopy bytes=512 stride=512 passes=8 moved=536870912 ms=30.445 GBs=17.63
+P4 hostcopy bytes=512 stride=1024 passes=8 moved=536870912 ms=50.266 GBs=10.68
+P4 hostcopy bytes=4096 stride=4096 passes=8 moved=536870912 ms=30.467 GBs=17.62
+P4 hostcopy bytes=4096 stride=8192 passes=8 moved=536870912 ms=36.106 GBs=14.87
+P4 hostcopy bytes=65536 stride=65536 passes=8 moved=536870912 ms=35.686 GBs=15.04
+P4 hostcopy bytes=65536 stride=131072 passes=8 moved=536870912 ms=35.220 GBs=15.24
+P4 hostcopy bytes=262144 stride=262144 passes=8 moved=536870912 ms=35.486 GBs=15.13
+P4 hostcopy bytes=262144 stride=524288 passes=8 moved=536870912 ms=34.173 GBs=15.71
+P4 hostcopy bytes=1048576 stride=1048576 passes=8 moved=536870912 ms=36.762 GBs=14.60
+P4 hostcopy bytes=1048576 stride=2097152 passes=8 moved=536870912 ms=34.467 GBs=15.58
+P4 dma dir=H2D bytes=16 calls=2097152 moved=33554432 ms=8045.772 GBs=0.00 us_per_call=3.837
+P4 dma dir=H2D bytes=32 calls=1048576 moved=33554432 ms=4022.431 GBs=0.01 us_per_call=3.836
+P4 dma dir=H2D bytes=64 calls=524288 moved=33554432 ms=2012.667 GBs=0.02 us_per_call=3.839
+P4 dma dir=H2D bytes=128 calls=262144 moved=33554432 ms=1006.563 GBs=0.03 us_per_call=3.840
+P4 dma dir=H2D bytes=256 calls=131072 moved=33554432 ms=503.340 GBs=0.07 us_per_call=3.840
+P4 dma dir=H2D bytes=512 calls=65536 moved=33554432 ms=251.845 GBs=0.13 us_per_call=3.843
+P4 dma dir=H2D bytes=4096 calls=8192 moved=33554432 ms=31.894 GBs=1.05 us_per_call=3.893
+P4 dma dir=H2D bytes=65536 calls=512 moved=33554432 ms=3.249 GBs=10.33 us_per_call=6.346
+P4 dma dir=H2D bytes=262144 calls=128 moved=33554432 ms=1.706 GBs=19.67 us_per_call=13.330
+P4 dma dir=H2D bytes=1048576 calls=32 moved=33554432 ms=1.368 GBs=24.53 us_per_call=42.751
+P4 dma dir=D2H bytes=16 calls=2097152 moved=33554432 ms=7999.460 GBs=0.00 us_per_call=3.814
+P4 dma dir=D2H bytes=32 calls=1048576 moved=33554432 ms=3991.351 GBs=0.01 us_per_call=3.806
+P4 dma dir=D2H bytes=64 calls=524288 moved=33554432 ms=2002.912 GBs=0.02 us_per_call=3.820
+P4 dma dir=D2H bytes=128 calls=262144 moved=33554432 ms=1002.000 GBs=0.03 us_per_call=3.822
+P4 dma dir=D2H bytes=256 calls=131072 moved=33554432 ms=500.979 GBs=0.07 us_per_call=3.822
+P4 dma dir=D2H bytes=512 calls=65536 moved=33554432 ms=250.651 GBs=0.13 us_per_call=3.825
+P4 dma dir=D2H bytes=4096 calls=8192 moved=33554432 ms=31.384 GBs=1.07 us_per_call=3.831
+P4 dma dir=D2H bytes=65536 calls=512 moved=33554432 ms=2.653 GBs=12.65 us_per_call=5.181
+P4 dma dir=D2H bytes=262144 calls=128 moved=33554432 ms=1.529 GBs=21.95 us_per_call=11.943
+P4 dma dir=D2H bytes=1048576 calls=32 moved=33554432 ms=1.269 GBs=26.43 us_per_call=39.670
+P4 dma dir=H2D bytes=134217728 calls=1 moved=134217728 ms=5.244 GBs=25.59 us_per_call=5244
+P4 dma dir=D2H bytes=134217728 calls=1 moved=134217728 ms=4.701 GBs=28.55 us_per_call=4701
+qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+P4 work prefill_supported=1 cap=2051 n_q=256 pages=520 decode n_in=4096 n_out=16384 weights_MiB=44.0
+P4 inter work=prefill blocks=0 threads=0 solo_ms=524.70 calls=8 io_GBs=0.00 io_ms=0.00 norm=1.000
+P4 inter work=prefill rep=1 blocks=1 threads=1024 solo_ms=524.70 conc_ms=527.87 norm=0.994 io_passes=7 io_MiB=924 io_ms=1431.67 io_GBs=0.68 io_pass_solo_ms=129.814
+P4 inter work=prefill rep=1 blocks=2 threads=1024 solo_ms=524.70 conc_ms=528.06 norm=0.994 io_passes=13 io_MiB=1716 io_ms=1366.59 io_GBs=1.32 io_pass_solo_ms=63.973
+P4 inter work=prefill rep=1 blocks=4 threads=1024 solo_ms=524.70 conc_ms=533.47 norm=0.984 io_passes=26 io_MiB=3432 io_ms=1357.99 io_GBs=2.65 io_pass_solo_ms=31.356
+P4 inter work=prefill rep=1 blocks=8 threads=1024 solo_ms=524.70 conc_ms=528.94 norm=0.992 io_passes=46 io_MiB=6072 io_ms=1245.02 io_GBs=5.11 io_pass_solo_ms=17.207
+P4 inter work=prefill rep=1 blocks=16 threads=1024 solo_ms=524.70 conc_ms=528.20 norm=0.993 io_passes=97 io_MiB=12804 io_ms=1325.43 io_GBs=10.13 io_pass_solo_ms=8.177
+P4 inter work=prefill rep=1 blocks=32 threads=1024 solo_ms=524.70 conc_ms=533.25 norm=0.984 io_passes=124 io_MiB=16368 io_ms=1315.80 io_GBs=13.04 io_pass_solo_ms=6.357
+P4 inter work=prefill rep=1 blocks=64 threads=1024 solo_ms=524.70 conc_ms=532.18 norm=0.986 io_passes=140 io_MiB=18480 io_ms=1319.30 io_GBs=14.69 io_pass_solo_ms=5.660
+P4 inter work=prefill rep=1 blocks=96 threads=1024 solo_ms=524.70 conc_ms=527.85 norm=0.994 io_passes=145 io_MiB=19140 io_ms=1313.51 io_GBs=15.28 io_pass_solo_ms=5.447
+P4 inter work=prefill rep=1 blocks=128 threads=1024 solo_ms=524.70 conc_ms=528.34 norm=0.993 io_passes=148 io_MiB=19536 io_ms=1310.74 io_GBs=15.63 io_pass_solo_ms=5.329
+P4 inter work=prefill rep=2 blocks=1 threads=1024 solo_ms=524.70 conc_ms=531.57 norm=0.987 io_passes=7 io_MiB=924 io_ms=1435.48 io_GBs=0.67 io_pass_solo_ms=128.837
+P4 inter work=prefill rep=2 blocks=2 threads=1024 solo_ms=524.70 conc_ms=531.10 norm=0.988 io_passes=13 io_MiB=1716 io_ms=1371.53 io_GBs=1.31 io_pass_solo_ms=64.520
+P4 inter work=prefill rep=2 blocks=4 threads=1024 solo_ms=524.70 conc_ms=529.30 norm=0.991 io_passes=25 io_MiB=3300 io_ms=1325.09 io_GBs=2.61 io_pass_solo_ms=32.036
+P4 inter work=prefill rep=2 blocks=8 threads=1024 solo_ms=524.70 conc_ms=525.45 norm=0.999 io_passes=50 io_MiB=6600 io_ms=1303.47 io_GBs=5.31 io_pass_solo_ms=15.741
+P4 inter work=prefill rep=2 blocks=16 threads=1024 solo_ms=524.70 conc_ms=528.70 norm=0.992 io_passes=97 io_MiB=12804 io_ms=1323.94 io_GBs=10.14 io_pass_solo_ms=8.151
+P4 inter work=prefill rep=2 blocks=32 threads=1024 solo_ms=524.70 conc_ms=528.61 norm=0.993 io_passes=124 io_MiB=16368 io_ms=1312.86 io_GBs=13.07 io_pass_solo_ms=6.362
+P4 inter work=prefill rep=2 blocks=64 threads=1024 solo_ms=524.70 conc_ms=525.87 norm=0.998 io_passes=139 io_MiB=18348 io_ms=1306.95 io_GBs=14.72 io_pass_solo_ms=5.670
+P4 inter work=prefill rep=2 blocks=96 threads=1024 solo_ms=524.70 conc_ms=533.42 norm=0.984 io_passes=145 io_MiB=19140 io_ms=1315.43 io_GBs=15.26 io_pass_solo_ms=5.446
+P4 inter work=prefill rep=2 blocks=128 threads=1024 solo_ms=524.70 conc_ms=527.55 norm=0.995 io_passes=148 io_MiB=19536 io_ms=1311.54 io_GBs=15.62 io_pass_solo_ms=5.326
+P4 inter work=decode blocks=0 threads=0 solo_ms=502.95 calls=2500 io_GBs=0.00 io_ms=0.00 norm=1.000
+P4 inter work=decode rep=1 blocks=1 threads=1024 solo_ms=502.95 conc_ms=1283.62 norm=0.392 io_passes=6 io_MiB=792 io_ms=784.80 io_GBs=1.06 io_pass_solo_ms=129.060
+P4 inter work=decode rep=1 blocks=2 threads=1024 solo_ms=502.95 conc_ms=1279.34 norm=0.393 io_passes=12 io_MiB=1584 io_ms=781.80 io_GBs=2.12 io_pass_solo_ms=64.627
+P4 inter work=decode rep=1 blocks=4 threads=1024 solo_ms=502.95 conc_ms=1264.65 norm=0.398 io_passes=24 io_MiB=3168 io_ms=775.58 io_GBs=4.28 io_pass_solo_ms=32.098
+P4 inter work=decode rep=1 blocks=8 threads=1024 solo_ms=502.95 conc_ms=1267.01 norm=0.397 io_passes=49 io_MiB=6468 io_ms=781.84 io_GBs=8.67 io_pass_solo_ms=15.652
+P4 inter work=decode rep=1 blocks=16 threads=1024 solo_ms=502.95 conc_ms=1258.49 norm=0.400 io_passes=91 io_MiB=12012 io_ms=782.62 io_GBs=16.09 io_pass_solo_ms=8.327
+P4 inter work=decode rep=1 blocks=32 threads=1024 solo_ms=502.95 conc_ms=1263.26 norm=0.398 io_passes=119 io_MiB=15708 io_ms=796.42 io_GBs=20.68 io_pass_solo_ms=6.380
+P4 inter work=decode rep=1 blocks=64 threads=1024 solo_ms=502.95 conc_ms=1264.56 norm=0.398 io_passes=134 io_MiB=17688 io_ms=804.23 io_GBs=23.06 io_pass_solo_ms=5.667
+P4 inter work=decode rep=1 blocks=96 threads=1024 solo_ms=502.95 conc_ms=1269.56 norm=0.396 io_passes=140 io_MiB=18480 io_ms=805.60 io_GBs=24.05 io_pass_solo_ms=5.409
+P4 inter work=decode rep=1 blocks=128 threads=1024 solo_ms=502.95 conc_ms=1259.50 norm=0.399 io_passes=141 io_MiB=18612 io_ms=796.70 io_GBs=24.50 io_pass_solo_ms=5.367
+P4 inter work=decode rep=2 blocks=1 threads=1024 solo_ms=502.95 conc_ms=1278.32 norm=0.393 io_passes=6 io_MiB=792 io_ms=783.11 io_GBs=1.06 io_pass_solo_ms=128.986
+P4 inter work=decode rep=2 blocks=2 threads=1024 solo_ms=502.95 conc_ms=1284.47 norm=0.392 io_passes=12 io_MiB=1584 io_ms=786.52 io_GBs=2.11 io_pass_solo_ms=64.596
+P4 inter work=decode rep=2 blocks=4 threads=1024 solo_ms=502.95 conc_ms=1266.54 norm=0.397 io_passes=24 io_MiB=3168 io_ms=775.02 io_GBs=4.29 io_pass_solo_ms=31.627
+P4 inter work=decode rep=2 blocks=8 threads=1024 solo_ms=502.95 conc_ms=1268.89 norm=0.396 io_passes=49 io_MiB=6468 io_ms=783.20 io_GBs=8.66 io_pass_solo_ms=15.684
+P4 inter work=decode rep=2 blocks=16 threads=1024 solo_ms=502.95 conc_ms=1257.56 norm=0.400 io_passes=91 io_MiB=12012 io_ms=793.45 io_GBs=15.87 io_pass_solo_ms=8.365
+P4 inter work=decode rep=2 blocks=32 threads=1024 solo_ms=502.95 conc_ms=1265.55 norm=0.397 io_passes=119 io_MiB=15708 io_ms=797.82 io_GBs=20.65 io_pass_solo_ms=6.384
+P4 inter work=decode rep=2 blocks=64 threads=1024 solo_ms=502.95 conc_ms=1265.10 norm=0.398 io_passes=134 io_MiB=17688 io_ms=799.86 io_GBs=23.19 io_pass_solo_ms=5.656
+P4 inter work=decode rep=2 blocks=96 threads=1024 solo_ms=502.95 conc_ms=1267.40 norm=0.397 io_passes=140 io_MiB=18480 io_ms=807.23 io_GBs=24.01 io_pass_solo_ms=5.420
+P4 inter work=decode rep=2 blocks=128 threads=1024 solo_ms=502.95 conc_ms=1261.62 norm=0.399 io_passes=142 io_MiB=18744 io_ms=788.65 io_GBs=24.92 io_pass_solo_ms=5.346
+P4 work prefill_supported=1 cap=2051 n_q=256 pages=520 decode n_in=4096 n_out=16384 weights_MiB=44.0
+P4 conc work=prefill same_workload both_queues soloA_ms=264.12 soloB_ms=263.99 concurrent_A_ms=535.62 concurrent_B_ms=263.14 wall_ms=531.27 overlap=0.994 (2.0 = full, 1.0 = serial)
+P4 conc work=decode same_workload both_queues soloA_ms=240.10 soloB_ms=242.24 concurrent_A_ms=487.87 concurrent_B_ms=483.11 wall_ms=484.48 overlap=0.996 (2.0 = full, 1.0 = serial)
+P4 work prefill_supported=1 cap=2051 n_q=256 pages=520 decode n_in=4096 n_out=16384 weights_MiB=44.0
+P4 order work=prefill io_first=0 passes=12 blocks=32 solo_ms=270.96 compute_ms=263.57 io_ms=339.23 serial_expect_ms=610.19
+P4 order work=prefill io_first=1 passes=12 blocks=32 solo_ms=270.96 compute_ms=279.62 io_ms=75.80 serial_expect_ms=346.76
+P4 order work=decode io_first=0 passes=12 blocks=32 solo_ms=240.42 compute_ms=317.01 io_ms=83.17 serial_expect_ms=323.58
+P4 order work=decode io_first=1 passes=12 blocks=32 solo_ms=240.42 compute_ms=260.06 io_ms=77.29 serial_expect_ms=317.71
+P4 done
+
+===============================================================
+2. THE ENGINE ARMS (both B70s, config of record, m6c harness)
+===============================================================
+
+---- p4-128k-16x128
+-- arm line: == P4 arm p4-128k-16x128: shape=16x128 blocks=16 threads=128 ctx=131072 maxnew=256
+-- summary (P3's extractor: decode timing, DONE, token-id count + md5, peak RSS/VRAM):
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 131.98 ms/window = verify 110.55 (GPU-reach wait 42.44 + per-layer host 0.47 [plan 0.29 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.42) + commit/emit 1.97 + draft 19.46; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372654.1 13065.5 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.4 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+-- KV volume line (err.txt):
+strata serve: KV streaming: 92.14% of 783080 block reads hit VRAM, 247.8 MiB read from RAM
+
+---- p4-128k-1x128
+-- arm line: == P4 arm p4-128k-1x128: shape=1x128 blocks=1 threads=128 ctx=131072 maxnew=256
+-- summary (P3's extractor: decode timing, DONE, token-id count + md5, peak RSS/VRAM):
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 136.05 ms/window = verify 114.62 (GPU-reach wait 44.69 + per-layer host 0.47 [plan 0.29 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.42) + commit/emit 1.99 + draft 19.43; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372488.4 13469.0 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.3 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+-- KV volume line (err.txt):
+strata serve: KV streaming: 92.14% of 783080 block reads hit VRAM, 247.8 MiB read from RAM
+
+---- p4-128k-1x128b
+-- arm line: == P4 arm p4-128k-1x128b: shape=1x128 blocks=1 threads=128 ctx=131072 maxnew=256
+-- summary (P3's extractor: decode timing, DONE, token-id count + md5, peak RSS/VRAM):
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 136.85 ms/window = verify 115.37 (GPU-reach wait 44.99 + per-layer host 0.46 [plan 0.29 actq 0.21 jobs 0.22 CPU 0.00] + stage 1.68) + commit/emit 2.06 + draft 19.42; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372716.3 13548.6 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.4 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+-- KV volume line (err.txt):
+strata serve: KV streaming: 92.14% of 783080 block reads hit VRAM, 247.8 MiB read from RAM
+
+---- p4-128k-4x128
+-- arm line: == P4 arm p4-128k-4x128: shape=4x128 blocks=4 threads=128 ctx=131072 maxnew=256
+-- summary (P3's extractor: decode timing, DONE, token-id count + md5, peak RSS/VRAM):
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 132.67 ms/window = verify 111.26 (GPU-reach wait 42.83 + per-layer host 0.45 [plan 0.29 actq 0.21 jobs 0.22 CPU 0.00] + stage 1.37) + commit/emit 1.96 + draft 19.45; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372612.3 13134.5 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.4 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+-- KV volume line (err.txt):
+strata serve: KV streaming: 92.14% of 783080 block reads hit VRAM, 247.8 MiB read from RAM
+
+---- p4-128k-amp-1x128
+-- arm line: 
+-- summary (P3's extractor: decode timing, DONE, token-id count + md5, peak RSS/VRAM):
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 137.35 ms/window = verify 115.91 (GPU-reach wait 45.59 + per-layer host 0.47 [plan 0.29 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.45) + commit/emit 2.00 + draft 19.43; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372570.7 13597.6 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.4 GiB, peak VRAM card0 28.9 GiB card1 31.2 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+-- KV volume line (err.txt):
+strata serve: KV streaming: 90.22% of 783080 block reads hit VRAM, 308.5 MiB read from RAM
+
+---- p4-128k-amp-default
+-- arm line: 
+-- summary (P3's extractor: decode timing, DONE, token-id count + md5, peak RSS/VRAM):
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 132.02 ms/window = verify 110.58 (GPU-reach wait 42.36 + per-layer host 0.47 [plan 0.29 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.47) + commit/emit 1.98 + draft 19.47; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372413.2 13069.8 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.4 GiB, peak VRAM card0 28.9 GiB card1 31.2 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+-- KV volume line (err.txt):
+strata serve: KV streaming: 90.22% of 783080 block reads hit VRAM, 308.5 MiB read from RAM
+
+---- p4-128k-default
+-- arm line: == P4 arm p4-128k-default: shape=default blocks=96 threads=128 ctx=131072 maxnew=256
+-- summary (P3's extractor: decode timing, DONE, token-id count + md5, peak RSS/VRAM):
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 140.08 ms/window = verify 117.79 (GPU-reach wait 42.21 + per-layer host 0.47 [plan 0.30 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.70) + commit/emit 2.18 + draft 20.11; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 375653.6 13867.7 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.6 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+-- KV volume line (err.txt):
+strata serve: KV streaming: 92.15% of 783080 block reads hit VRAM, 247.8 MiB read from RAM
+
+---- p4-128k-default2
+-- arm line: == P4 arm p4-128k-default2: shape=default blocks=96 threads=128 ctx=131072 maxnew=256
+-- summary (P3's extractor: decode timing, DONE, token-id count + md5, peak RSS/VRAM):
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 132.22 ms/window = verify 110.80 (GPU-reach wait 42.72 + per-layer host 0.46 [plan 0.29 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.44) + commit/emit 1.96 + draft 19.46; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372699.0 13090.2 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.4 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+-- KV volume line (err.txt):
+strata serve: KV streaming: 92.14% of 783080 block reads hit VRAM, 247.8 MiB read from RAM
+
+---- p4-32k-1x128
+-- arm line: == P4 arm p4-32k-1x128: shape=1x128 blocks=1 threads=128 ctx=32768 maxnew=256
+-- summary (P3's extractor: decode timing, DONE, token-id count + md5, peak RSS/VRAM):
+  strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 137.94 ms/window = verify 115.04 (GPU-reach wait 44.30 + per-layer host 0.50 [plan 0.30 actq 0.24 jobs 0.25 CPU 0.00] + stage 1.22) + commit/emit 2.06 + draft 20.85; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.18, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata verify: window up to 6 tokens, 74.1 MiB of device buffers
+  DONE 256 32256 91905.7 11725.3 length 171 214 0 143520 143520 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 124a3cd39b33f7da31e2
+  peak tree RSS 48.3 GiB, peak VRAM card0 28.7 GiB card1 31.2 GiB
+  strata serve: decode expert cache hit rate: 100.0% (143520 hits / 143520 lookups)
+  strata serve: expert tiers: GPU 143520 hits this request; since the start RAM 0 blobs, files 0 blobs 69934.3 MB read (the GGUF in place)
+-- KV volume line (err.txt):
+
+---- p4-4k-1x128
+-- arm line: == P4 arm p4-4k-1x128: shape=1x128 blocks=1 threads=128 ctx=4096 maxnew=150
+-- summary (P3's extractor: decode timing, DONE, token-id count + md5, peak RSS/VRAM):
+  strata decode timing: 48 windows, avg T 3.79, 3.06 tokens/window, 141.98 ms/window = verify 120.82 (GPU-reach wait 46.68 + per-layer host 0.53 [plan 0.31 actq 0.25 jobs 0.28 CPU 0.00] + stage 1.16) + commit/emit 2.06 + draft 19.10; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.92, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+  DONE 147 3832 15154.4 6815.2 stop 99 134 0 87360 87360 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 147, md5 ac9f16fceed82e5681e4
+  peak tree RSS 48.3 GiB, peak VRAM card0 28.6 GiB card1 30.9 GiB
+  strata serve: decode expert cache hit rate: 100.0% (87360 hits / 87360 lookups)
+  strata serve: expert tiers: GPU 87360 hits this request; since the start RAM 0 blobs, files 0 blobs 54327.8 MB read (the GGUF in place)
+-- KV volume line (err.txt):

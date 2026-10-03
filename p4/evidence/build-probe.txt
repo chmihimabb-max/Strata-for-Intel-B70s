@@ -1,0 +1,2 @@
+syclify: p4/kv_io_probe.cu -> p4/gen/kv_io_probe.cpp (6 launches, 0 shared arrays, 0 shared scalars, 0 renames, 0 extern shared, 0+0 constants)
+built p4/kv_io_probe

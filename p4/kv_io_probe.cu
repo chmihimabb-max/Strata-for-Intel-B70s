@@ -201,6 +201,14 @@ void section_bw(Fixture& f) {
                         r.passes, r.bytes, r.seconds * 1000.0, r.gbs);
             std::fflush(stdout);
         }
+        // the ENGINE ARMS' shapes: the confined arm is 1 block x 128 threads, so the bandwidth curve has to carry
+        // that point for the end-to-end cost to be checkable against it.
+        for (int b : {1, 2, 4, 8, 16, 32, 64}) {
+            const Rate r = run_copy(f, dir, 0, b, 128, 0.15);
+            std::printf("P4 bw dir=%s blocks=%d threads=128 passes=%d bytes=%lld ms=%.3f GBs=%.2f\n", dn, b,
+                        r.passes, r.bytes, r.seconds * 1000.0, r.gbs);
+            std::fflush(stdout);
+        }
     }
 }
 
@@ -208,7 +216,7 @@ void section_bw(Fixture& f) {
 void section_chunk() {
     const int64_t total = 128LL << 20;   // 128 MiB moved per shape
     for (int dir = 0; dir < 2; ++dir) {
-        for (int chunk : {128, 512, 4096, 65536, 262144, 1048576}) {
+        for (int chunk : {16, 32, 64, 128, 256, 512, 4096, 65536, 262144, 1048576}) {
             const int64_t n_chunks = total / chunk;
             const int64_t span = n_chunks * (int64_t) chunk * 2;   // room for a hole as large as the chunk
             uint8_t* ds = device((size_t) span);
@@ -422,7 +430,7 @@ void section_verify(Fixture& f) {
 //     memcpy per run per layer) at small transfer sizes.
 void section_hostcopy() {
     const int64_t total = 64LL << 20;
-    for (int chunk : {128, 512, 4096, 65536, 262144, 1048576}) {
+    for (int chunk : {16, 32, 64, 128, 256, 512, 4096, 65536, 262144, 1048576}) {
         const int64_t n_chunks = total / chunk;
         const int64_t span = n_chunks * (int64_t) chunk * 2;
         std::vector<uint8_t> src((size_t) span, 1), dst((size_t) span, 0);
@@ -450,7 +458,7 @@ void section_hostcopy() {
 void section_dma() {
     const int64_t total = 32LL << 20;
     for (int dir = 0; dir < 2; ++dir) {
-        for (int chunk : {128, 512, 4096, 65536, 262144, 1048576}) {
+        for (int chunk : {16, 32, 64, 128, 256, 512, 4096, 65536, 262144, 1048576}) {
             const int64_t n_chunks = total / chunk;
             const int64_t span = n_chunks * (int64_t) chunk * 2;
             uint8_t* ds = device((size_t) span);

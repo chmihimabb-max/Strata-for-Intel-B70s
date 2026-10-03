@@ -1,0 +1,43 @@
+P4 head devices=1 shipped_shape=96x128
+P4 fixture pages=32768 block_bytes=4224 run_bytes=2048,2048,64,64 run_off=0,2048,4096,4160 n_head_kv=2 page_size=4 head_dim=256
+qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+P4 work prefill_supported=1 cap=2051 n_q=256 pages=520 decode n_in=4096 n_out=16384 weights_MiB=44.0
+P4 inter work=prefill blocks=0 threads=0 solo_ms=528.72 calls=8 io_GBs=0.00 io_ms=0.00 norm=1.000
+P4 inter work=prefill rep=1 blocks=1 threads=1024 solo_ms=528.72 conc_ms=528.60 norm=1.000 io_passes=7 io_MiB=924 io_ms=1432.99 io_GBs=0.68 io_pass_solo_ms=130.859
+P4 inter work=prefill rep=1 blocks=2 threads=1024 solo_ms=528.72 conc_ms=529.66 norm=0.998 io_passes=13 io_MiB=1716 io_ms=1370.99 io_GBs=1.31 io_pass_solo_ms=64.325
+P4 inter work=prefill rep=1 blocks=4 threads=1024 solo_ms=528.72 conc_ms=526.31 norm=1.005 io_passes=26 io_MiB=3432 io_ms=1353.57 io_GBs=2.66 io_pass_solo_ms=31.687
+P4 inter work=prefill rep=1 blocks=8 threads=1024 solo_ms=528.72 conc_ms=530.40 norm=0.997 io_passes=52 io_MiB=6864 io_ms=1337.74 io_GBs=5.38 io_pass_solo_ms=15.518
+P4 inter work=prefill rep=1 blocks=16 threads=1024 solo_ms=528.72 conc_ms=528.73 norm=1.000 io_passes=96 io_MiB=12672 io_ms=1317.84 io_GBs=10.08 io_pass_solo_ms=8.322
+P4 inter work=prefill rep=1 blocks=32 threads=1024 solo_ms=528.72 conc_ms=527.23 norm=1.003 io_passes=125 io_MiB=16500 io_ms=1317.97 io_GBs=13.13 io_pass_solo_ms=6.365
+P4 inter work=prefill rep=1 blocks=64 threads=1024 solo_ms=528.72 conc_ms=533.19 norm=0.992 io_passes=141 io_MiB=18612 io_ms=1324.05 io_GBs=14.74 io_pass_solo_ms=5.655
+P4 inter work=prefill rep=1 blocks=96 threads=1024 solo_ms=528.72 conc_ms=529.93 norm=0.998 io_passes=146 io_MiB=19272 io_ms=1319.28 io_GBs=15.32 io_pass_solo_ms=5.443
+P4 inter work=prefill rep=1 blocks=128 threads=1024 solo_ms=528.72 conc_ms=526.51 norm=1.004 io_passes=150 io_MiB=19800 io_ms=1321.58 io_GBs=15.71 io_pass_solo_ms=5.320
+P4 inter work=prefill rep=2 blocks=1 threads=1024 solo_ms=528.72 conc_ms=530.02 norm=0.998 io_passes=7 io_MiB=924 io_ms=1434.04 io_GBs=0.68 io_pass_solo_ms=128.883
+P4 inter work=prefill rep=2 blocks=2 threads=1024 solo_ms=528.72 conc_ms=528.23 norm=1.001 io_passes=13 io_MiB=1716 io_ms=1369.74 io_GBs=1.31 io_pass_solo_ms=64.582
+P4 inter work=prefill rep=2 blocks=4 threads=1024 solo_ms=528.72 conc_ms=530.99 norm=0.996 io_passes=26 io_MiB=3432 io_ms=1356.70 io_GBs=2.65 io_pass_solo_ms=31.124
+P4 inter work=prefill rep=2 blocks=8 threads=1024 solo_ms=528.72 conc_ms=530.23 norm=0.997 io_passes=51 io_MiB=6732 io_ms=1323.62 io_GBs=5.33 io_pass_solo_ms=15.569
+P4 inter work=prefill rep=2 blocks=16 threads=1024 solo_ms=528.72 conc_ms=527.53 norm=1.002 io_passes=97 io_MiB=12804 io_ms=1324.20 io_GBs=10.14 io_pass_solo_ms=8.218
+P4 inter work=prefill rep=2 blocks=32 threads=1024 solo_ms=528.72 conc_ms=529.32 norm=0.999 io_passes=125 io_MiB=16500 io_ms=1318.30 io_GBs=13.12 io_pass_solo_ms=6.356
+P4 inter work=prefill rep=2 blocks=64 threads=1024 solo_ms=528.72 conc_ms=531.31 norm=0.995 io_passes=141 io_MiB=18612 io_ms=1324.06 io_GBs=14.74 io_pass_solo_ms=5.658
+P4 inter work=prefill rep=2 blocks=96 threads=1024 solo_ms=528.72 conc_ms=526.50 norm=1.004 io_passes=146 io_MiB=19272 io_ms=1315.41 io_GBs=15.36 io_pass_solo_ms=5.452
+P4 inter work=prefill rep=2 blocks=128 threads=1024 solo_ms=528.72 conc_ms=529.64 norm=0.998 io_passes=149 io_MiB=19668 io_ms=1316.95 io_GBs=15.66 io_pass_solo_ms=5.341
+P4 inter work=decode blocks=0 threads=0 solo_ms=503.82 calls=2500 io_GBs=0.00 io_ms=0.00 norm=1.000
+P4 inter work=decode rep=1 blocks=1 threads=1024 solo_ms=503.82 conc_ms=1279.38 norm=0.394 io_passes=6 io_MiB=792 io_ms=783.67 io_GBs=1.06 io_pass_solo_ms=128.910
+P4 inter work=decode rep=1 blocks=2 threads=1024 solo_ms=503.82 conc_ms=1284.63 norm=0.392 io_passes=12 io_MiB=1584 io_ms=789.43 io_GBs=2.10 io_pass_solo_ms=63.342
+P4 inter work=decode rep=1 blocks=4 threads=1024 solo_ms=503.82 conc_ms=1267.32 norm=0.398 io_passes=24 io_MiB=3168 io_ms=776.93 io_GBs=4.28 io_pass_solo_ms=31.949
+P4 inter work=decode rep=1 blocks=8 threads=1024 solo_ms=503.82 conc_ms=1267.61 norm=0.397 io_passes=49 io_MiB=6468 io_ms=787.51 io_GBs=8.61 io_pass_solo_ms=15.536
+P4 inter work=decode rep=1 blocks=16 threads=1024 solo_ms=503.82 conc_ms=1257.92 norm=0.401 io_passes=91 io_MiB=12012 io_ms=785.89 io_GBs=16.03 io_pass_solo_ms=8.345
+P4 inter work=decode rep=1 blocks=32 threads=1024 solo_ms=503.82 conc_ms=1265.99 norm=0.398 io_passes=119 io_MiB=15708 io_ms=797.30 io_GBs=20.66 io_pass_solo_ms=6.388
+P4 inter work=decode rep=1 blocks=64 threads=1024 solo_ms=503.82 conc_ms=1257.57 norm=0.401 io_passes=133 io_MiB=17556 io_ms=788.18 io_GBs=23.36 io_pass_solo_ms=5.694
+P4 inter work=decode rep=1 blocks=96 threads=1024 solo_ms=503.82 conc_ms=1268.10 norm=0.397 io_passes=140 io_MiB=18480 io_ms=810.70 io_GBs=23.90 io_pass_solo_ms=5.413
+P4 inter work=decode rep=1 blocks=128 threads=1024 solo_ms=503.82 conc_ms=1266.86 norm=0.398 io_passes=142 io_MiB=18744 io_ms=808.94 io_GBs=24.30 io_pass_solo_ms=5.351
+P4 inter work=decode rep=2 blocks=1 threads=1024 solo_ms=503.82 conc_ms=1281.78 norm=0.393 io_passes=6 io_MiB=792 io_ms=786.42 io_GBs=1.06 io_pass_solo_ms=129.001
+P4 inter work=decode rep=2 blocks=2 threads=1024 solo_ms=503.82 conc_ms=1278.86 norm=0.394 io_passes=12 io_MiB=1584 io_ms=784.92 io_GBs=2.12 io_pass_solo_ms=64.641
+P4 inter work=decode rep=2 blocks=4 threads=1024 solo_ms=503.82 conc_ms=1266.84 norm=0.398 io_passes=24 io_MiB=3168 io_ms=775.04 io_GBs=4.29 io_pass_solo_ms=31.627
+P4 inter work=decode rep=2 blocks=8 threads=1024 solo_ms=503.82 conc_ms=1255.65 norm=0.401 io_passes=48 io_MiB=6336 io_ms=761.14 io_GBs=8.73 io_pass_solo_ms=15.778
+P4 inter work=decode rep=2 blocks=16 threads=1024 solo_ms=503.82 conc_ms=1248.05 norm=0.404 io_passes=90 io_MiB=11880 io_ms=766.10 io_GBs=16.26 io_pass_solo_ms=8.435
+P4 inter work=decode rep=2 blocks=32 threads=1024 solo_ms=503.82 conc_ms=1262.70 norm=0.399 io_passes=119 io_MiB=15708 io_ms=779.35 io_GBs=21.13 io_pass_solo_ms=6.359
+P4 inter work=decode rep=2 blocks=64 threads=1024 solo_ms=503.82 conc_ms=1265.98 norm=0.398 io_passes=134 io_MiB=17688 io_ms=805.55 io_GBs=23.02 io_pass_solo_ms=5.657
+P4 inter work=decode rep=2 blocks=96 threads=1024 solo_ms=503.82 conc_ms=1267.99 norm=0.397 io_passes=140 io_MiB=18480 io_ms=808.96 io_GBs=23.95 io_pass_solo_ms=5.409
+P4 inter work=decode rep=2 blocks=128 threads=1024 solo_ms=503.82 conc_ms=1264.78 norm=0.398 io_passes=142 io_MiB=18744 io_ms=801.65 io_GBs=24.52 io_pass_solo_ms=5.327
+P4 done

@@ -1,0 +1,77 @@
+====================================================================================================
+ARM p4-128k-default
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 140.08 ms/window = verify 117.79 (GPU-reach wait 42.21 + per-layer host 0.47 [plan 0.30 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.70) + commit/emit 2.18 + draft 20.11; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 375653.6 13867.7 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.6 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+====================================================================================================
+ARM p4-128k-default2
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 132.22 ms/window = verify 110.80 (GPU-reach wait 42.72 + per-layer host 0.46 [plan 0.29 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.44) + commit/emit 1.96 + draft 19.46; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372699.0 13090.2 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.4 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+====================================================================================================
+ARM p4-128k-1x128
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 136.05 ms/window = verify 114.62 (GPU-reach wait 44.69 + per-layer host 0.47 [plan 0.29 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.42) + commit/emit 1.99 + draft 19.43; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372488.4 13469.0 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.3 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+====================================================================================================
+ARM p4-128k-1x128b
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 136.85 ms/window = verify 115.37 (GPU-reach wait 44.99 + per-layer host 0.46 [plan 0.29 actq 0.21 jobs 0.22 CPU 0.00] + stage 1.68) + commit/emit 2.06 + draft 19.42; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372716.3 13548.6 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.4 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+====================================================================================================
+ARM p4-128k-4x128
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 132.67 ms/window = verify 111.26 (GPU-reach wait 42.83 + per-layer host 0.45 [plan 0.29 actq 0.21 jobs 0.22 CPU 0.00] + stage 1.37) + commit/emit 1.96 + draft 19.45; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372612.3 13134.5 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.4 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+====================================================================================================
+ARM p4-128k-16x128
+  strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 131.98 ms/window = verify 110.55 (GPU-reach wait 42.44 + per-layer host 0.47 [plan 0.29 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.42) + commit/emit 1.97 + draft 19.46; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.81, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+  DONE 256 129024 372654.1 13065.5 length 159 206 0 146400 146400 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 c60e72d397e9b1cd44da
+  peak tree RSS 48.4 GiB, peak VRAM card0 29.0 GiB card1 31.3 GiB
+  strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+  strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+====================================================================================================
+ARM p4-32k-1x128
+  strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 137.94 ms/window = verify 115.04 (GPU-reach wait 44.30 + per-layer host 0.50 [plan 0.30 actq 0.24 jobs 0.25 CPU 0.00] + stage 1.22) + commit/emit 2.06 + draft 20.85; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.18, PCIe 0.00
+  strata serve: prompt chunk auto: 8192 tokens
+  strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+  strata verify: window up to 6 tokens, 74.1 MiB of device buffers
+  DONE 256 32256 91905.7 11725.3 length 171 214 0 143520 143520 0 0 0.0   (tokens generated / prompt / prefill ms / decode ms / finish / draft accepted / offered ...)
+  token ids: 256, md5 124a3cd39b33f7da31e2
+  peak tree RSS 48.3 GiB, peak VRAM card0 28.7 GiB card1 31.2 GiB
+  strata serve: decode expert cache hit rate: 100.0% (143520 hits / 143520 lookups)
+  strata serve: expert tiers: GPU 143520 hits this request; since the start RAM 0 blobs, files 0 blobs 69934.3 MB read (the GGUF in place)

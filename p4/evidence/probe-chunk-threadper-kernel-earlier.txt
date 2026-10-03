@@ -1,0 +1,15 @@
+P4 head devices=1 shipped_shape=96x128
+P4 fixture pages=32768 block_bytes=4224 run_bytes=2048,2048,64,64 run_off=0,2048,4096,4160 n_head_kv=2 page_size=4 head_dim=256
+P4 chunk bytes=128 stride=128 blocks=32 threads=1024 passes=1 moved=134217728 ms=1281.162 GBs=0.10
+P4 chunk bytes=128 stride=256 blocks=32 threads=1024 passes=1 moved=134217728 ms=1261.845 GBs=0.11
+P4 chunk bytes=512 stride=512 blocks=32 threads=1024 passes=1 moved=134217728 ms=1282.586 GBs=0.10
+P4 chunk bytes=512 stride=1024 blocks=32 threads=1024 passes=1 moved=134217728 ms=1272.958 GBs=0.11
+P4 chunk bytes=4096 stride=4096 blocks=32 threads=1024 passes=1 moved=134217728 ms=1264.815 GBs=0.11
+P4 chunk bytes=4096 stride=8192 blocks=32 threads=1024 passes=1 moved=134217728 ms=1286.021 GBs=0.10
+P4 chunk bytes=65536 stride=65536 blocks=32 threads=1024 passes=1 moved=134217728 ms=1288.531 GBs=0.10
+P4 chunk bytes=65536 stride=131072 blocks=32 threads=1024 passes=1 moved=134217728 ms=1282.549 GBs=0.10
+P4 chunk bytes=262144 stride=262144 blocks=32 threads=1024 passes=1 moved=134217728 ms=1282.702 GBs=0.10
+P4 chunk bytes=262144 stride=524288 blocks=32 threads=1024 passes=1 moved=134217728 ms=1274.798 GBs=0.11
+P4 chunk bytes=1048576 stride=1048576 blocks=32 threads=1024 passes=1 moved=134217728 ms=1282.247 GBs=0.10
+P4 chunk bytes=1048576 stride=2097152 blocks=32 threads=1024 passes=1 moved=134217728 ms=1291.726 GBs=0.10
+P4 done

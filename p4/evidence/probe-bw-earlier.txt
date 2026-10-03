@@ -1,0 +1,29 @@
+P4 head devices=1 shipped_shape=96x128
+P4 fixture pages=32768 block_bytes=4224 run_bytes=2048,2048,64,64 run_off=0,2048,4096,4160 n_head_kv=2 page_size=4 head_dim=256
+P4 bw dir=H2D blocks=1 threads=1024 passes=2 bytes=276824064 ms=263.844 GBs=1.05
+P4 bw dir=H2D blocks=2 threads=1024 passes=3 bytes=415236096 ms=196.072 GBs=2.12
+P4 bw dir=H2D blocks=4 threads=1024 passes=5 bytes=692060160 ms=159.619 GBs=4.34
+P4 bw dir=H2D blocks=8 threads=1024 passes=10 bytes=1384120320 ms=155.244 GBs=8.92
+P4 bw dir=H2D blocks=16 threads=1024 passes=19 bytes=2629828608 ms=154.041 GBs=17.07
+P4 bw dir=H2D blocks=32 threads=1024 passes=24 bytes=3321888768 ms=151.680 GBs=21.90
+P4 bw dir=H2D blocks=64 threads=1024 passes=27 bytes=3737124864 ms=151.631 GBs=24.65
+P4 bw dir=H2D blocks=96 threads=1024 passes=28 bytes=3875536896 ms=151.154 GBs=25.64
+P4 bw dir=H2D blocks=128 threads=1024 passes=29 bytes=4013948928 ms=153.505 GBs=26.15
+P4 bw dir=H2D blocks=96 threads=128 passes=28 bytes=3875536896 ms=152.587 GBs=25.40
+P4 bw dir=H2D blocks=96 threads=256 passes=28 bytes=3875536896 ms=151.522 GBs=25.58
+P4 bw dir=H2D blocks=96 threads=512 passes=28 bytes=3875536896 ms=151.483 GBs=25.58
+P4 bw dir=H2D blocks=96 threads=1024 passes=28 bytes=3875536896 ms=151.157 GBs=25.64
+P4 bw dir=D2H blocks=1 threads=1024 passes=3 bytes=415236096 ms=152.649 GBs=2.72
+P4 bw dir=D2H blocks=2 threads=1024 passes=6 bytes=830472192 ms=161.758 GBs=5.13
+P4 bw dir=D2H blocks=4 threads=1024 passes=10 bytes=1384120320 ms=153.556 GBs=9.01
+P4 bw dir=D2H blocks=8 threads=1024 passes=19 bytes=2629828608 ms=153.194 GBs=17.17
+P4 bw dir=D2H blocks=16 threads=1024 passes=22 bytes=3045064704 ms=151.747 GBs=20.07
+P4 bw dir=D2H blocks=32 threads=1024 passes=24 bytes=3321888768 ms=156.459 GBs=21.23
+P4 bw dir=D2H blocks=64 threads=1024 passes=25 bytes=3460300800 ms=153.433 GBs=22.55
+P4 bw dir=D2H blocks=96 threads=1024 passes=25 bytes=3460300800 ms=154.615 GBs=22.38
+P4 bw dir=D2H blocks=128 threads=1024 passes=25 bytes=3460300800 ms=155.580 GBs=22.24
+P4 bw dir=D2H blocks=96 threads=128 passes=25 bytes=3460300800 ms=154.548 GBs=22.39
+P4 bw dir=D2H blocks=96 threads=256 passes=25 bytes=3460300800 ms=153.243 GBs=22.58
+P4 bw dir=D2H blocks=96 threads=512 passes=25 bytes=3460300800 ms=153.291 GBs=22.57
+P4 bw dir=D2H blocks=96 threads=1024 passes=25 bytes=3460300800 ms=154.566 GBs=22.39
+P4 done
