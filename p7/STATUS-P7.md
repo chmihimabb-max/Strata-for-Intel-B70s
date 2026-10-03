@@ -245,14 +245,17 @@ vocabulary) and it is worth ~7.5 ms per verify window at 4K here.
 The W4A16-derived artifact is now **redundant and provably so** (identical weights, and it is missing a step of
 upstream's recipe). Deleting it frees, on the external volume:
 
-- `/run/media/michael/2208B12208B0F63F/strata-w4a16/mtp-bf16/` — **8.1 GB** total: `rt-q2_0/` 786 MB, `tensors/` 4.9 GB,
-  `mtp-q2_0.gguf` 889 MB, `mtp-q4_0.gguf` 1.6 GB (the q4_0 arm, never served), manifests/reports.
+- `/run/media/michael/2208B12208B0F63F/strata-w4a16/mtp-bf16/` — **8.0 GB** (`du -sh`) total: `rt-q2_0/` 786 MiB,
+  `tensors/` 4.9 GB, `mtp-q2_0.gguf` 848 MiB (889,017,216 B), `mtp-q4_0.gguf` 1.5 GB (the q4_0 arm, never served),
+  manifests/reports.
 - The W4A16 checkpoint (`~/.cache/.../Qwen3.8-Flash-Next-W4A16-AutoRound`, 169 GB) and the rest of the
   `/run/media/.../strata-w4a16` working set (199 GB total) are separate, bigger reclamations that PLAN U13 already
   flagged; P7 only establishes that the `mtp-bf16` subdirectory inside it is safe.
 
-**Recommendation: delete `.../strata-w4a16/mtp-bf16/` (8.1 GB) and keep `~/strata-xpu/mtp/` (the faithful drafter + the
-canonical tensors + the rsync-able gguf).** Waiting on Mike's word.
+**Recommendation: delete `.../strata-w4a16/mtp-bf16/` (8.0 GB) and keep `~/strata-xpu/mtp/` (6.5 GB — the faithful
+drafter, the packed gguf, and the verified canonical tensors).** Waiting on Mike's word. On the root volume, `~/strata-xpu/mtp/`'s
+`canonical/` half (4.9 GB) is the pure provenance record and can go too once the drafter has been served for a while;
+only `rt/` (786 MiB) is needed at run time.
 
 ## 9. Not validated
 
