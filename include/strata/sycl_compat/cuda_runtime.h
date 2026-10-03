@@ -52,6 +52,7 @@
 #include <cctype>       // the launch-site histogram shortens a demangled name (isdigit)
 #include <cxxabi.h>     // ... and that needs __cxa_demangle
 #include <string>
+#include <mutex>           // the launch-site histogram is shared by more than one submitting thread
 #include <unordered_map>   // the window dump aggregates its slice per launch site
 #include <vector>
 #include <functional>   // stream capture records each submission as a std::function<void()> (PLAN.md §1.3(b))
@@ -549,6 +550,13 @@ struct launch_site {
 };
 struct launch_hist_state {
     bool on = false;
+    /// The engine submits from more than one host thread (the window's finalizer thread, the prompt threads),
+    /// so the table is shared state and is locked.  MEASURED as necessary: the first form of this instrument
+    /// let the table be touched from whichever thread was launching, and the 128K graph arm died in the prefill
+    /// with `double free or corruption (out)` (a glibc heap report, i.e. a torn std::vector) - that arm
+    /// (d1-hist-131072-graph) is in the runs directory with its own log, and this lock plus the
+    /// no-retention-outside-a-window rule below are what fixed it.
+    std::mutex m;
     std::vector<launch_site> sites;
     struct dentry {
         int site;
@@ -593,6 +601,7 @@ inline std::string hist_demangle(const char* m) {
 /// Register a site by name and return its index (linear scan: the site count is a few hundred at most).
 inline int hist_site_named(const std::string& name) {
     launch_hist_state& h = hist();
+    std::lock_guard<std::mutex> lk(h.m);
     for (size_t i = 0; i < h.sites.size(); ++i)
         if (h.sites[i].name == name) return (int) i;
     h.sites.push_back(launch_site{name});
@@ -602,17 +611,30 @@ inline int hist_site_named(const std::string& name) {
 inline int hist_site(const char* mangled) { return hist_site_named(hist_demangle(mangled)); }
 /// A non-kernel submission's pseudo-site (a copy, a memset), so a window's rows add up to its submit line.
 inline int hist_site_fixed(const char* name) { return hist_site_named(std::string(name)); }
-/// A real submission: count it and keep its event for the window's dump.
+/// A real submission: count it and keep its event for the window's dump.  The event is kept ONLY while a window
+/// is open: the load and the prefill submit hundreds of thousands of times (a 129 024-token prefill is ~680 000
+/// launches at 4K's ~5 per token), none of it belongs to a window, and retaining those events is what the
+/// crash above was - a prefill's worth of live sycl::event objects is also a prefill's worth of driver events.
 inline void hist_take(int site, const sycl::event& ev) {
     launch_hist_state& h = hist();
+    std::lock_guard<std::mutex> lk(h.m);
+    if ((size_t) site >= h.sites.size()) return;
     ++h.sites[(size_t) site].count;
-    if (h.pending.size() < 400000) h.pending.push_back(launch_hist_state::dentry{site, ev});
+    if (h.slices.empty()) return;                      // no window open: count only, keep nothing
+    if (h.pending.size() < 200000) h.pending.push_back(launch_hist_state::dentry{site, ev});
 }
 /// A submission that has no event to price (a closure-recorded node, or a path that does not hand one back).
-inline void hist_count(int site) { ++hist().sites[(size_t) site].count; }
+inline void hist_count(int site) {
+    launch_hist_state& h = hist();
+    std::lock_guard<std::mutex> lk(h.m);
+    if ((size_t) site < h.sites.size()) ++h.sites[(size_t) site].count;
+}
 
 inline void hist_begin() {
-    if (hist_on()) hist().slices.push_back(hist().pending.size());
+    if (!hist_on()) return;
+    launch_hist_state& h = hist();
+    std::lock_guard<std::mutex> lk(h.m);
+    h.slices.push_back(h.pending.size());
 }
 /// Close the innermost window: sum its slice per site, write it, and (at the outermost dump) drop the events.
 /// Format, one line per site, tab separated:  H <tag> <count> <us> <site name>
@@ -621,9 +643,18 @@ inline void hist_dump(const std::string& tag) {
     if (!h.on || h.slices.empty()) return;
     const unsigned long long b = h.slices.back();
     h.slices.pop_back();
+    // The slice is the ONLY part of pending that belongs to this window (see hist_take), and the events in it
+    // are complete (the window's tail sync ran), so they are priced here without holding the lock during the
+    // queries - which is what makes 3 810 get_profiling_info pairs per window affordable to run under a lock.
+    std::vector<launch_hist_state::dentry> slice;
+    {
+        std::lock_guard<std::mutex> lk(h.m);
+        const unsigned long long from = b < h.pending.size() ? b : h.pending.size();
+        slice.assign(h.pending.begin() + (long) from, h.pending.end());
+        if (h.slices.empty()) h.pending.clear();   // the outermost window closed: the events can go
+    }
     std::unordered_map<int, std::pair<unsigned long long, unsigned long long>> agg;   // site -> (count, ns)
-    for (unsigned long long i = b; i < h.pending.size(); ++i) {
-        const launch_hist_state::dentry& d = h.pending[i];
+    for (const launch_hist_state::dentry& d : slice) {
         unsigned long long ns = 0;
         try {   // device timestamps of an event that is already complete (the window's own tail sync ran)
             const unsigned long long st = d.ev.get_profiling_info<sycl::info::event_profiling::command_start>();
@@ -639,14 +670,17 @@ inline void hist_dump(const std::string& tag) {
     const char* file = std::getenv("STRATA_LAUNCH_HIST_FILE");
     FILE* f = (file != nullptr && file[0] != '\0') ? std::fopen(file, "a") : stderr;
     if (f == nullptr) return;
-    std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), h.pending.size() - b, agg.size());
+    std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
     for (const std::pair<const int, std::pair<unsigned long long, unsigned long long>>& kv : agg) {
-        const launch_site& s = h.sites[(size_t) kv.first];
+        std::string nm;
+        {
+            std::lock_guard<std::mutex> lk(h.m);
+            nm = h.sites[(size_t) kv.first].name;
+        }
         std::fprintf(f, "H\t%s\t%llu\t%.2f\t%s\n", tag.c_str(), kv.second.first,
-                     (double) kv.second.second / 1000.0, s.name.c_str());
+                     (double) kv.second.second / 1000.0, nm.c_str());
     }
     if (f != stderr) std::fclose(f);
-    if (h.slices.empty()) h.pending.clear();   // the outermost window closed: the events can go
 }
 
 // ---- stream capture and graphs: the handle, and the two implementations -----------------------------

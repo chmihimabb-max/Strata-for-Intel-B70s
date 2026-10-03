@@ -46,7 +46,8 @@ def one(tag: str, d: str) -> dict | None:
     m = re.search(r"hist=(\d+)/(\d+)", lg)
     r["hist"] = m.group(1) if m else "0"
 
-    # the graph banner (which path ran)
+    # the graph banner (which path ran).  The PRE-CHANGE binary (md5 9eff0675) has no banner when the flag is
+    # unset - STRATA_SYCL_GRAPH was opt-in, so that silent case IS the closure path.
     r["path"] = "?"
     if "the graph path is ON (default since D1" in e:
         r["path"] = "graph(default)"
@@ -54,6 +55,10 @@ def one(tag: str, d: str) -> dict | None:
         r["path"] = "closure(env=0)"
     elif "STRATA_SYCL_GRAPH=1" in e:
         r["path"] = "graph(env=1)"
+    elif r["bin_md5"] == "9eff0675059cf7e8145ae7b4bca984a4":
+        r["path"] = "closure(pre-change)"
+    else:
+        r["path"] = "closure(no banner)"
 
     # the decode timing line
     dt = None

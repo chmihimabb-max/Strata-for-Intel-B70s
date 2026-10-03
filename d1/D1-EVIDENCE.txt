@@ -1,0 +1,1215 @@
+========================================
+D1 (card t_d9ffcf38) EVIDENCE  2026-10-03T17:48:34-06:00
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+host: Linux 7.0.0-34-generic x86_64; 20 cores;  Intel(R) Core(TM) Ultra 7 265KF
+two B70s, ZE_AFFINITY_MASK unset for every arm; config of record strata-sycl-iq3s.json (IQ3_S ed59f920)
+engine binaries: pd1/strata-before md5 9eff0675059cf7e8145ae7b4bca984a4
+                 d1/strata-after  md5 8419d58f9d020327d5cc00259b07d960
+                 build-sycl/strata md5 72ec74aeefd9f300335d40f038910afa
+
+################################################################################
+### ARM ctest
+###   2026-10-03T15:59:08-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+
+--- the graph path's banner ---
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+    T lines:   md5 d41d8cd98f00b204e9800998ecf8427e
+    PP line: 
+    engine exit: 
+
+################################################################################
+### ARM d1-guard-128k-after
+###   2026-10-03T15:50:10-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-guard-128k-after   2026-10-03T15:50:09-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 15:50:09.783579850 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 120.49 ms/window = verify 106.16 (GPU-reach wait 90.97 + per-layer host 0.93 [plan 0.29 actq 0.21 jobs 0.20 CPU 0.00] + stage 1.59 + tail 11.13) + commit/emit 1.86 + draft 12.47; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=129273 layers 23..47 (25): submitted 94 (kernel 0 memset 0 memcpy 78 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4650.54 ms
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 90 (kernel 0 memset 0 memcpy 72 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 8948.02 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4708.12 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 129024 372416.5 11928.9 length 159 205 0 145920 145920 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372416 ms (346.5 tok/s), 256 generated in 11929 ms (21.5 tok/s), drafts accepted 159 of 205, 0 checkpoints
+    T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+    PP line: PP 129023 129024 370096 348.6
+    engine exit: == engine exit 0, wall 423 s (ask wall 384862 ms) ==
+
+################################################################################
+### ARM d1-guard-128k-before
+###   2026-10-03T15:43:00-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-guard-128k-before   2026-10-03T15:43:00-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 15:43:00.282080484 -0600  35091648 bytes  md5 9eff0675059cf7e8145ae7b4bca984a4
+
+--- the graph path's banner ---
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 124.20 ms/window = verify 109.90 (GPU-reach wait 87.30 + per-layer host 0.96 [plan 0.29 actq 0.21 jobs 0.22 CPU 0.00] + stage 1.57 + tail 11.29) + commit/emit 1.95 + draft 12.35; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=129273 layers 23..47 (25): submitted 2084 (kernel 1321 memset 0 memcpy 750 barrier 13 event 0 hostfn 0 graph 0) + recorded 0; 83.4 per layer; GPU-reach wait 4434.82 ms
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 1781 (kernel 1207 memset 0 memcpy 556 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 77.4 per layer; GPU-reach wait 8587.11 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2090 (kernel 1321 memset 0 memcpy 750 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 83.6 per layer; GPU-reach wait 4490.06 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 129024 372755.2 12295.9 length 159 205 0 145920 145920 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372755 ms (346.1 tok/s), 256 generated in 12296 ms (20.8 tok/s), drafts accepted 159 of 205, 0 checkpoints
+    T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+    PP line: PP 129023 129024 370115 348.6
+    engine exit: == engine exit 0, wall 423 s (ask wall 385683 ms) ==
+
+################################################################################
+### ARM d1-guard-32768-closure
+###   2026-10-03T17:00:51-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-guard-32768-closure   2026-10-03T17:00:50-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=0 hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 17:00:50.728533288 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 87 windows, avg T 3.47, 2.94 tokens/window, 128.87 ms/window = verify 113.60 (GPU-reach wait 89.73 + per-layer host 1.04 [plan 0.30 actq 0.23 jobs 0.26 CPU 0.00] + stage 1.33 + tail 12.24) + commit/emit 2.04 + draft 13.23; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.71, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 2074 (kernel 1307 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 3985.76 ms
+strata submit: stage window T=4 pos0=32510 layers 0..22 (23): submitted 1766 (kernel 1197 memset 0 memcpy 556 barrier 13 event 0 hostfn 0 graph 0) + recorded 0; 76.8 per layer; GPU-reach wait 7756.25 ms
+strata submit: stage window T=4 pos0=32510 layers 23..47 (25): submitted 2073 (kernel 1307 memset 0 memcpy 750 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 82.9 per layer; GPU-reach wait 4036.18 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 91676.9 11211.3 length 172 215 0 144960 144960 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91677 ms (351.8 tok/s), 256 generated in 11211 ms (22.8 tok/s), drafts accepted 172 of 215, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 89440 360.6
+    engine exit: == engine exit 0, wall 140 s (ask wall 103261 ms) ==
+
+################################################################################
+### ARM d1-guard-32k-after
+###   2026-10-03T15:40:34-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-guard-32k-after   2026-10-03T15:40:33-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 15:40:33.827818384 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 87 windows, avg T 3.46, 2.94 tokens/window, 124.57 ms/window = verify 109.26 (GPU-reach wait 92.93 + per-layer host 0.99 [plan 0.29 actq 0.23 jobs 0.22 CPU 0.00] + stage 1.33 + tail 12.12) + commit/emit 1.93 + draft 13.37; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.60, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 4127.43 ms
+strata submit: stage window T=4 pos0=32510 layers 0..22 (23): submitted 86 (kernel 0 memset 0 memcpy 72 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 8032.95 ms
+strata submit: stage window T=4 pos0=32510 layers 23..47 (25): submitted 95 (kernel 0 memset 0 memcpy 78 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4179.76 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 92482.3 10837.2 length 172 214 0 144480 144480 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 92482 ms (348.8 tok/s), 256 generated in 10837 ms (23.6 tok/s), drafts accepted 172 of 214, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 90095 358.0
+    engine exit: == engine exit 0, wall 140 s (ask wall 103786 ms) ==
+
+################################################################################
+### ARM d1-guard-32k-before
+###   2026-10-03T15:38:08-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-guard-32k-before   2026-10-03T15:38:07-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 15:38:07.868589482 -0600  35091648 bytes  md5 9eff0675059cf7e8145ae7b4bca984a4
+
+--- the graph path's banner ---
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 87 windows, avg T 3.48, 2.94 tokens/window, 129.68 ms/window = verify 114.40 (GPU-reach wait 90.63 + per-layer host 1.05 [plan 0.30 actq 0.24 jobs 0.26 CPU 0.00] + stage 1.35 + tail 12.29) + commit/emit 2.02 + draft 13.25; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.83, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 2074 (kernel 1307 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 4001.25 ms
+strata submit: stage window T=4 pos0=32510 layers 0..22 (23): submitted 1766 (kernel 1197 memset 0 memcpy 556 barrier 13 event 0 hostfn 0 graph 0) + recorded 0; 76.8 per layer; GPU-reach wait 7834.03 ms
+strata submit: stage window T=4 pos0=32510 layers 23..47 (25): submitted 2073 (kernel 1307 memset 0 memcpy 750 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 82.9 per layer; GPU-reach wait 4051.62 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 91626.8 11282.0 length 172 216 0 145440 145440 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91627 ms (352.0 tok/s), 256 generated in 11282 ms (22.7 tok/s), drafts accepted 172 of 216, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 89284 361.3
+    engine exit: == engine exit 0, wall 139 s (ask wall 103297 ms) ==
+
+################################################################################
+### ARM d1-guard-4096-closure
+###   2026-10-03T16:59:46-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-guard-4096-closure   2026-10-03T16:59:45-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=0 hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:59:45.888649680 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 49 windows, avg T 3.69, 3.00 tokens/window, 131.27 ms/window = verify 117.71 (GPU-reach wait 92.64 + per-layer host 1.07 [plan 0.30 actq 0.25 jobs 0.25 CPU 0.00] + stage 1.25 + tail 12.75) + commit/emit 2.05 + draft 11.51; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 36.94, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=3970 layers 23..47 (25): submitted 2077 (kernel 1307 memset 0 memcpy 750 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 83.1 per layer; GPU-reach wait 2288.73 ms
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 1768 (kernel 1197 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 76.9 per layer; GPU-reach wait 4489.68 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2073 (kernel 1307 memset 0 memcpy 750 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 82.9 per layer; GPU-reach wait 2338.45 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15323.5 6432.0 stop 98 132 0 86880 86880 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15324 ms (250.1 tok/s), 147 generated in 6432 ms (22.9 tok/s), drafts accepted 98 of 132, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 14045 272.8
+    engine exit: == engine exit 0, wall 58 s (ask wall 22173 ms) ==
+
+################################################################################
+### ARM d1-guard-4k-after
+###   2026-10-03T15:37:05-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-guard-4k-after   2026-10-03T15:37:04-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 15:37:04.525756058 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 51 windows, avg T 3.59, 2.88 tokens/window, 125.71 ms/window = verify 111.99 (GPU-reach wait 93.83 + per-layer host 1.01 [plan 0.30 actq 0.24 jobs 0.23 CPU 0.00] + stage 1.29 + tail 12.44) + commit/emit 1.91 + draft 11.80; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.88, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=3970 layers 23..47 (25): submitted 99 (kernel 0 memset 0 memcpy 78 barrier 20 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 2419.48 ms
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4733.72 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2471.33 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15018.0 6411.1 stop 96 132 0 87840 87840 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15018 ms (255.2 tok/s), 147 generated in 6411 ms (22.9 tok/s), drafts accepted 96 of 132, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13830 277.0
+    engine exit: == engine exit 0, wall 57 s (ask wall 21686 ms) ==
+
+################################################################################
+### ARM d1-guard-4k-before
+###   2026-10-03T15:36:00-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-guard-4k-before   2026-10-03T15:36:00-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: e5682b9 P10 (t_1d052912): the one-line answer, filled
+engine binary: 2026-10-03 15:36:00.109891566 -0600  35091648 bytes  md5 9eff0675059cf7e8145ae7b4bca984a4
+
+--- the graph path's banner ---
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 49 windows, avg T 3.76, 3.00 tokens/window, 131.86 ms/window = verify 118.33 (GPU-reach wait 93.48 + per-layer host 1.09 [plan 0.31 actq 0.25 jobs 0.26 CPU 0.00] + stage 1.27 + tail 12.84) + commit/emit 2.03 + draft 11.50; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.55, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=3970 layers 23..47 (25): submitted 2074 (kernel 1307 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 2315.02 ms
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 1769 (kernel 1197 memset 0 memcpy 556 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 76.9 per layer; GPU-reach wait 4530.61 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2073 (kernel 1307 memset 0 memcpy 750 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 82.9 per layer; GPU-reach wait 2364.81 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15199.0 6461.3 stop 98 135 0 88320 88320 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15199 ms (252.1 tok/s), 147 generated in 6461 ms (22.8 tok/s), drafts accepted 98 of 135, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13982 274.0
+    engine exit: == engine exit 0, wall 58 s (ask wall 21683 ms) ==
+
+################################################################################
+### ARM d1-hist-131072-closed
+###   2026-10-03T17:48:18-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-hist-131072-closed   2026-10-03T16:50:45-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=0 hist=1/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:50:45.081939186 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 133.60 ms/window = verify 119.10 (GPU-reach wait 87.02 + per-layer host 1.43 [plan 0.61 actq 0.21 jobs 0.21 CPU 0.00] + stage 1.53 + tail 11.13) + commit/emit 2.07 + draft 12.43; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=129273 layers 23..47 (25): submitted 2082 (kernel 1321 memset 0 memcpy 750 barrier 11 event 0 hostfn 0 graph 0) + recorded 0; 83.3 per layer; GPU-reach wait 4416.26 ms
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 1779 (kernel 1207 memset 0 memcpy 556 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 77.3 per layer; GPU-reach wait 8560.18 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2090 (kernel 1321 memset 0 memcpy 750 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 83.6 per layer; GPU-reach wait 4471.48 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 129024 372873.0 13226.7 length 159 205 0 145920 145920 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372873 ms (346.0 tok/s), 256 generated in 13227 ms (19.4 tok/s), drafts accepted 159 of 205, 0 checkpoints
+    T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+    PP line: PP 129023 129024 370429 348.3
+    engine exit: == engine exit 0, wall 425 s (ask wall 386396 ms) ==
+
+--- the launch-site histogram (d1/runs/d1-hist-131072-closed/hist.txt): window headers ---
+HW	win=1 stage T=1 pos0=129023 layers 0..22 n=23 wall=63.41ms	submissions 0	sites 0
+HW	win=1 stage T=1 pos0=129023 layers 23..47 n=25 wall=43.13ms	submissions 1498	sites 55
+HW	win=2 stage T=4 pos0=129024 layers 0..22 n=23 wall=64.90ms	submissions 1763	sites 56
+HW	win=2 stage T=4 pos0=129024 layers 23..47 n=25 wall=79.18ms	submissions 2071	sites 56
+    (lines: 171)
+
+################################################################################
+### ARM d1-hist-131072-graph
+###   2026-10-03T17:48:18-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-hist-131072-graph   2026-10-03T17:36:02-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=1/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 17:36:02.089055252 -0600  35970200 bytes  md5 72ec74aeefd9f300335d40f038910afa
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 120.85 ms/window = verify 106.50 (GPU-reach wait 91.03 + per-layer host 0.95 [plan 0.29 actq 0.21 jobs 0.20 CPU 0.00] + stage 1.62 + tail 11.13) + commit/emit 1.86 + draft 12.48; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=129273 layers 23..47 (25): submitted 94 (kernel 0 memset 0 memcpy 78 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4654.92 ms
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 91 (kernel 0 memset 0 memcpy 72 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 8954.22 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 101 (kernel 0 memset 0 memcpy 78 barrier 22 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4712.76 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 129024 372761.9 11964.3 length 159 205 0 145920 145920 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372762 ms (346.1 tok/s), 256 generated in 11964 ms (21.4 tok/s), drafts accepted 159 of 205, 0 checkpoints
+    T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+    PP line: PP 129023 129024 370017 348.7
+    engine exit: == engine exit 0, wall 423 s (ask wall 385290 ms) ==
+
+--- the launch-site histogram (d1/runs/d1-hist-131072-graph/hist.txt): window headers ---
+HW	win=1 stage T=1 pos0=129023 layers 0..22 n=23 wall=40.27ms	submissions 1401	sites 57
+HW	win=1 stage T=1 pos0=129023 layers 23..47 n=25 wall=34.18ms	submissions 1584	sites 56
+HW	win=2 stage T=4 pos0=129024 layers 0..22 n=23 wall=63.17ms	submissions 1763	sites 56
+HW	win=2 stage T=4 pos0=129024 layers 23..47 n=25 wall=75.43ms	submissions 2071	sites 56
+    (lines: 229)
+
+################################################################################
+### ARM d1-hist-131072-graph-crash
+###   2026-10-03T16:57:56-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-hist-131072-graph   2026-10-03T16:57:56-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=1/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:57:56.167462278 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+strata serve: prompt chunk auto: 8192 tokens
+    T lines: 0  md5 d41d8cd98f00b204e9800998ecf8427e
+    PP line: PP 16384 129024 51540 317.9
+    engine exit: 
+
+################################################################################
+### ARM d1-hist-32768-closed
+###   2026-10-03T17:48:18-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-hist-32768-closed   2026-10-03T16:45:48-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=0 hist=1/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:45:48.676337979 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 139.47 ms/window = verify 124.11 (GPU-reach wait 90.42 + per-layer host 1.47 [plan 0.60 actq 0.24 jobs 0.24 CPU 0.00] + stage 1.35 + tail 12.23) + commit/emit 2.09 + draft 13.27; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.18, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=32503 layers 23..47 (25): submitted 2071 (kernel 1307 memset 0 memcpy 750 barrier 14 event 0 hostfn 0 graph 0) + recorded 0; 82.8 per layer; GPU-reach wait 3927.09 ms
+strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 1772 (kernel 1197 memset 0 memcpy 556 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 77.0 per layer; GPU-reach wait 7633.99 ms
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 2074 (kernel 1307 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 3978.43 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 91828.7 11855.3 length 171 214 0 143520 143520 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91829 ms (351.3 tok/s), 256 generated in 11855 ms (21.6 tok/s), drafts accepted 171 of 214, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 89452 360.6
+    engine exit: == engine exit 0, wall 142 s (ask wall 103772 ms) ==
+
+--- the launch-site histogram (d1/runs/d1-hist-32768-closed/hist.txt): window headers ---
+HW	win=1 stage T=1 pos0=32255 layers 0..22 n=23 wall=51.14ms	submissions 0	sites 0
+HW	win=1 stage T=1 pos0=32255 layers 23..47 n=25 wall=47.38ms	submissions 1484	sites 53
+HW	win=2 stage T=4 pos0=32256 layers 0..22 n=23 wall=65.48ms	submissions 1753	sites 54
+HW	win=2 stage T=4 pos0=32256 layers 23..47 n=25 wall=75.53ms	submissions 2057	sites 54
+    (lines: 165)
+
+################################################################################
+### ARM d1-hist-32768-graph
+###   2026-10-03T17:48:18-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-hist-32768-graph   2026-10-03T16:48:17-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=1/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:48:17.122643083 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 87 windows, avg T 3.46, 2.94 tokens/window, 125.49 ms/window = verify 110.16 (GPU-reach wait 92.54 + per-layer host 1.54 [plan 0.67 actq 0.23 jobs 0.22 CPU 0.00] + stage 1.53 + tail 12.08) + commit/emit 1.95 + draft 13.38; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.60, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 95 (kernel 0 memset 0 memcpy 78 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4118.95 ms
+strata submit: stage window T=4 pos0=32510 layers 0..22 (23): submitted 86 (kernel 0 memset 0 memcpy 72 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 7998.74 ms
+strata submit: stage window T=4 pos0=32510 layers 23..47 (25): submitted 95 (kernel 0 memset 0 memcpy 78 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4171.13 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 91830.3 10918.0 length 172 214 0 144480 144480 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91830 ms (351.3 tok/s), 256 generated in 10918 ms (23.4 tok/s), drafts accepted 172 of 214, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 89431 360.7
+    engine exit: == engine exit 0, wall 142 s (ask wall 103256 ms) ==
+
+--- the launch-site histogram (d1/runs/d1-hist-32768-graph/hist.txt): window headers ---
+HW	win=1 stage T=1 pos0=32255 layers 0..22 n=23 wall=46.54ms	submissions 1391	sites 55
+HW	win=1 stage T=1 pos0=32255 layers 23..47 n=25 wall=38.39ms	submissions 1570	sites 54
+HW	win=2 stage T=4 pos0=32256 layers 0..22 n=23 wall=53.65ms	submissions 1753	sites 54
+HW	win=2 stage T=4 pos0=32256 layers 23..47 n=25 wall=66.77ms	submissions 2057	sites 54
+    (lines: 221)
+
+################################################################################
+### ARM d1-hist-4096-closed
+###   2026-10-03T17:48:18-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-hist-4096-closed   2026-10-03T16:43:34-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=0 hist=1/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:43:34.929459185 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 49 windows, avg T 3.80, 3.00 tokens/window, 143.14 ms/window = verify 129.53 (GPU-reach wait 94.78 + per-layer host 1.47 [plan 0.56 actq 0.26 jobs 0.27 CPU 0.00] + stage 1.32 + tail 12.81) + commit/emit 2.07 + draft 11.53; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.96, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=3970 layers 23..47 (25): submitted 2076 (kernel 1307 memset 0 memcpy 750 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 2336.31 ms
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 1770 (kernel 1197 memset 0 memcpy 556 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 77.0 per layer; GPU-reach wait 4594.16 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2074 (kernel 1307 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 2386.32 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15146.5 7013.7 stop 98 137 0 89280 89280 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15146 ms (253.0 tok/s), 147 generated in 7014 ms (21.0 tok/s), drafts accepted 98 of 137, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13835 276.9
+    engine exit: == engine exit 0, wall 61 s (ask wall 22674 ms) ==
+
+--- the launch-site histogram (d1/runs/d1-hist-4096-closed/hist.txt): window headers ---
+HW	win=1 stage T=1 pos0=3831 layers 0..22 n=23 wall=67.58ms	submissions 1318	sites 53
+HW	win=1 stage T=1 pos0=3831 layers 23..47 n=25 wall=47.93ms	submissions 1484	sites 53
+HW	win=2 stage T=4 pos0=3832 layers 0..22 n=23 wall=64.59ms	submissions 1753	sites 54
+HW	win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=74.85ms	submissions 2057	sites 54
+    (lines: 218)
+
+################################################################################
+### ARM d1-hist-4096-graph
+###   2026-10-03T17:48:18-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-hist-4096-graph   2026-10-03T16:44:42-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=1/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:44:42.282412479 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 51 windows, avg T 3.59, 2.88 tokens/window, 127.09 ms/window = verify 113.38 (GPU-reach wait 93.75 + per-layer host 1.55 [plan 0.62 actq 0.24 jobs 0.24 CPU 0.00] + stage 1.37 + tail 12.45) + commit/emit 1.89 + draft 11.83; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.88, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=3970 layers 23..47 (25): submitted 99 (kernel 0 memset 0 memcpy 78 barrier 20 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 2417.68 ms
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 87 (kernel 0 memset 0 memcpy 72 barrier 14 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4730.44 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2468.74 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15144.4 6481.8 stop 96 132 0 87840 87840 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15144 ms (253.0 tok/s), 147 generated in 6482 ms (22.7 tok/s), drafts accepted 96 of 132, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13801 277.6
+    engine exit: == engine exit 0, wall 60 s (ask wall 21677 ms) ==
+
+--- the launch-site histogram (d1/runs/d1-hist-4096-graph/hist.txt): window headers ---
+HW	win=1 stage T=1 pos0=3831 layers 0..22 n=23 wall=52.72ms	submissions 1391	sites 55
+HW	win=1 stage T=1 pos0=3831 layers 23..47 n=25 wall=38.35ms	submissions 1570	sites 54
+HW	win=2 stage T=4 pos0=3832 layers 0..22 n=23 wall=54.25ms	submissions 1753	sites 54
+HW	win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=66.36ms	submissions 2057	sites 54
+    (lines: 221)
+
+################################################################################
+### ARM d1-hist-4096-w1
+###   2026-10-03T17:43:06-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-hist-4096-w1   2026-10-03T17:43:06-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=0 hist=1/1
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 17:43:06.061429533 -0600  35970200 bytes  md5 72ec74aeefd9f300335d40f038910afa
+
+--- the graph path's banner ---
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 49 windows, avg T 3.76, 3.00 tokens/window, 133.00 ms/window = verify 119.40 (GPU-reach wait 93.59 + per-layer host 1.09 [plan 0.31 actq 0.25 jobs 0.27 CPU 0.00] + stage 1.32 + tail 12.88) + commit/emit 2.09 + draft 11.50; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.55, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=3970 layers 23..47 (25): submitted 2076 (kernel 1307 memset 0 memcpy 750 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 2317.48 ms
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 1768 (kernel 1197 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 76.9 per layer; GPU-reach wait 4535.93 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2073 (kernel 1307 memset 0 memcpy 750 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 82.9 per layer; GPU-reach wait 2367.31 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15008.4 6516.8 stop 98 135 0 88320 88320 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15008 ms (255.3 tok/s), 147 generated in 6517 ms (22.6 tok/s), drafts accepted 98 of 135, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13814 277.3
+    engine exit: == engine exit 0, wall 59 s (ask wall 21677 ms) ==
+
+--- the launch-site histogram (d1/runs/d1-hist-4096-w1/hist.txt): window headers ---
+HW	win=1 stage T=1 pos0=3831 layers 0..22 n=23 wall=60.03ms	submissions 1318	sites 53
+HW	win=1 stage T=1 pos0=3831 layers 23..47 n=25 wall=42.39ms	submissions 1484	sites 53
+    (lines: 108)
+
+################################################################################
+### ARM d1-smoke2-4k
+###   2026-10-03T15:33:49-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-smoke2-4k   2026-10-03T15:33:48-06:00
+ctx=4096 max-new=150 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=0 hist=1/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: e5682b9 P10 (t_1d052912): the one-line answer, filled
+engine binary: 2026-10-03 15:33:48.544083498 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 49 windows, avg T 3.80, 3.00 tokens/window, 141.85 ms/window = verify 128.23 (GPU-reach wait 94.55 + per-layer host 1.42 [plan 0.52 actq 0.27 jobs 0.25 CPU 0.00] + stage 1.29 + tail 12.77) + commit/emit 2.10 + draft 11.52; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.96, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=3970 layers 23..47 (25): submitted 2076 (kernel 1307 memset 0 memcpy 750 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 2330.17 ms
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 1768 (kernel 1197 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 76.9 per layer; GPU-reach wait 4583.06 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2074 (kernel 1307 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 2380.01 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15081.6 6950.6 stop 98 137 0 89280 89280 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15082 ms (254.1 tok/s), 147 generated in 6951 ms (21.1 tok/s), drafts accepted 98 of 137, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13784 277.9
+    engine exit: == engine exit 0, wall 59 s (ask wall 22179 ms) ==
+
+--- the launch-site histogram (d1/runs/d1-smoke2-4k/hist.txt): window headers ---
+HW	win=1 stage T=1 pos0=3831 layers 0..22 n=23 wall=55.53ms	submissions 1318	sites 53
+HW	win=1 stage T=1 pos0=3831 layers 23..47 n=25 wall=44.11ms	submissions 1484	sites 53
+HW	win=2 stage T=4 pos0=3832 layers 0..22 n=23 wall=63.81ms	submissions 1753	sites 54
+HW	win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=77.78ms	submissions 2057	sites 54
+    (lines: 218)
+
+################################################################################
+### ARM d1-smoke-4k-hist
+###   2026-10-03T15:30:47-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-smoke-4k-hist   2026-10-03T15:30:47-06:00
+ctx=4096 max-new=24 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=1/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: e5682b9 P10 (t_1d052912): the one-line answer, filled
+engine binary: 2026-10-03 15:30:09.281737067 -0600  35974288 bytes  md5 286bf2a8f0d740359948ddf218bf9f60
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 10 windows, avg T 3.40, 2.40 tokens/window, 128.69 ms/window = verify 115.82 (GPU-reach wait 92.69 + per-layer host 1.14 [plan 0.32 actq 0.23 jobs 0.22 CPU 0.00] + stage 1.47 + tail 12.07) + commit/emit 1.86 + draft 11.02; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.00, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=3850 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 416.59 ms
+strata submit: stage window T=4 pos0=3854 layers 0..22 (23): submitted 90 (kernel 0 memset 0 memcpy 72 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 874.63 ms
+strata submit: stage window T=4 pos0=3854 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 468.83 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 24 3832 15116.1 1286.9 length 17 24 0 16320 16320 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15116 ms (253.5 tok/s), 24 generated in 1287 ms (18.6 tok/s), drafts accepted 17 of 24, 0 checkpoints
+    T lines: 24  md5 49380fa8dbfcc483a218267c62f5fe7b
+    PP line: PP 3831 3832 13825 277.1
+    engine exit: == engine exit 0, wall 53 s (ask wall 16630 ms) ==
+
+--- the launch-site histogram (d1/runs/d1-smoke-4k-hist/hist.txt): window headers ---
+HW	win=1 stage T=1 pos0=3831 layers 0..22 n=23 wall=55.21ms	submissions 72	sites 1
+HW	win=1 stage T=1 pos0=3831 layers 23..47 n=25 wall=37.15ms	submissions 78	sites 1
+HW	win=2 stage T=4 pos0=3832 layers 0..22 n=23 wall=53.05ms	submissions 72	sites 1
+HW	win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=63.16ms	submissions 78	sites 1
+    (lines: 8)
+
+################################################################################
+### ARM d1-spec2-131072
+###   2026-10-03T16:14:57-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec2-131072   2026-10-03T16:14:57-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=2 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:14:57.151607836 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 144 windows, avg T 1.87, 1.78 tokens/window, 84.17 ms/window = verify 77.23 (GPU-reach wait 66.85 + per-layer host 0.71 [plan 0.25 actq 0.13 jobs 0.11 CPU 0.00] + stage 1.25 + tail 7.77) + commit/emit 1.70 + draft 5.25; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 18.68, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=2 pos0=129275 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 5022.65 ms
+strata submit: stage window T=2 pos0=129277 layers 0..22 (23): submitted 74 (kernel 0 memset 0 memcpy 72 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 9588.64 ms
+strata submit: stage window T=2 pos0=129277 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 5059.79 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 129024 373037.4 12121.1 length 112 125 0 129120 129120 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 373037 ms (345.9 tok/s), 256 generated in 12121 ms (21.1 tok/s), drafts accepted 112 of 125, 0 checkpoints
+    T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+    PP line: PP 129023 129024 370468 348.3
+    engine exit: == engine exit 0, wall 423 s (ask wall 385805 ms) ==
+
+################################################################################
+### ARM d1-spec2-32768
+###   2026-10-03T16:05:07-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec2-32768   2026-10-03T16:05:07-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=2 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:05:07.491589886 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 138 windows, avg T 1.97, 1.86 tokens/window, 83.25 ms/window = verify 76.34 (GPU-reach wait 65.56 + per-layer host 0.74 [plan 0.25 actq 0.14 jobs 0.12 CPU 0.00] + stage 1.09 + tail 8.03) + commit/emit 1.68 + draft 5.23; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 19.71, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=2 pos0=32507 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 4683.83 ms
+strata submit: stage window T=2 pos0=32509 layers 0..22 (23): submitted 74 (kernel 0 memset 0 memcpy 72 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 9013.19 ms
+strata submit: stage window T=2 pos0=32509 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 4718.51 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 92665.6 11488.3 length 118 134 0 130560 130560 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 92666 ms (348.1 tok/s), 256 generated in 11488 ms (22.3 tok/s), drafts accepted 118 of 134, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 90062 358.1
+    engine exit: == engine exit 0, wall 141 s (ask wall 104249 ms) ==
+
+################################################################################
+### ARM d1-spec2-4096
+###   2026-10-03T16:00:41-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec2-4096   2026-10-03T16:00:40-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=2 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:00:40.560887912 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 74 windows, avg T 2.19, 1.99 tokens/window, 87.18 ms/window = verify 80.87 (GPU-reach wait 68.71 + per-layer host 0.77 [plan 0.26 actq 0.15 jobs 0.13 CPU 0.00] + stage 1.06 + tail 8.62) + commit/emit 1.71 + draft 4.59; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 21.89, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=2 pos0=3974 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 2587.97 ms
+strata submit: stage window T=4 pos0=3976 layers 0..22 (23): submitted 92 (kernel 0 memset 0 memcpy 72 barrier 19 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 5032.14 ms
+strata submit: stage window T=4 pos0=3976 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2640.10 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15164.1 6451.1 stop 73 88 0 77760 77760 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15164 ms (252.7 tok/s), 147 generated in 6451 ms (22.8 tok/s), drafts accepted 73 of 88, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13889 275.8
+    engine exit: == engine exit 0, wall 58 s (ask wall 21680 ms) ==
+
+################################################################################
+### ARM d1-spec4-131072
+###   2026-10-03T16:22:07-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec4-131072   2026-10-03T16:22:06-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:22:06.692079381 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 120.42 ms/window = verify 106.08 (GPU-reach wait 90.86 + per-layer host 0.92 [plan 0.29 actq 0.21 jobs 0.20 CPU 0.00] + stage 1.54 + tail 11.13) + commit/emit 1.85 + draft 12.49; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=129273 layers 23..47 (25): submitted 94 (kernel 0 memset 0 memcpy 78 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4649.73 ms
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 91 (kernel 0 memset 0 memcpy 72 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 8937.49 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 101 (kernel 0 memset 0 memcpy 78 barrier 22 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4707.72 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 129024 372510.8 11921.2 length 159 205 0 145920 145920 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372511 ms (346.4 tok/s), 256 generated in 11921 ms (21.5 tok/s), drafts accepted 159 of 205, 0 checkpoints
+    T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+    PP line: PP 129023 129024 370093 348.6
+    engine exit: == engine exit 0, wall 422 s (ask wall 384715 ms) ==
+
+################################################################################
+### ARM d1-spec4-32768
+###   2026-10-03T16:07:34-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec4-32768   2026-10-03T16:07:34-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:07:34.409829036 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 87 windows, avg T 3.46, 2.94 tokens/window, 124.22 ms/window = verify 108.95 (GPU-reach wait 92.72 + per-layer host 0.98 [plan 0.29 actq 0.23 jobs 0.22 CPU 0.00] + stage 1.32 + tail 12.13) + commit/emit 1.90 + draft 13.37; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.60, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 4129.44 ms
+strata submit: stage window T=4 pos0=32510 layers 0..22 (23): submitted 86 (kernel 0 memset 0 memcpy 72 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 8014.34 ms
+strata submit: stage window T=4 pos0=32510 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4181.77 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 91677.5 10806.7 length 172 214 0 144480 144480 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91677 ms (351.8 tok/s), 256 generated in 10807 ms (23.7 tok/s), drafts accepted 172 of 214, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 89342 361.0
+    engine exit: == engine exit 0, wall 139 s (ask wall 102743 ms) ==
+
+################################################################################
+### ARM d1-spec4-4096
+###   2026-10-03T16:01:46-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec4-4096   2026-10-03T16:01:45-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:01:45.872772406 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 51 windows, avg T 3.59, 2.88 tokens/window, 126.45 ms/window = verify 112.63 (GPU-reach wait 93.87 + per-layer host 1.02 [plan 0.29 actq 0.24 jobs 0.23 CPU 0.00] + stage 1.32 + tail 12.44) + commit/emit 1.89 + draft 11.92; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.88, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=3970 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 2426.10 ms
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4735.93 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2477.76 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15202.0 6448.8 stop 96 132 0 87840 87840 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15202 ms (252.1 tok/s), 147 generated in 6449 ms (22.8 tok/s), drafts accepted 96 of 132, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13816 277.3
+    engine exit: == engine exit 0, wall 59 s (ask wall 21675 ms) ==
+
+################################################################################
+### ARM d1-spec6-131072
+###   2026-10-03T16:29:15-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec6-131072   2026-10-03T16:29:15-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=6 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:29:15.079517457 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 88 windows, avg T 3.76, 2.91 tokens/window, 145.34 ms/window = verify 126.37 (GPU-reach wait 108.76 + per-layer host 1.07 [plan 0.31 actq 0.25 jobs 0.25 CPU 0.00] + stage 2.11 + tail 12.31) + commit/emit 2.05 + draft 16.92; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.61, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=5 pos0=129271 layers 23..47 (25): submitted 105 (kernel 0 memset 0 memcpy 78 barrier 26 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 4871.41 ms
+strata submit: stage window T=6 pos0=129273 layers 0..22 (23): submitted 102 (kernel 0 memset 0 memcpy 72 barrier 29 event 0 hostfn 0 graph 1) + recorded 0; 4.4 per layer; GPU-reach wait 9487.70 ms
+strata submit: stage window T=6 pos0=129273 layers 23..47 (25): submitted 111 (kernel 0 memset 0 memcpy 78 barrier 32 event 0 hostfn 0 graph 1) + recorded 0; 4.4 per layer; GPU-reach wait 4954.30 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 129024 372784.4 12789.8 length 168 243 0 158880 158880 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372784 ms (346.1 tok/s), 256 generated in 12790 ms (20.0 tok/s), drafts accepted 168 of 243, 0 checkpoints
+    T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+    PP line: PP 129023 129024 370201 348.5
+    engine exit: == engine exit 0, wall 423 s (ask wall 385940 ms) ==
+
+################################################################################
+### ARM d1-spec6-32768
+###   2026-10-03T16:10:00-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec6-32768   2026-10-03T16:09:59-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=6 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:09:59.787023722 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 72 windows, avg T 4.75, 3.56 tokens/window, 165.97 ms/window = verify 143.54 (GPU-reach wait 123.16 + per-layer host 1.22 [plan 0.33 actq 0.32 jobs 0.31 CPU 0.00] + stage 1.49 + tail 14.52) + commit/emit 2.10 + draft 20.33; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 47.50, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=6 pos0=32505 layers 23..47 (25): submitted 105 (kernel 0 memset 0 memcpy 78 barrier 26 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 4469.98 ms
+strata submit: stage window T=5 pos0=32510 layers 0..22 (23): submitted 96 (kernel 0 memset 0 memcpy 72 barrier 23 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 8806.49 ms
+strata submit: stage window T=5 pos0=32510 layers 23..47 (25): submitted 105 (kernel 0 memset 0 memcpy 78 barrier 26 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 4530.97 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 91985.5 11949.8 length 188 270 0 164160 164160 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91985 ms (350.7 tok/s), 256 generated in 11950 ms (21.4 tok/s), drafts accepted 188 of 270, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 89406 360.8
+    engine exit: == engine exit 0, wall 141 s (ask wall 104271 ms) ==
+
+################################################################################
+### ARM d1-spec6-4096
+###   2026-10-03T16:02:51-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec6-4096   2026-10-03T16:02:51-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=6 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:02:51.214657778 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 40 windows, avg T 4.88, 3.68 tokens/window, 210.66 ms/window = verify 190.94 (GPU-reach wait 123.03 + per-layer host 1.26 [plan 0.33 actq 0.32 jobs 0.32 CPU 0.00] + stage 1.49 + tail 14.79) + commit/emit 2.11 + draft 17.61; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 48.75, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=6 pos0=3966 layers 23..47 (25): submitted 105 (kernel 0 memset 0 memcpy 78 barrier 26 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 2440.12 ms
+strata submit: stage window T=6 pos0=3972 layers 0..22 (23): submitted 97 (kernel 0 memset 0 memcpy 72 barrier 24 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 4849.94 ms
+strata submit: stage window T=6 pos0=3972 layers 23..47 (25): submitted 105 (kernel 0 memset 0 memcpy 78 barrier 26 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 2511.50 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15276.6 8426.5 stop 107 155 0 93600 93600 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15277 ms (250.8 tok/s), 147 generated in 8426 ms (17.4 tok/s), drafts accepted 107 of 155, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13893 275.7
+    engine exit: == engine exit 0, wall 62 s (ask wall 24196 ms) ==
+
+################################################################################
+### ARM d1-spec8-131072
+###   2026-10-03T16:36:25-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec8-131072   2026-10-03T16:36:24-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=8 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:36:24.730982980 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 84 windows, avg T 4.06, 3.05 tokens/window, 156.65 ms/window = verify 135.23 (GPU-reach wait 116.18 + per-layer host 1.13 [plan 0.31 actq 0.27 jobs 0.28 CPU 0.00] + stage 2.08 + tail 12.99) + commit/emit 2.00 + draft 19.43; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 40.60, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=5 pos0=129271 layers 23..47 (25): submitted 105 (kernel 0 memset 0 memcpy 78 barrier 26 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 4975.71 ms
+strata submit: stage window T=8 pos0=129273 layers 0..22 (23): submitted 108 (kernel 0 memset 0 memcpy 72 barrier 35 event 0 hostfn 0 graph 1) + recorded 0; 4.7 per layer; GPU-reach wait 9653.60 ms
+strata submit: stage window T=8 pos0=129273 layers 23..47 (25): submitted 116 (kernel 0 memset 0 memcpy 78 barrier 37 event 0 hostfn 0 graph 1) + recorded 0; 4.6 per layer; GPU-reach wait 5081.48 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 129024 372740.1 13158.8 length 172 257 0 163680 163680 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372740 ms (346.1 tok/s), 256 generated in 13159 ms (19.5 tok/s), drafts accepted 172 of 257, 0 checkpoints
+    T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+    PP line: PP 129023 129024 370078 348.6
+    engine exit: == engine exit 0, wall 423 s (ask wall 386456 ms) ==
+
+################################################################################
+### ARM d1-spec8-32768
+###   2026-10-03T16:12:28-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec8-32768   2026-10-03T16:12:27-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=8 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:12:27.716292017 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 69 windows, avg T 5.59, 3.71 tokens/window, 193.49 ms/window = verify 165.97 (GPU-reach wait 142.64 + per-layer host 1.42 [plan 0.35 actq 0.37 jobs 0.40 CPU 0.00] + stage 1.61 + tail 16.49) + commit/emit 2.14 + draft 25.38; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 55.94, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=6 pos0=32507 layers 23..47 (25): submitted 106 (kernel 0 memset 0 memcpy 78 barrier 27 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 5009.00 ms
+strata submit: stage window T=5 pos0=32510 layers 0..22 (23): submitted 97 (kernel 0 memset 0 memcpy 72 barrier 24 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 9781.30 ms
+strata submit: stage window T=5 pos0=32510 layers 23..47 (25): submitted 104 (kernel 0 memset 0 memcpy 78 barrier 25 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 5069.81 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 91954.7 13350.9 length 191 317 0 185280 185280 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91955 ms (350.8 tok/s), 256 generated in 13351 ms (19.2 tok/s), drafts accepted 191 of 317, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 89428 360.7
+    engine exit: == engine exit 0, wall 143 s (ask wall 105771 ms) ==
+
+################################################################################
+### ARM d1-spec8-4096
+###   2026-10-03T16:03:59-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-spec8-4096   2026-10-03T16:03:59-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=8 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 16:03:59.121617146 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 37 windows, avg T 5.97, 3.97 tokens/window, 246.18 ms/window = verify 220.82 (GPU-reach wait 150.20 + per-layer host 1.50 [plan 0.36 actq 0.41 jobs 0.41 CPU 0.00] + stage 1.74 + tail 17.30) + commit/emit 2.25 + draft 23.11; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 59.73, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=8 pos0=3964 layers 23..47 (25): submitted 113 (kernel 0 memset 0 memcpy 78 barrier 34 event 0 hostfn 0 graph 1) + recorded 0; 4.5 per layer; GPU-reach wait 2723.70 ms
+strata submit: stage window T=8 pos0=3972 layers 0..22 (23): submitted 108 (kernel 0 memset 0 memcpy 72 barrier 35 event 0 hostfn 0 graph 1) + recorded 0; 4.7 per layer; GPU-reach wait 5459.37 ms
+strata submit: stage window T=8 pos0=3972 layers 23..47 (25): submitted 116 (kernel 0 memset 0 memcpy 78 barrier 37 event 0 hostfn 0 graph 1) + recorded 0; 4.6 per layer; GPU-reach wait 2821.72 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15194.3 9108.6 stop 112 184 0 106080 106080 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15194 ms (252.2 tok/s), 147 generated in 9109 ms (16.1 tok/s), drafts accepted 112 of 184, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13805 277.5
+    engine exit: == engine exit 0, wall 62 s (ask wall 24687 ms) ==
+
+################################################################################
+### ARM d1-v-maxt-131072
+###   2026-10-03T17:18:53-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-v-maxt-131072   2026-10-03T17:18:53-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=2 graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 17:18:52.993041915 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 144 windows, avg T 1.87, 1.78 tokens/window, 84.81 ms/window = verify 77.86 (GPU-reach wait 67.02 + per-layer host 0.73 [plan 0.25 actq 0.14 jobs 0.11 CPU 0.00] + stage 1.24 + tail 7.77) + commit/emit 1.69 + draft 5.26; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 18.68, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=2 pos0=129275 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 5028.87 ms
+strata submit: stage window T=2 pos0=129277 layers 0..22 (23): submitted 74 (kernel 0 memset 0 memcpy 72 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 9613.99 ms
+strata submit: stage window T=2 pos0=129277 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 5065.98 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 129024 372871.7 12213.1 length 112 125 0 129120 129120 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372872 ms (346.0 tok/s), 256 generated in 12213 ms (21.0 tok/s), drafts accepted 112 of 125, 0 checkpoints
+    T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+    PP line: PP 129023 129024 370433 348.3
+    engine exit: == engine exit 0, wall 422 s (ask wall 385262 ms) ==
+
+################################################################################
+### ARM d1-v-maxt-32768
+###   2026-10-03T17:09:17-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-v-maxt-32768   2026-10-03T17:09:16-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=2 graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 17:09:16.888254394 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 138 windows, avg T 1.97, 1.86 tokens/window, 83.17 ms/window = verify 76.26 (GPU-reach wait 65.56 + per-layer host 0.74 [plan 0.25 actq 0.14 jobs 0.12 CPU 0.00] + stage 1.05 + tail 8.03) + commit/emit 1.71 + draft 5.21; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 19.71, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=2 pos0=32507 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 4682.07 ms
+strata submit: stage window T=2 pos0=32509 layers 0..22 (23): submitted 74 (kernel 0 memset 0 memcpy 72 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 9012.24 ms
+strata submit: stage window T=2 pos0=32509 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 4716.91 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 92128.3 11478.1 length 118 134 0 130560 130560 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 92128 ms (350.1 tok/s), 256 generated in 11478 ms (22.3 tok/s), drafts accepted 118 of 134, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 89696 359.6
+    engine exit: == engine exit 0, wall 141 s (ask wall 103757 ms) ==
+
+################################################################################
+### ARM d1-v-maxt-4096
+###   2026-10-03T17:05:45-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-v-maxt-4096   2026-10-03T17:05:45-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=2 graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 17:05:45.090084524 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 74 windows, avg T 2.22, 1.99 tokens/window, 87.67 ms/window = verify 81.36 (GPU-reach wait 69.14 + per-layer host 0.82 [plan 0.26 actq 0.16 jobs 0.13 CPU 0.00] + stage 1.05 + tail 8.70) + commit/emit 1.72 + draft 4.60; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 22.16, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=2 pos0=3974 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 2605.91 ms
+strata submit: stage window T=4 pos0=3976 layers 0..22 (23): submitted 92 (kernel 0 memset 0 memcpy 72 barrier 19 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 5064.69 ms
+strata submit: stage window T=4 pos0=3976 layers 23..47 (25): submitted 95 (kernel 0 memset 0 memcpy 78 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2657.78 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15036.7 6487.3 stop 73 90 0 78720 78720 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15037 ms (254.8 tok/s), 147 generated in 6487 ms (22.7 tok/s), drafts accepted 73 of 90, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13843 276.7
+    engine exit: == engine exit 0, wall 59 s (ask wall 21669 ms) ==
+
+################################################################################
+### ARM d1-v-minp-131072
+###   2026-10-03T17:11:44-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-v-minp-131072   2026-10-03T17:11:44-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 17:11:44.351551433 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 118 windows, avg T 2.36, 2.17 tokens/window, 101.84 ms/window = verify 90.11 (GPU-reach wait 76.96 + per-layer host 0.82 [plan 0.27 actq 0.16 jobs 0.15 CPU 0.00] + stage 1.64 + tail 9.24) + commit/emit 1.81 + draft 9.92; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 23.56, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=129273 layers 23..47 (25): submitted 94 (kernel 0 memset 0 memcpy 78 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4684.53 ms
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 91 (kernel 0 memset 0 memcpy 72 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 9023.19 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4742.32 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 129024 372745.0 12016.7 length 140 160 0 133440 133440 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372745 ms (346.1 tok/s), 256 generated in 12017 ms (21.3 tok/s), drafts accepted 140 of 160, 0 checkpoints
+    T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+    PP line: PP 129023 129024 370076 348.6
+    engine exit: == engine exit 0, wall 422 s (ask wall 384926 ms) ==
+
+################################################################################
+### ARM d1-v-minp-32768
+###   2026-10-03T17:06:50-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-v-minp-32768   2026-10-03T17:06:50-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 17:06:50.462987590 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 113.66 ms/window = verify 99.72 (GPU-reach wait 84.87 + per-layer host 0.92 [plan 0.29 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.30 + tail 10.98) + commit/emit 1.88 + draft 12.06; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=32503 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4004.02 ms
+strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 93 (kernel 0 memset 0 memcpy 72 barrier 20 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 7754.22 ms
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 4057.55 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 256 32256 91927.7 10456.9 length 164 185 0 132960 132960 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91928 ms (350.9 tok/s), 256 generated in 10457 ms (24.5 tok/s), drafts accepted 164 of 185, 0 checkpoints
+    T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+    PP line: PP 32255 32256 89334 361.1
+    engine exit: == engine exit 0, wall 140 s (ask wall 102749 ms) ==
+
+################################################################################
+### ARM d1-v-minp-4096
+###   2026-10-03T17:04:40-06:00
+
+--- the arm's own setup line (binary, graph/hist switches, spec) ---
+D1 arm d1-v-minp-4096   2026-10-03T17:04:39-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+HEAD: ce01ff3 D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+engine binary: 2026-10-03 17:04:39.755186546 -0600  35974200 bytes  md5 8419d58f9d020327d5cc00259b07d960
+
+--- the graph path's banner ---
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+--- the decode timing line (per window; the card's tokens/window + ms/window) ---
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 112.86 ms/window = verify 100.75 (GPU-reach wait 84.56 + per-layer host 0.92 [plan 0.29 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.15 + tail 10.94) + commit/emit 1.88 + draft 10.23; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+
+--- the submit line (P3's counters: kernels/copies/barriers per window) ---
+strata submit: stage window T=4 pos0=3970 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 2312.69 ms
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4514.63 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2364.26 ms
+
+--- the request: DONE (gen/prompt/decode ms/finish/accepted/offered) and the token ids ---
+DONE 147 3832 15168.3 6094.7 stop 93 110 0 78720 78720 0 0 0.0
+strata serve: prompt chunk auto: 8192 tokens
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15168 ms (252.6 tok/s), 147 generated in 6095 ms (24.1 tok/s), drafts accepted 93 of 110, 0 checkpoints
+    T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+    PP line: PP 3831 3832 13804 277.5
+    engine exit: == engine exit 0, wall 59 s (ask wall 21675 ms) ==
+
+################################################################################
+### the engine's test suite (d1/runs/ctest)
+--- capture-graphdefault.log ---
+100% tests passed, 0 tests failed out of 6
+--- full-closure.log ---
+19/49 Test #19: iq_multi_parity ..................***Failed    2.96 sec
+45/49 Test #45: expert_multi_test ................***Failed    0.00 sec
+90% tests passed, 5 tests failed out of 49
+	  5 - platform_memory_test (Failed)
+	 15 - elementwise_parity (Failed)
+	 16 - quantize_act_parity (Failed)
+	 19 - iq_multi_parity (Failed)
+	 45 - expert_multi_test (Failed)
+--- full-graphdefault.log ---
+19/49 Test #19: iq_multi_parity ..................***Failed    2.03 sec
+45/49 Test #45: expert_multi_test ................***Failed    0.00 sec
+90% tests passed, 5 tests failed out of 49
+	  5 - platform_memory_test (Failed)
+	 15 - elementwise_parity (Failed)
+	 16 - quantize_act_parity (Failed)
+	 19 - iq_multi_parity (Failed)
+	 45 - expert_multi_test (Failed)

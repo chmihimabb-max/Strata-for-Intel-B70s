@@ -1,0 +1,27 @@
+D1 (t_d9ffcf38): the launch-site histogram's table is thread-safe, and keeps events only inside a window
+
+The first form of the histogram (ce01ff3) crashed the 128K graph-mode arm: `double free or corruption (out)`,
+exit -6, two of the sixteen prefill chunks in, before any window (the arm is kept at
+/home/michael/strata-xpu/d1/runs/d1-hist-131072-graph-crash with its own log and an empty hist.txt).
+
+Two defects, both in the instrument, both fixed here:
+
+1. The table was not thread-safe.  The engine does submit from more than one host thread - the window's
+   finalizer thread (verify.cpp:433) and the prompt threads (generate.cpp:4574/4691) - and the first form let
+   whichever thread was launching push into the shared std::vector, which is a torn vector, i.e. exactly what
+   glibc reports as "double free or corruption (out)".  Every table mutation now takes a mutex; the dump copies
+   its slice out under the lock and does the (slow) device-timestamp queries outside it.
+
+2. Events were retained outside a window.  A 129 024-token prefill is ~680 000 launches at this port's ~5 per
+   token, and the first form kept a sycl::event for every one of them: a prefill's worth of LIVE driver events,
+   growing to the 400 000-entry cap.  Nothing outside a window's slice is ever priced, so hist_take now retains
+   only while a window is open, and only counts otherwise.
+
+The fix does not touch the default path: hist_take/hist_count are reached only under STRATA_LAUNCH_HIST, and
+this card's d1/STATUS-D1.md records the re-run that shows it (the 128K graph-mode arm completes, 99 windows,
+120.85 ms/window - the config of record's own 120.42 - with the config of record's own token ids).
+
+Rig: d1/d1_fix_arms.sh (the re-run plus the arm that prices the dump), d1/d1_ctest.sh (the suite, three ways),
+d1/d1_closure.sh (the same-binary closure control), d1/d1_spec.sh + d1/d1_variants.sh (the sweep),
+d1/d1_hist_chain.sh + d1/d1_hist_all.sh (the histograms), d1/d1_serial.sh (the serial driver that kept the GPUs
+busy), and the analysis: d1_report.py, d1_sweep.py, d1_hist.py, d1_families.py, d1_evidence.sh.

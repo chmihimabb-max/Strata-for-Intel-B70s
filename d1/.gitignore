@@ -3,4 +3,5 @@
 # /home/michael/strata-xpu/d1/runs -- only the rig, the analysis and the write-up are committed.
 strata-before
 strata-after
+strata-after-histfix
 runs/

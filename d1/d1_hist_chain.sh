@@ -27,8 +27,11 @@ which=${1:?4096|32768|131072|all}
 echo "###### d1 histogram $which started $(date -Is)" >> "$LOG"
 for CTX in 4096 32768 131072; do
   [ "$which" = all ] || [ "$which" = "$CTX" ] || continue
-  run_arm "d1-hist-${CTX}-closed" "$CTX" 150 --bin "$SRC/d1/strata-after" --graph 0 --hist 1
-  run_arm "d1-hist-${CTX}-graph"  "$CTX" 150 --bin "$SRC/d1/strata-after" --hist 1
+  # max-new 256 = the protocol of record, and the same as the guard/closure arms, so an instrumented arm is
+  # directly comparable with its own control (the histogram keeps ~3 800 events per window and queries their
+  # device timestamps at the dump, which is what its own cost is).
+  run_arm "d1-hist-${CTX}-closed" "$CTX" 256 --bin "$SRC/d1/strata-after" --graph 0 --hist 1
+  run_arm "d1-hist-${CTX}-graph"  "$CTX" 256 --bin "$SRC/d1/strata-after" --hist 1
 done
 echo "###### d1 histogram $which done $(date -Is)" >> "$LOG"
 tail -2 "$LOG"

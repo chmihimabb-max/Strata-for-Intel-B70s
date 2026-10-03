@@ -1,0 +1,654 @@
+################################################################################
+### d1-hist-4096-closed   (ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768)
+### engine line: strata decode timing: 49 windows, avg T 3.80, 3.00 tokens/window, 143.14 ms/window = verify 129.53 (GPU-reach wait 94.78 + per-layer host 1.47 [plan 0.56 actq 0.26 jobs 0.27 CPU 0.00] + stage 1.32 + tail 12.81) + commit/emit 2.07 + draft 11.53; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.96, PCIe 0.00
+### submit line: strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2074 (kernel 1307 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 2386.32 ms
+### ms/window from the arm: d1-hist-4096-closed           4    0 closure(env=0)      4096   49  3.80     3.00  143.14     20.96   253.00    98/137 0.715 66bf952d445e330c974c49e4f220b4b1
+
+windows: win1(count 2802, subs 2802, wall 47.93/67.58), win2(count 3810, subs 3810, wall 64.59/74.85)
+
+== window 2 ==
+   win=2 stage T=4 pos0=3832 layers 0..22 n=23 wall=64.59ms
+   win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=74.85ms
+-- top 20 KERNELS by device microseconds --
+#    count     us         share   kernel (sites merged)
+1    129       31409.1    24.0%   launch_multi_n<Q6KTraits, 4>
+2    144       15685.4    12.0%   wait_flag_ge
+3    78        15241.4    11.7%   launch_down<20>
+4    288       12741.5    9.7%    launch_multi
+5    47        6456.2     4.9%    launch_multi_n<SmallTraits<IQ4NLBlock, 4>, 4>
+6    40        6349.3     4.9%    launch_gu<22>
+7    34        5710.5     4.4%    launch_gu<18>
+8    35        5149.2     3.9%    launch_multi_n<Q5KTraits, 4>
+9    42        5116.5     3.9%    launch_multi_n<IQ4XSTraits, 4>
+10   47        4278.3     3.3%    launch_multi_n<Q4KTraits, 4>
+11   20        3259.3     2.5%    launch_gu<21>
+12   18        3004.6     2.3%    launch_down<42>
+13   41        2329.1     1.8%    copy_from_mapped
+14   120       2034.6     1.6%    bf16_gemv_fp32_mmvf_multi
+15   24        2001.1     1.5%    qsa_decode_attn_batch
+16   16        1448.6     1.1%    bf16_gemv_fp32_mmvf
+17   1306      1170.3     0.9%    <memcpy>
+18   36        915.2      0.7%    gdn_step_norm_multi
+19   193       702.9      0.5%    native_quantize_q8_1
+20   12        663.4      0.5%    qsa_block_topk
+     3810      130815.9    (130.82 ms of 130.82 ms counted)
+
+-- top 20 KERNELS by count --
+#    count     us         share   kernel (sites merged)
+1    1306      1170.3     0.9%    <memcpy>
+2    288       12741.5    9.7%    launch_multi
+3    193       702.9      0.5%    native_quantize_q8_1
+4    192       524.8      0.4%    native_expert_grouped
+5    144       15685.4    12.0%   wait_flag_ge
+6    144       159.6      0.1%    shared_expert_multi
+7    129       31409.1    24.0%   launch_multi_n<Q6KTraits, 4>
+8    120       2034.6     1.6%    bf16_gemv_fp32_mmvf_multi
+9    78        15241.4    11.7%   launch_down<20>
+10   54        237.8      0.2%    copy_i32_from_mapped
+11   48        640.4      0.5%    native_router_top10_multi
+12   48        346.1      0.3%    doorbell_publish
+13   48        193.8      0.1%    quantize_q8_1_rows
+14   48        166.1      0.1%    copy_rows_from_mapped
+15   48        154.5      0.1%    native_moe_combine_multi
+16   48        147.0      0.1%    kv_append_q8_step
+17   48        105.3      0.1%    moe_hit_add
+18   48        102.8      0.1%    fetch_blobs
+19   48        96.5       0.1%    native_qsa_indexer_append
+20   48        91.3       0.1%    f32_to_bf16_bulk
+     3810      130815.9    (130.82 ms of 130.82 ms counted)
+
+-- top 20 SITES by device microseconds --
+#    count     us         share   launch site
+1    129       31409.1    24.0%   strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+2    144       15685.4    12.0%   strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+3    78        15241.4    11.7%   strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+4    47        6456.2     4.9%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::SmallTraits<strata::kernels::(anonymous namespace)::IQ4NLBlock, 4>, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#2
+5    40        6349.3     4.9%    strata::kernels::(anonymous namespace)::launch_gu<22>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+6    96        6053.8     4.6%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+7    96        5899.4     4.5%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+8    34        5710.5     4.4%    strata::kernels::(anonymous namespace)::launch_gu<18>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+9    35        5149.2     3.9%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q5KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+10   42        5116.5     3.9%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::IQ4XSTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#2
+11   47        4278.3     3.3%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q4KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+12   20        3259.3     2.5%    strata::kernels::(anonymous namespace)::launch_gu<21>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+13   18        3004.6     2.3%    strata::kernels::(anonymous namespace)::launch_down<42>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+14   41        2329.1     1.8%    strata::kernels::copy_from_mapped(float*, float const*, long, void*)#1
+15   120       2034.6     1.6%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+16   12        1877.3     1.4%    strata::kernels::qsa_decode_attn_batch(float const*, strata::kernels::QsaAttnPools const&, int const*, int const*, long, strata::kernels::QsaShapes const&, float*, float*, long, void*)#3
+17   1306      1170.3     0.9%    <memcpy>
+18   12        1137.4     0.9%    strata::kernels::bf16_gemv_fp32_mmvf(float const*, unsigned short const*, float*, long, long, void*)#8
+19   36        915.2      0.7%    strata::kernels::gdn_step_norm_multi(float*, float const*, int, float const*, float const*, float const*, float const*, float, float*, int, int, int, int const*, void*, int)#1
+20   96        788.3      0.6%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#1
+     3810      130815.9    (130.82 ms of 130.82 ms counted)
+
+-- top 20 SITES by count --
+#    count     us         share   launch site
+1    1306      1170.3     0.9%    <memcpy>
+2    193       702.9      0.5%    strata::kernels::native_quantize_q8_1(float const*, void*, int, int, void*)#1
+3    144       15685.4    12.0%   strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+4    129       31409.1    24.0%   strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+5    120       2034.6     1.6%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+6    96        6053.8     4.6%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+7    96        5899.4     4.5%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+8    96        788.3      0.6%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#1
+9    96        379.8      0.3%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#3
+10   96        145.0      0.1%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#1
+11   78        15241.4    11.7%   strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+12   54        237.8      0.2%    strata::kernels::copy_i32_from_mapped(int*, int const*, long, void*)#1
+13   48        640.4      0.5%    strata::kernels::native_router_top10_multi(float const*, int*, float*, int, void*)#1
+14   48        346.1      0.3%    strata::kernels::doorbell_publish(float const*, int const*, float const*, long, long, float*, int*, float*, unsigned int*, void*)#1
+15   48        193.8      0.1%    strata::kernels::quantize_q8_1_rows(float const*, long, long, void*, void*)#1
+16   48        166.1      0.1%    strata::kernels::copy_rows_from_mapped(float*, float const*, long, long, int const*, int const*, void*)#1
+17   48        154.5      0.1%    strata::kernels::native_moe_combine_multi(float const*, float const*, float const*, float*, long, long, int, void*)#1
+18   48        147.0      0.1%    strata::kernels::kv_append_q8_step(signed char*, signed char*, unsigned short*, unsigned short*, int const*, int const*, float const*, float const*, strata::kernels::QsaShapes const&, void*, strata::kernels::KvHostPools const*)#1
+19   48        105.3      0.1%    strata::kernels::moe_hit_add(float*, float const*, int const*, int const*, long, long, void*)#1
+20   48        102.8      0.1%    strata::kernels::fetch_blobs(unsigned long long const*, int const*, unsigned char*, long, int, void*)#1
+     3810      130815.9    (130.82 ms of 130.82 ms counted)
+
+wrote /home/michael/strata-xpu/d1/runs/d1-hist-4096-closed/sites.csv (60 sites)
+
+################################################################################
+### d1-hist-32768-closed   (ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768)
+### engine line: strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 139.47 ms/window = verify 124.11 (GPU-reach wait 90.42 + per-layer host 1.47 [plan 0.60 actq 0.24 jobs 0.24 CPU 0.00] + stage 1.35 + tail 12.23) + commit/emit 2.09 + draft 13.27; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.18, PCIe 0.00
+### submit line: strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 2074 (kernel 1307 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 83.0 per layer; GPU-reach wait 3978.43 ms
+### ms/window from the arm: d1-hist-32768-closed          4    0 closure(env=0)     32768   85  3.52     3.01  139.47     21.59   351.26   171/214 0.799 d87373e84417dab60732a95eb47666a6
+
+windows: win1(count 1484, subs 1484, wall 47.38/47.38), win2(count 3810, subs 3810, wall 65.48/75.53)
+
+== window 2 ==
+   win=2 stage T=4 pos0=32256 layers 0..22 n=23 wall=65.48ms
+   win=2 stage T=4 pos0=32256 layers 23..47 n=25 wall=75.53ms
+-- top 20 KERNELS by device microseconds --
+#    count     us         share   kernel (sites merged)
+1    129       31524.4    23.8%   launch_multi_n<Q6KTraits, 4>
+2    144       15864.9    12.0%   wait_flag_ge
+3    78        15167.0    11.5%   launch_down<20>
+4    288       12705.5    9.6%    launch_multi
+5    47        6377.1     4.8%    launch_multi_n<SmallTraits<IQ4NLBlock, 4>, 4>
+6    40        6343.1     4.8%    launch_gu<22>
+7    34        5623.1     4.2%    launch_gu<18>
+8    35        5278.3     4.0%    launch_multi_n<Q5KTraits, 4>
+9    42        5165.0     3.9%    launch_multi_n<IQ4XSTraits, 4>
+10   47        4257.9     3.2%    launch_multi_n<Q4KTraits, 4>
+11   20        3299.2     2.5%    launch_gu<21>
+12   18        2930.5     2.2%    launch_down<42>
+13   41        2339.1     1.8%    copy_from_mapped
+14   120       2055.1     1.6%    bf16_gemv_fp32_mmvf_multi
+15   24        2023.3     1.5%    qsa_decode_attn_batch
+16   12        1485.2     1.1%    qsa_block_scores
+17   16        1446.8     1.1%    bf16_gemv_fp32_mmvf
+18   1306      1177.9     0.9%    <memcpy>
+19   36        917.6      0.7%    gdn_step_norm_multi
+20   12        758.4      0.6%    qsa_block_topk
+     3810      132453.4    (132.45 ms of 132.45 ms counted)
+
+-- top 20 KERNELS by count --
+#    count     us         share   kernel (sites merged)
+1    1306      1177.9     0.9%    <memcpy>
+2    288       12705.5    9.6%    launch_multi
+3    193       704.1      0.5%    native_quantize_q8_1
+4    192       531.7      0.4%    native_expert_grouped
+5    144       15864.9    12.0%   wait_flag_ge
+6    144       171.0      0.1%    shared_expert_multi
+7    129       31524.4    23.8%   launch_multi_n<Q6KTraits, 4>
+8    120       2055.1     1.6%    bf16_gemv_fp32_mmvf_multi
+9    78        15167.0    11.5%   launch_down<20>
+10   54        239.0      0.2%    copy_i32_from_mapped
+11   48        643.7      0.5%    native_router_top10_multi
+12   48        355.4      0.3%    doorbell_publish
+13   48        198.9      0.2%    quantize_q8_1_rows
+14   48        165.1      0.1%    copy_rows_from_mapped
+15   48        153.6      0.1%    native_moe_combine_multi
+16   48        150.4      0.1%    kv_append_q8_step
+17   48        108.0      0.1%    moe_hit_add
+18   48        104.6      0.1%    fetch_blobs
+19   48        96.5       0.1%    native_qsa_indexer_append
+20   48        91.6       0.1%    f32_to_bf16_bulk
+     3810      132453.4    (132.45 ms of 132.45 ms counted)
+
+-- top 20 SITES by device microseconds --
+#    count     us         share   launch site
+1    129       31524.4    23.8%   strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+2    144       15864.9    12.0%   strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+3    78        15167.0    11.5%   strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+4    47        6377.1     4.8%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::SmallTraits<strata::kernels::(anonymous namespace)::IQ4NLBlock, 4>, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#2
+5    40        6343.1     4.8%    strata::kernels::(anonymous namespace)::launch_gu<22>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+6    96        6041.8     4.6%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+7    96        5869.8     4.4%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+8    34        5623.1     4.2%    strata::kernels::(anonymous namespace)::launch_gu<18>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+9    35        5278.3     4.0%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q5KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+10   42        5165.0     3.9%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::IQ4XSTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#2
+11   47        4257.9     3.2%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q4KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+12   20        3299.2     2.5%    strata::kernels::(anonymous namespace)::launch_gu<21>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+13   18        2930.5     2.2%    strata::kernels::(anonymous namespace)::launch_down<42>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+14   41        2339.1     1.8%    strata::kernels::copy_from_mapped(float*, float const*, long, void*)#1
+15   120       2055.1     1.6%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+16   12        1897.2     1.4%    strata::kernels::qsa_decode_attn_batch(float const*, strata::kernels::QsaAttnPools const&, int const*, int const*, long, strata::kernels::QsaShapes const&, float*, float*, long, void*)#3
+17   12        1485.2     1.1%    strata::kernels::qsa_block_scores(float const*, float const*, float const*, int const*, long, long, strata::kernels::QsaShapes const&, float*, void*, long)#1
+18   1306      1177.9     0.9%    <memcpy>
+19   12        1135.4     0.9%    strata::kernels::bf16_gemv_fp32_mmvf(float const*, unsigned short const*, float*, long, long, void*)#8
+20   36        917.6      0.7%    strata::kernels::gdn_step_norm_multi(float*, float const*, int, float const*, float const*, float const*, float const*, float, float*, int, int, int, int const*, void*, int)#1
+     3810      132453.4    (132.45 ms of 132.45 ms counted)
+
+-- top 20 SITES by count --
+#    count     us         share   launch site
+1    1306      1177.9     0.9%    <memcpy>
+2    193       704.1      0.5%    strata::kernels::native_quantize_q8_1(float const*, void*, int, int, void*)#1
+3    144       15864.9    12.0%   strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+4    129       31524.4    23.8%   strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+5    120       2055.1     1.6%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+6    96        6041.8     4.6%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+7    96        5869.8     4.4%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+8    96        794.0      0.6%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#1
+9    96        383.9      0.3%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#3
+10   96        147.8      0.1%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#1
+11   78        15167.0    11.5%   strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+12   54        239.0      0.2%    strata::kernels::copy_i32_from_mapped(int*, int const*, long, void*)#1
+13   48        643.7      0.5%    strata::kernels::native_router_top10_multi(float const*, int*, float*, int, void*)#1
+14   48        355.4      0.3%    strata::kernels::doorbell_publish(float const*, int const*, float const*, long, long, float*, int*, float*, unsigned int*, void*)#1
+15   48        198.9      0.2%    strata::kernels::quantize_q8_1_rows(float const*, long, long, void*, void*)#1
+16   48        165.1      0.1%    strata::kernels::copy_rows_from_mapped(float*, float const*, long, long, int const*, int const*, void*)#1
+17   48        153.6      0.1%    strata::kernels::native_moe_combine_multi(float const*, float const*, float const*, float*, long, long, int, void*)#1
+18   48        150.4      0.1%    strata::kernels::kv_append_q8_step(signed char*, signed char*, unsigned short*, unsigned short*, int const*, int const*, float const*, float const*, strata::kernels::QsaShapes const&, void*, strata::kernels::KvHostPools const*)#1
+19   48        108.0      0.1%    strata::kernels::moe_hit_add(float*, float const*, int const*, int const*, long, long, void*)#1
+20   48        104.6      0.1%    strata::kernels::fetch_blobs(unsigned long long const*, int const*, unsigned char*, long, int, void*)#1
+     3810      132453.4    (132.45 ms of 132.45 ms counted)
+
+wrote /home/michael/strata-xpu/d1/runs/d1-hist-32768-closed/sites.csv (60 sites)
+
+################################################################################
+### d1-hist-131072-closed   (ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768)
+### engine line: strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 133.60 ms/window = verify 119.10 (GPU-reach wait 87.02 + per-layer host 1.43 [plan 0.61 actq 0.21 jobs 0.21 CPU 0.00] + stage 1.53 + tail 11.13) + commit/emit 2.07 + draft 12.43; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+### submit line: strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2090 (kernel 1321 memset 0 memcpy 750 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 83.6 per layer; GPU-reach wait 4471.48 ms
+### ms/window from the arm: d1-hist-131072-closed         4    0 closure(env=0)    131072   99  3.07     2.59  133.60     19.35   346.03   159/205 0.776 511a89be345a6583c9bc8c580259d73e
+
+windows: win1(count 1498, subs 1498, wall 43.13/43.13), win2(count 3834, subs 3834, wall 64.90/79.18)
+
+== window 2 ==
+   win=2 stage T=4 pos0=129024 layers 0..22 n=23 wall=64.90ms
+   win=2 stage T=4 pos0=129024 layers 23..47 n=25 wall=79.18ms
+-- top 20 KERNELS by device microseconds --
+#    count     us         share   kernel (sites merged)
+1    129       31318.9    22.7%   launch_multi_n<Q6KTraits, 4>
+2    78        15128.6    10.9%   launch_down<20>
+3    144       14453.5    10.5%   wait_flag_ge
+4    288       12594.1    9.1%    launch_multi
+5    47        6314.6     4.6%    launch_multi_n<SmallTraits<IQ4NLBlock, 4>, 4>
+6    40        6201.2     4.5%    launch_gu<22>
+7    34        5620.1     4.1%    launch_gu<18>
+8    12        5563.6     4.0%    qsa_block_scores
+9    35        5350.3     3.9%    launch_multi_n<Q5KTraits, 4>
+10   42        5024.7     3.6%    launch_multi_n<IQ4XSTraits, 4>
+11   47        4197.5     3.0%    launch_multi_n<Q4KTraits, 4>
+12   20        3350.9     2.4%    launch_gu<21>
+13   18        2925.2     2.1%    launch_down<42>
+14   41        2331.9     1.7%    copy_from_mapped
+15   120       2030.5     1.5%    bf16_gemv_fp32_mmvf_multi
+16   24        1987.1     1.4%    qsa_decode_attn_batch
+17   24        1736.6     1.3%    kv_stream_resolve
+18   48        1689.3     1.2%    kv_append_q8_step
+19   12        1431.7     1.0%    qsa_block_topk
+20   16        1261.1     0.9%    bf16_gemv_fp32_mmvf
+     3834      138167.4    (138.17 ms of 138.17 ms counted)
+
+-- top 20 KERNELS by count --
+#    count     us         share   kernel (sites merged)
+1    1306      1218.2     0.9%    <memcpy>
+2    288       12594.1    9.1%    launch_multi
+3    193       708.3      0.5%    native_quantize_q8_1
+4    192       529.1      0.4%    native_expert_grouped
+5    144       14453.5    10.5%   wait_flag_ge
+6    144       162.7      0.1%    shared_expert_multi
+7    129       31318.9    22.7%   launch_multi_n<Q6KTraits, 4>
+8    120       2030.5     1.5%    bf16_gemv_fp32_mmvf_multi
+9    78        15128.6    10.9%   launch_down<20>
+10   54        237.7      0.2%    copy_i32_from_mapped
+11   48        1689.3     1.2%    kv_append_q8_step
+12   48        638.4      0.5%    native_router_top10_multi
+13   48        350.6      0.3%    doorbell_publish
+14   48        192.4      0.1%    quantize_q8_1_rows
+15   48        163.6      0.1%    copy_rows_from_mapped
+16   48        151.0      0.1%    native_moe_combine_multi
+17   48        105.9      0.1%    moe_hit_add
+18   48        103.8      0.1%    fetch_blobs
+19   48        99.3       0.1%    native_qsa_indexer_append
+20   48        92.0       0.1%    f32_to_bf16_bulk
+     3834      138167.4    (138.17 ms of 138.17 ms counted)
+
+-- top 20 SITES by device microseconds --
+#    count     us         share   launch site
+1    129       31318.9    22.7%   strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+2    78        15128.6    10.9%   strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+3    144       14453.5    10.5%   strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+4    47        6314.6     4.6%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::SmallTraits<strata::kernels::(anonymous namespace)::IQ4NLBlock, 4>, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#2
+5    40        6201.2     4.5%    strata::kernels::(anonymous namespace)::launch_gu<22>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+6    96        5975.5     4.3%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+7    96        5823.0     4.2%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+8    34        5620.1     4.1%    strata::kernels::(anonymous namespace)::launch_gu<18>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+9    12        5563.6     4.0%    strata::kernels::qsa_block_scores(float const*, float const*, float const*, int const*, long, long, strata::kernels::QsaShapes const&, float*, void*, long)#1
+10   35        5350.3     3.9%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q5KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+11   42        5024.7     3.6%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::IQ4XSTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#2
+12   47        4197.5     3.0%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q4KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+13   20        3350.9     2.4%    strata::kernels::(anonymous namespace)::launch_gu<21>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+14   18        2925.2     2.1%    strata::kernels::(anonymous namespace)::launch_down<42>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+15   41        2331.9     1.7%    strata::kernels::copy_from_mapped(float*, float const*, long, void*)#1
+16   120       2030.5     1.5%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+17   12        1862.1     1.3%    strata::kernels::qsa_decode_attn_batch(float const*, strata::kernels::QsaAttnPools const&, int const*, int const*, long, strata::kernels::QsaShapes const&, float*, float*, long, void*)#3
+18   48        1689.3     1.2%    strata::kernels::kv_append_q8_step(signed char*, signed char*, unsigned short*, unsigned short*, int const*, int const*, float const*, float const*, strata::kernels::QsaShapes const&, void*, strata::kernels::KvHostPools const*)#1
+19   12        1564.2     1.1%    strata::kernels::kv_stream_resolve(strata::kernels::KvStreamMap const&, strata::kernels::QsaAttnPools const&, strata::kernels::KvHostPools const&, int, int const*, int const*, long, long, strata::kernels::QsaShapes const&, void*)#2
+20   12        1431.7     1.0%    strata::kernels::qsa_block_topk(float const*, int const*, long, long, long, strata::kernels::QsaShapes const&, int*, void*, long)#1
+     3834      138167.4    (138.17 ms of 138.17 ms counted)
+
+-- top 20 SITES by count --
+#    count     us         share   launch site
+1    1306      1218.2     0.9%    <memcpy>
+2    193       708.3      0.5%    strata::kernels::native_quantize_q8_1(float const*, void*, int, int, void*)#1
+3    144       14453.5    10.5%   strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+4    129       31318.9    22.7%   strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+5    120       2030.5     1.5%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+6    96        5975.5     4.3%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+7    96        5823.0     4.2%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+8    96        795.6      0.6%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#1
+9    96        381.2      0.3%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#3
+10   96        147.8      0.1%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#1
+11   78        15128.6    10.9%   strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+12   54        237.7      0.2%    strata::kernels::copy_i32_from_mapped(int*, int const*, long, void*)#1
+13   48        1689.3     1.2%    strata::kernels::kv_append_q8_step(signed char*, signed char*, unsigned short*, unsigned short*, int const*, int const*, float const*, float const*, strata::kernels::QsaShapes const&, void*, strata::kernels::KvHostPools const*)#1
+14   48        638.4      0.5%    strata::kernels::native_router_top10_multi(float const*, int*, float*, int, void*)#1
+15   48        350.6      0.3%    strata::kernels::doorbell_publish(float const*, int const*, float const*, long, long, float*, int*, float*, unsigned int*, void*)#1
+16   48        192.4      0.1%    strata::kernels::quantize_q8_1_rows(float const*, long, long, void*, void*)#1
+17   48        163.6      0.1%    strata::kernels::copy_rows_from_mapped(float*, float const*, long, long, int const*, int const*, void*)#1
+18   48        151.0      0.1%    strata::kernels::native_moe_combine_multi(float const*, float const*, float const*, float*, long, long, int, void*)#1
+19   48        105.9      0.1%    strata::kernels::moe_hit_add(float*, float const*, int const*, int const*, long, long, void*)#1
+20   48        103.8      0.1%    strata::kernels::fetch_blobs(unsigned long long const*, int const*, unsigned char*, long, int, void*)#1
+     3834      138167.4    (138.17 ms of 138.17 ms counted)
+
+wrote /home/michael/strata-xpu/d1/runs/d1-hist-131072-closed/sites.csv (62 sites)
+
+################################################################################
+### d1-hist-4096-graph   (ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768)
+### engine line: strata decode timing: 51 windows, avg T 3.59, 2.88 tokens/window, 127.09 ms/window = verify 113.38 (GPU-reach wait 93.75 + per-layer host 1.55 [plan 0.62 actq 0.24 jobs 0.24 CPU 0.00] + stage 1.37 + tail 12.45) + commit/emit 1.89 + draft 11.83; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.88, PCIe 0.00
+### submit line: strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2468.74 ms
+### ms/window from the arm: d1-hist-4096-graph            4 <unset=default> graph(default)      4096   51  3.59     2.88  127.09     22.68   253.03    96/132 0.727 66bf952d445e330c974c49e4f220b4b1
+
+windows: win1(count 2961, subs 2961, wall 38.35/52.72), win2(count 3810, subs 3810, wall 54.25/66.36)
+
+== window 2 ==
+   win=2 stage T=4 pos0=3832 layers 0..22 n=23 wall=54.25ms
+   win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=66.36ms
+-- top 20 KERNELS by device microseconds --
+#    count     us         share   kernel (sites merged)
+1    1306      217.5      100.0%  <memcpy>
+2    288       0.0        0.0%    launch_multi
+3    193       0.0        0.0%    native_quantize_q8_1
+4    192       0.0        0.0%    native_expert_grouped
+5    144       0.0        0.0%    shared_expert_multi
+6    144       0.0        0.0%    wait_flag_ge
+7    129       0.0        0.0%    launch_multi_n<Q6KTraits, 4>
+8    120       0.0        0.0%    bf16_gemv_fp32_mmvf_multi
+9    78        0.0        0.0%    launch_down<20>
+10   54        0.0        0.0%    copy_i32_from_mapped
+11   48        0.0        0.0%    native_qsa_indexer_append
+12   48        0.0        0.0%    moe_hit_add
+13   48        0.0        0.0%    copy_rows_from_mapped
+14   48        0.0        0.0%    rebase_ptrs
+15   48        0.0        0.0%    kv_append_q8_step
+16   48        0.0        0.0%    native_router_top10_multi
+17   48        0.0        0.0%    native_moe_combine_multi
+18   48        0.0        0.0%    f32_to_bf16_bulk
+19   48        0.0        0.0%    doorbell_publish
+20   48        0.0        0.0%    quantize_q8_1_rows
+     3810      217.5       (0.22 ms of 0.22 ms counted)
+
+-- top 20 KERNELS by count --
+#    count     us         share   kernel (sites merged)
+1    1306      217.5      100.0%  <memcpy>
+2    288       0.0        0.0%    launch_multi
+3    193       0.0        0.0%    native_quantize_q8_1
+4    192       0.0        0.0%    native_expert_grouped
+5    144       0.0        0.0%    shared_expert_multi
+6    144       0.0        0.0%    wait_flag_ge
+7    129       0.0        0.0%    launch_multi_n<Q6KTraits, 4>
+8    120       0.0        0.0%    bf16_gemv_fp32_mmvf_multi
+9    78        0.0        0.0%    launch_down<20>
+10   54        0.0        0.0%    copy_i32_from_mapped
+11   48        0.0        0.0%    native_qsa_indexer_append
+12   48        0.0        0.0%    moe_hit_add
+13   48        0.0        0.0%    copy_rows_from_mapped
+14   48        0.0        0.0%    rebase_ptrs
+15   48        0.0        0.0%    kv_append_q8_step
+16   48        0.0        0.0%    native_router_top10_multi
+17   48        0.0        0.0%    native_moe_combine_multi
+18   48        0.0        0.0%    f32_to_bf16_bulk
+19   48        0.0        0.0%    doorbell_publish
+20   48        0.0        0.0%    quantize_q8_1_rows
+     3810      217.5       (0.22 ms of 0.22 ms counted)
+
+-- top 20 SITES by device microseconds --
+#    count     us         share   launch site
+1    1306      217.5      100.0%  <memcpy>
+2    193       0.0        0.0%    strata::kernels::native_quantize_q8_1(float const*, void*, int, int, void*)#1
+3    144       0.0        0.0%    strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+4    129       0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+5    120       0.0        0.0%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+6    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+7    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+8    96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#1
+9    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#1
+10   96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#3
+11   78        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+12   54        0.0        0.0%    strata::kernels::copy_i32_from_mapped(int*, int const*, long, void*)#1
+13   48        0.0        0.0%    strata::kernels::native_qsa_indexer_append(float const*, int const*, int, float const*, float, strata::kernels::QsaIndexerBuffers const&, strata::kernels::QsaShapes const&, long, strata::kernels::RopeScaling const&, void*)#2
+14   48        0.0        0.0%    strata::kernels::moe_hit_add(float*, float const*, int const*, int const*, long, long, void*)#1
+15   48        0.0        0.0%    strata::kernels::copy_rows_from_mapped(float*, float const*, long, long, int const*, int const*, void*)#1
+16   48        0.0        0.0%    strata::kernels::rebase_ptrs(unsigned long long*, int const*, unsigned char*, long, void*)#1
+17   48        0.0        0.0%    strata::kernels::kv_append_q8_step(signed char*, signed char*, unsigned short*, unsigned short*, int const*, int const*, float const*, float const*, strata::kernels::QsaShapes const&, void*, strata::kernels::KvHostPools const*)#1
+18   48        0.0        0.0%    strata::kernels::native_router_top10_multi(float const*, int*, float*, int, void*)#1
+19   48        0.0        0.0%    strata::kernels::native_moe_combine_multi(float const*, float const*, float const*, float*, long, long, int, void*)#1
+20   48        0.0        0.0%    strata::kernels::f32_to_bf16_bulk(float const*, unsigned short*, long, void*)#1
+     3810      217.5       (0.22 ms of 0.22 ms counted)
+
+-- top 20 SITES by count --
+#    count     us         share   launch site
+1    1306      217.5      100.0%  <memcpy>
+2    193       0.0        0.0%    strata::kernels::native_quantize_q8_1(float const*, void*, int, int, void*)#1
+3    144       0.0        0.0%    strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+4    129       0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+5    120       0.0        0.0%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+6    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+7    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+8    96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#1
+9    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#1
+10   96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#3
+11   78        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+12   54        0.0        0.0%    strata::kernels::copy_i32_from_mapped(int*, int const*, long, void*)#1
+13   48        0.0        0.0%    strata::kernels::native_qsa_indexer_append(float const*, int const*, int, float const*, float, strata::kernels::QsaIndexerBuffers const&, strata::kernels::QsaShapes const&, long, strata::kernels::RopeScaling const&, void*)#2
+14   48        0.0        0.0%    strata::kernels::moe_hit_add(float*, float const*, int const*, int const*, long, long, void*)#1
+15   48        0.0        0.0%    strata::kernels::copy_rows_from_mapped(float*, float const*, long, long, int const*, int const*, void*)#1
+16   48        0.0        0.0%    strata::kernels::rebase_ptrs(unsigned long long*, int const*, unsigned char*, long, void*)#1
+17   48        0.0        0.0%    strata::kernels::kv_append_q8_step(signed char*, signed char*, unsigned short*, unsigned short*, int const*, int const*, float const*, float const*, strata::kernels::QsaShapes const&, void*, strata::kernels::KvHostPools const*)#1
+18   48        0.0        0.0%    strata::kernels::native_router_top10_multi(float const*, int*, float*, int, void*)#1
+19   48        0.0        0.0%    strata::kernels::native_moe_combine_multi(float const*, float const*, float const*, float*, long, long, int, void*)#1
+20   48        0.0        0.0%    strata::kernels::f32_to_bf16_bulk(float const*, unsigned short*, long, void*)#1
+     3810      217.5       (0.22 ms of 0.22 ms counted)
+
+wrote /home/michael/strata-xpu/d1/runs/d1-hist-4096-graph/sites.csv (60 sites)
+
+################################################################################
+### d1-hist-32768-graph   (ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768)
+### engine line: strata decode timing: 87 windows, avg T 3.46, 2.94 tokens/window, 125.49 ms/window = verify 110.16 (GPU-reach wait 92.54 + per-layer host 1.54 [plan 0.67 actq 0.23 jobs 0.22 CPU 0.00] + stage 1.53 + tail 12.08) + commit/emit 1.95 + draft 13.38; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.60, PCIe 0.00
+### submit line: strata submit: stage window T=4 pos0=32510 layers 23..47 (25): submitted 95 (kernel 0 memset 0 memcpy 78 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4171.13 ms
+### ms/window from the arm: d1-hist-32768-graph           4 <unset=default> graph(default)     32768   87  3.46     2.94  125.49     23.45   351.26   172/214 0.804 d87373e84417dab60732a95eb47666a6
+
+windows: win1(count 2961, subs 2961, wall 38.39/46.54), win2(count 3810, subs 3810, wall 53.65/66.77)
+
+== window 2 ==
+   win=2 stage T=4 pos0=32256 layers 0..22 n=23 wall=53.65ms
+   win=2 stage T=4 pos0=32256 layers 23..47 n=25 wall=66.77ms
+-- top 20 KERNELS by device microseconds --
+#    count     us         share   kernel (sites merged)
+1    1306      221.4      100.0%  <memcpy>
+2    288       0.0        0.0%    launch_multi
+3    193       0.0        0.0%    native_quantize_q8_1
+4    192       0.0        0.0%    native_expert_grouped
+5    144       0.0        0.0%    shared_expert_multi
+6    144       0.0        0.0%    wait_flag_ge
+7    129       0.0        0.0%    launch_multi_n<Q6KTraits, 4>
+8    120       0.0        0.0%    bf16_gemv_fp32_mmvf_multi
+9    78        0.0        0.0%    launch_down<20>
+10   54        0.0        0.0%    copy_i32_from_mapped
+11   48        0.0        0.0%    native_qsa_indexer_append
+12   48        0.0        0.0%    moe_hit_add
+13   48        0.0        0.0%    copy_rows_from_mapped
+14   48        0.0        0.0%    rebase_ptrs
+15   48        0.0        0.0%    kv_append_q8_step
+16   48        0.0        0.0%    native_router_top10_multi
+17   48        0.0        0.0%    native_moe_combine_multi
+18   48        0.0        0.0%    f32_to_bf16_bulk
+19   48        0.0        0.0%    doorbell_publish
+20   48        0.0        0.0%    quantize_q8_1_rows
+     3810      221.4       (0.22 ms of 0.22 ms counted)
+
+-- top 20 KERNELS by count --
+#    count     us         share   kernel (sites merged)
+1    1306      221.4      100.0%  <memcpy>
+2    288       0.0        0.0%    launch_multi
+3    193       0.0        0.0%    native_quantize_q8_1
+4    192       0.0        0.0%    native_expert_grouped
+5    144       0.0        0.0%    shared_expert_multi
+6    144       0.0        0.0%    wait_flag_ge
+7    129       0.0        0.0%    launch_multi_n<Q6KTraits, 4>
+8    120       0.0        0.0%    bf16_gemv_fp32_mmvf_multi
+9    78        0.0        0.0%    launch_down<20>
+10   54        0.0        0.0%    copy_i32_from_mapped
+11   48        0.0        0.0%    native_qsa_indexer_append
+12   48        0.0        0.0%    moe_hit_add
+13   48        0.0        0.0%    copy_rows_from_mapped
+14   48        0.0        0.0%    rebase_ptrs
+15   48        0.0        0.0%    kv_append_q8_step
+16   48        0.0        0.0%    native_router_top10_multi
+17   48        0.0        0.0%    native_moe_combine_multi
+18   48        0.0        0.0%    f32_to_bf16_bulk
+19   48        0.0        0.0%    doorbell_publish
+20   48        0.0        0.0%    quantize_q8_1_rows
+     3810      221.4       (0.22 ms of 0.22 ms counted)
+
+-- top 20 SITES by device microseconds --
+#    count     us         share   launch site
+1    1306      221.4      100.0%  <memcpy>
+2    193       0.0        0.0%    strata::kernels::native_quantize_q8_1(float const*, void*, int, int, void*)#1
+3    144       0.0        0.0%    strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+4    129       0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+5    120       0.0        0.0%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+6    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+7    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#1
+8    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+9    96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#1
+10   96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#3
+11   78        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+12   54        0.0        0.0%    strata::kernels::copy_i32_from_mapped(int*, int const*, long, void*)#1
+13   48        0.0        0.0%    strata::kernels::native_qsa_indexer_append(float const*, int const*, int, float const*, float, strata::kernels::QsaIndexerBuffers const&, strata::kernels::QsaShapes const&, long, strata::kernels::RopeScaling const&, void*)#2
+14   48        0.0        0.0%    strata::kernels::moe_hit_add(float*, float const*, int const*, int const*, long, long, void*)#1
+15   48        0.0        0.0%    strata::kernels::copy_rows_from_mapped(float*, float const*, long, long, int const*, int const*, void*)#1
+16   48        0.0        0.0%    strata::kernels::rebase_ptrs(unsigned long long*, int const*, unsigned char*, long, void*)#1
+17   48        0.0        0.0%    strata::kernels::kv_append_q8_step(signed char*, signed char*, unsigned short*, unsigned short*, int const*, int const*, float const*, float const*, strata::kernels::QsaShapes const&, void*, strata::kernels::KvHostPools const*)#1
+18   48        0.0        0.0%    strata::kernels::native_router_top10_multi(float const*, int*, float*, int, void*)#1
+19   48        0.0        0.0%    strata::kernels::native_moe_combine_multi(float const*, float const*, float const*, float*, long, long, int, void*)#1
+20   48        0.0        0.0%    strata::kernels::f32_to_bf16_bulk(float const*, unsigned short*, long, void*)#1
+     3810      221.4       (0.22 ms of 0.22 ms counted)
+
+-- top 20 SITES by count --
+#    count     us         share   launch site
+1    1306      221.4      100.0%  <memcpy>
+2    193       0.0        0.0%    strata::kernels::native_quantize_q8_1(float const*, void*, int, int, void*)#1
+3    144       0.0        0.0%    strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+4    129       0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+5    120       0.0        0.0%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+6    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+7    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#1
+8    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+9    96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#1
+10   96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#3
+11   78        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+12   54        0.0        0.0%    strata::kernels::copy_i32_from_mapped(int*, int const*, long, void*)#1
+13   48        0.0        0.0%    strata::kernels::native_qsa_indexer_append(float const*, int const*, int, float const*, float, strata::kernels::QsaIndexerBuffers const&, strata::kernels::QsaShapes const&, long, strata::kernels::RopeScaling const&, void*)#2
+14   48        0.0        0.0%    strata::kernels::moe_hit_add(float*, float const*, int const*, int const*, long, long, void*)#1
+15   48        0.0        0.0%    strata::kernels::copy_rows_from_mapped(float*, float const*, long, long, int const*, int const*, void*)#1
+16   48        0.0        0.0%    strata::kernels::rebase_ptrs(unsigned long long*, int const*, unsigned char*, long, void*)#1
+17   48        0.0        0.0%    strata::kernels::kv_append_q8_step(signed char*, signed char*, unsigned short*, unsigned short*, int const*, int const*, float const*, float const*, strata::kernels::QsaShapes const&, void*, strata::kernels::KvHostPools const*)#1
+18   48        0.0        0.0%    strata::kernels::native_router_top10_multi(float const*, int*, float*, int, void*)#1
+19   48        0.0        0.0%    strata::kernels::native_moe_combine_multi(float const*, float const*, float const*, float*, long, long, int, void*)#1
+20   48        0.0        0.0%    strata::kernels::f32_to_bf16_bulk(float const*, unsigned short*, long, void*)#1
+     3810      221.4       (0.22 ms of 0.22 ms counted)
+
+wrote /home/michael/strata-xpu/d1/runs/d1-hist-32768-graph/sites.csv (60 sites)
+
+################################################################################
+### d1-hist-131072-graph   (ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768)
+### engine line: strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 120.85 ms/window = verify 106.50 (GPU-reach wait 91.03 + per-layer host 0.95 [plan 0.29 actq 0.21 jobs 0.20 CPU 0.00] + stage 1.62 + tail 11.13) + commit/emit 1.86 + draft 12.48; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+### submit line: strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 101 (kernel 0 memset 0 memcpy 78 barrier 22 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4712.76 ms
+### ms/window from the arm: d1-hist-131072-graph          4 <unset=default> graph(default)    131072   99  3.07     2.59  120.85     21.40   346.13   159/205 0.776 511a89be345a6583c9bc8c580259d73e
+
+windows: win1(count 2985, subs 2985, wall 34.18/40.27), win2(count 3834, subs 3834, wall 63.17/75.43)
+
+== window 2 ==
+   win=2 stage T=4 pos0=129024 layers 0..22 n=23 wall=63.17ms
+   win=2 stage T=4 pos0=129024 layers 23..47 n=25 wall=75.43ms
+-- top 20 KERNELS by device microseconds --
+#    count     us         share   kernel (sites merged)
+1    1306      221.2      100.0%  <memcpy>
+2    288       0.0        0.0%    launch_multi
+3    193       0.0        0.0%    native_quantize_q8_1
+4    192       0.0        0.0%    native_expert_grouped
+5    144       0.0        0.0%    shared_expert_multi
+6    144       0.0        0.0%    wait_flag_ge
+7    129       0.0        0.0%    launch_multi_n<Q6KTraits, 4>
+8    120       0.0        0.0%    bf16_gemv_fp32_mmvf_multi
+9    78        0.0        0.0%    launch_down<20>
+10   54        0.0        0.0%    copy_i32_from_mapped
+11   48        0.0        0.0%    native_qsa_indexer_append
+12   48        0.0        0.0%    native_moe_combine_multi
+13   48        0.0        0.0%    moe_hit_add
+14   48        0.0        0.0%    copy_rows_from_mapped
+15   48        0.0        0.0%    rebase_ptrs
+16   48        0.0        0.0%    kv_append_q8_step
+17   48        0.0        0.0%    doorbell_publish
+18   48        0.0        0.0%    native_router_top10_multi
+19   48        0.0        0.0%    f32_to_bf16_bulk
+20   48        0.0        0.0%    quantize_q8_1_rows
+     3834      221.2       (0.22 ms of 0.22 ms counted)
+
+-- top 20 KERNELS by count --
+#    count     us         share   kernel (sites merged)
+1    1306      221.2      100.0%  <memcpy>
+2    288       0.0        0.0%    launch_multi
+3    193       0.0        0.0%    native_quantize_q8_1
+4    192       0.0        0.0%    native_expert_grouped
+5    144       0.0        0.0%    shared_expert_multi
+6    144       0.0        0.0%    wait_flag_ge
+7    129       0.0        0.0%    launch_multi_n<Q6KTraits, 4>
+8    120       0.0        0.0%    bf16_gemv_fp32_mmvf_multi
+9    78        0.0        0.0%    launch_down<20>
+10   54        0.0        0.0%    copy_i32_from_mapped
+11   48        0.0        0.0%    native_qsa_indexer_append
+12   48        0.0        0.0%    native_moe_combine_multi
+13   48        0.0        0.0%    moe_hit_add
+14   48        0.0        0.0%    copy_rows_from_mapped
+15   48        0.0        0.0%    rebase_ptrs
+16   48        0.0        0.0%    kv_append_q8_step
+17   48        0.0        0.0%    doorbell_publish
+18   48        0.0        0.0%    native_router_top10_multi
+19   48        0.0        0.0%    f32_to_bf16_bulk
+20   48        0.0        0.0%    quantize_q8_1_rows
+     3834      221.2       (0.22 ms of 0.22 ms counted)
+
+-- top 20 SITES by device microseconds --
+#    count     us         share   launch site
+1    1306      221.2      100.0%  <memcpy>
+2    193       0.0        0.0%    strata::kernels::native_quantize_q8_1(float const*, void*, int, int, void*)#1
+3    144       0.0        0.0%    strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+4    129       0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+5    120       0.0        0.0%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+6    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+7    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#1
+8    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+9    96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#1
+10   96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#3
+11   78        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+12   54        0.0        0.0%    strata::kernels::copy_i32_from_mapped(int*, int const*, long, void*)#1
+13   48        0.0        0.0%    strata::kernels::native_qsa_indexer_append(float const*, int const*, int, float const*, float, strata::kernels::QsaIndexerBuffers const&, strata::kernels::QsaShapes const&, long, strata::kernels::RopeScaling const&, void*)#2
+14   48        0.0        0.0%    strata::kernels::native_moe_combine_multi(float const*, float const*, float const*, float*, long, long, int, void*)#1
+15   48        0.0        0.0%    strata::kernels::moe_hit_add(float*, float const*, int const*, int const*, long, long, void*)#1
+16   48        0.0        0.0%    strata::kernels::copy_rows_from_mapped(float*, float const*, long, long, int const*, int const*, void*)#1
+17   48        0.0        0.0%    strata::kernels::rebase_ptrs(unsigned long long*, int const*, unsigned char*, long, void*)#1
+18   48        0.0        0.0%    strata::kernels::kv_append_q8_step(signed char*, signed char*, unsigned short*, unsigned short*, int const*, int const*, float const*, float const*, strata::kernels::QsaShapes const&, void*, strata::kernels::KvHostPools const*)#1
+19   48        0.0        0.0%    strata::kernels::doorbell_publish(float const*, int const*, float const*, long, long, float*, int*, float*, unsigned int*, void*)#1
+20   48        0.0        0.0%    strata::kernels::native_router_top10_multi(float const*, int*, float*, int, void*)#1
+     3834      221.2       (0.22 ms of 0.22 ms counted)
+
+-- top 20 SITES by count --
+#    count     us         share   launch site
+1    1306      221.2      100.0%  <memcpy>
+2    193       0.0        0.0%    strata::kernels::native_quantize_q8_1(float const*, void*, int, int, void*)#1
+3    144       0.0        0.0%    strata::kernels::wait_flag_ge(unsigned int const*, unsigned int, void*)#1
+4    129       0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi_n<strata::kernels::(anonymous namespace)::Q6KTraits, 4>(void const*, void const*, float*, int, int, strata::sycl_compat::stream_t*)#3
+5    120       0.0        0.0%    strata::kernels::bf16_gemv_fp32_mmvf_multi(float const*, long, unsigned short const*, float*, long, long, long, int, void*)#15
+6    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#3
+7    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#1
+8    96        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_multi(strata::kernels::(anonymous namespace)::GrMulti const&, int, strata::sycl_compat::stream_t*, unsigned long long*, int)#6
+9    96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#1
+10   96        0.0        0.0%    strata::kernels::native_expert_grouped(strata::kernels::NativeExpertLayout const&, unsigned long long const*, int const*, int const*, int const*, int const*, long, long, void const*, void*, float*, void*, bool)#3
+11   78        0.0        0.0%    strata::kernels::(anonymous namespace)::launch_down<20>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*)#2
+12   54        0.0        0.0%    strata::kernels::copy_i32_from_mapped(int*, int const*, long, void*)#1
+13   48        0.0        0.0%    strata::kernels::native_qsa_indexer_append(float const*, int const*, int, float const*, float, strata::kernels::QsaIndexerBuffers const&, strata::kernels::QsaShapes const&, long, strata::kernels::RopeScaling const&, void*)#2
+14   48        0.0        0.0%    strata::kernels::native_moe_combine_multi(float const*, float const*, float const*, float*, long, long, int, void*)#1
+15   48        0.0        0.0%    strata::kernels::moe_hit_add(float*, float const*, int const*, int const*, long, long, void*)#1
+16   48        0.0        0.0%    strata::kernels::copy_rows_from_mapped(float*, float const*, long, long, int const*, int const*, void*)#1
+17   48        0.0        0.0%    strata::kernels::rebase_ptrs(unsigned long long*, int const*, unsigned char*, long, void*)#1
+18   48        0.0        0.0%    strata::kernels::kv_append_q8_step(signed char*, signed char*, unsigned short*, unsigned short*, int const*, int const*, float const*, float const*, strata::kernels::QsaShapes const&, void*, strata::kernels::KvHostPools const*)#1
+19   48        0.0        0.0%    strata::kernels::doorbell_publish(float const*, int const*, float const*, long, long, float*, int*, float*, unsigned int*, void*)#1
+20   48        0.0        0.0%    strata::kernels::native_router_top10_multi(float const*, int*, float*, int, void*)#1
+     3834      221.2       (0.22 ms of 0.22 ms counted)
+
+wrote /home/michael/strata-xpu/d1/runs/d1-hist-131072-graph/sites.csv (62 sites)
+
