@@ -80,6 +80,33 @@ def main() -> int:
     for t in CURVE + RESIDENT:
         if t in reps:
             print(row(reps[t]))
+    print("\n## 2b. What streaming changes at the same length (on - off)\n")
+    for on, off in (("m6c-64k", "m6c-64k-res"), ("m6c-262k", "m6c-262k-res")):
+        if on not in reps or off not in reps:
+            continue
+        a, b = reps[on], reps[off]
+        cells = int(g(a, "streaming", "context_cells", default=0) or 0)
+        print("### %s vs %s (prompt %s tokens)\n" % (on, off, g(a, "done", "prompt_tokens")))
+        print("| quantity | streaming on | streaming off | on - off |")
+        print("|---|---|---|---|")
+        for label, ka, kb in (
+            ("expert slots", ("info", "expert_slots"), ("info", "expert_slots")),
+            ("expert cache MiB", ("info", "expert_cache_mib"), ("info", "expert_cache_mib")),
+            ("VRAM free MiB", ("info", "vram_free_mib"), ("info", "vram_free_mib")),
+            ("peak RSS GiB", ("peak_rss_gib",), ("peak_rss_gib",)),
+            ("RSS at READY GiB", ("rss_at_ready_gib",), ("rss_at_ready_gib",)),
+            ("prefill tok/s", ("done", "prefill_tok_s"), ("done", "prefill_tok_s")),
+            ("decode tok/s", ("done", "decode_tok_s"), ("done", "decode_tok_s")),
+        ):
+            va, vb = g(a, *ka), g(b, *kb)
+            d = round(va - vb, 3) if isinstance(va, (int, float)) and isinstance(vb, (int, float)) else "-"
+            print("| %s | %s | %s | %s |" % (label, va, vb, d))
+        ra, rb = a.get("rss_at_ready_gib"), b.get("rss_at_ready_gib")
+        if isinstance(ra, (int, float)) and isinstance(rb, (int, float)) and cells:
+            d = (ra - rb) * 2 ** 30
+            print("\nRSS at READY: %.2f - %.2f = %.3f GiB, over %d context cells = **%.0f B/context token** "
+                  "(%.2f KiB/token); the docs' figure is 13.7 KB/token.\n" % (ra, rb, d / 2 ** 30, cells, d / cells,
+                                                                             d / cells / 1024.0))
     print("\n## 3. Needle rows\n")
     print(HDR); print(SEP)
     for t in NEEDLE:

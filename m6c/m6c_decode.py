@@ -57,8 +57,8 @@ def main() -> int:
         blocks, ok = [], 0
         for i, r in enumerate(reqs):
             text = tok.decode(r["ids"])
-            loose = re.sub(r"[\s]+", "", text).upper()
-            tgt = ANSWER.replace("-", "").upper()
+            loose = re.sub(r"[^A-Z0-9]", "", text.upper())
+            tgt = re.sub(r"[^A-Z0-9]", "", ANSWER.upper())
             hit = ANSWER in text
             loose_hit = tgt in loose
             ok += 1 if loose_hit else 0

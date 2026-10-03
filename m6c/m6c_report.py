@@ -32,10 +32,15 @@ def read_timeline(path: pathlib.Path) -> dict:
     if not path.exists():
         return {}
     for line in path.read_text(errors="replace").splitlines():
+        if line.startswith("#"):
+            continue
         p = line.split("\t", 3)
         if len(p) < 4:
             continue
-        out.append((float(p[0]), p[2], p[3]))
+        try:
+            out.append((float(p[0]), p[2], p[3]))
+        except ValueError:
+            continue
     marks = {}
     for t, stream, text in out:
         if text.startswith("READY") and "ready" not in marks:
