@@ -1,0 +1,28 @@
+P8 (t_bf6af1fb): the Intel backend for the Monitor's GPU telemetry
+
+The dashboard's gpu_* fields were empty on the two B70s because serve/telemetry.py had a backend for NVIDIA
+(NVML) and one for AMD (amdgpu sysfs) and none for Intel.  This adds one, in the same shape (_Intel with
+ok()/name()/read(), plus sources() and unsupported()), selected for a SYCL/XPU server and used by default when
+there is no NVIDIA driver to ask.
+
+What it reads, and from where (both cards, measured):
+- load: the driver's own per-process cycle counters, drm-cycles-ccs / drm-total-cycles-ccs over the card's
+  render-node clients, across the sampler's interval - intel_gpu_top's derivation, no extra tooling.  Checked
+  against a known workload: a 3.03 s copy burst in a 147.7 s window reads 2.06% of the copy engines' cycles.
+- VRAM: drm-total-vram0 summed over the card's clients (one process can hold several render-node fds of the same
+  card, so a client is counted once), with the PCI BAR 2 aperture as the total - the driver exposes no VRAM size.
+- temperature: the hwmon sensor chosen BY LABEL ("pkg"; this card has no temp1 at all and its labels run
+  temp2=pkg, temp3=vram, temp4=mctrl, temp5=pcie, temp6..temp21=vram_ch_0..15).  vram/pcie and the fan are reported
+  next to it.
+- power: energy1_input (a microjoule counter, label "card") across the sampler's interval, because this driver has
+  no power1_average and no power1_input; power1_cap is the limit.  The first sample has no interval behind it.
+
+Anything this platform cannot read comes back None, never 0, with the reason in the payload
+(hardware_static.gpu_unsupported) and shown by the Monitor where the number would be: the PCIe link figures (the
+driver's link registers read Gen1 x1 for both cards, which 26.6 GB/s host->device measured refutes) and the PCIe
+throughput (no byte counter in sysfs).  extra fields: gpu_copy_busy, gpu_mem_gtt, gpu_fan_rpm, gpu_freq_mhz,
+gpu_gt_idle, gpu_power_pkg.
+
+serve/test_server.py: IntelTelemetry builds a fake xe sysfs tree and a fake /proc and checks the label choice, the
+energy-derived power, the deduplicated VRAM sum, the cycle-counter load and the None-not-0 rule.  92 tests pass.
+docs/DETAILS.md: the backend table and the per-field notes.

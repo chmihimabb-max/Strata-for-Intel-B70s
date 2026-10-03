@@ -1857,5 +1857,132 @@ class AmdTelemetry(unittest.TestCase):
                 self.assertEqual(svc.free_vram_mib(), 26 << 10)
 
 
+class IntelTelemetry(unittest.TestCase):
+    """P8: the Intel backend's readings from a fake xe sysfs tree and a fake /proc - the sensor picked by its label,
+    power derived from the energy counter across the interval, VRAM and GPU load from the driver's fdinfo, and the
+    metrics this platform has no source for None rather than 0 (a zeroed load/power/PCIe reads as "idle")."""
+
+    APERTURE = "0x000000a000000000 0x000000a7ffffffff 0x000000000014220c"
+
+    def card(self, pci, bdf, package, vram):
+        dev = pci / bdf
+        (dev / "hwmon/hwmon8").mkdir(parents=True)
+        (dev / "vendor").write_text("0x8086\n")
+        (dev / "class").write_text("0x030000\n")
+        (dev / "device").write_text("0xe223\n")
+        (dev / "resource").write_text("\n".join([self.APERTURE if i == 2 else
+                                                 "0x0000000000000000 0x0000000000000000 0x0000000000000000"
+                                                 for i in range(6)]) + "\n")
+        (dev / "tile0/gt0/freq0").mkdir(parents=True)
+        (dev / "tile0/gt0/freq0/act_freq").write_text("2800\n")
+        (dev / "tile0/gt0/freq0/max_freq").write_text("2800\n")
+        (dev / "tile0/gt0/gtidle").mkdir()
+        (dev / "tile0/gt0/gtidle/idle_status").write_text("gt-c0\n")
+        hw = dev / "hwmon/hwmon8"
+        for sensor, label, value in (("temp2", "pkg", package), ("temp3", "vram", vram),
+                                     ("temp5", "pcie", 61000), ("temp6", "vram_ch_0", 69000)):
+            (hw / f"{sensor}_label").write_text(label + "\n")
+            (hw / f"{sensor}_input").write_text(f"{value}\n")
+        (hw / "fan1_input").write_text("1354\n")
+        (hw / "power1_cap").write_text("230000000\n")
+        (hw / "power1_crit").write_text("460000000\n")
+        (hw / "energy1_input").write_text("1000000\n")
+        (hw / "energy2_input").write_text("500000\n")
+
+    def client(self, proc, pid, fd, render, bdf, cid, vram_kib, gtt_kib, ccs, total):
+        (proc / pid / "fd").mkdir(parents=True, exist_ok=True)
+        (proc / pid / "fdinfo").mkdir(exist_ok=True)
+        if os.path.lexists(proc / pid / "fd" / fd):
+            os.unlink(proc / pid / "fd" / fd)                  # a re-write of the same sample (the counters moved)
+        os.symlink(f"/dev/dri/{render}", proc / pid / "fd" / fd)
+        (proc / pid / "fdinfo" / fd).write_text(
+            f"pos:\t0\nmnt_id:\t41\nino:\t1197\ndrm-driver:\txe\ndrm-client-id:\t{cid}\ndrm-pdev:\t{bdf}\n"
+            f"drm-total-system:\t3000 KiB\ndrm-shared-system:\t0\ndrm-total-gtt:\t{gtt_kib} KiB\n"
+            f"drm-shared-gtt:\t0\ndrm-total-vram0:\t{vram_kib} KiB\ndrm-shared-vram0:\t0\n"
+            f"drm-cycles-rcs:\t0\ndrm-total-cycles-rcs:\t{total}\ndrm-cycles-bcs:\t0\n"
+            f"drm-total-cycles-bcs:\t{total}\ndrm-cycles-ccs:\t{ccs}\ndrm-total-cycles-ccs:\t{total}\n")
+
+    def tree(self, d, e):
+        pci = Path(d) / "bus/pci/devices"
+        self.card(pci, "0000:03:00.0", 66000, 68000)          # the Intel cards, in PCI order
+        self.card(pci, "0000:08:00.0", 70000, 70000)
+        (pci / "0000:00:02.0").mkdir(parents=True)            # an Intel device that is not a display
+        (pci / "0000:00:02.0/vendor").write_text("0x8086\n")
+        (pci / "0000:00:02.0/class").write_text("0x040300\n")
+        (pci / "0000:01:00.0").mkdir(parents=True)            # another vendor's card: not ours to read
+        (pci / "0000:01:00.0/vendor").write_text("0x10de\n")
+        (pci / "0000:01:00.0/class").write_text("0x030000\n")
+        proc = Path(e)
+        self.client(proc, "4321", "7", "renderD128", "0000:03:00.0", "5", 1000, 2000, 100, 1000)
+        self.client(proc, "4321", "8", "renderD128", "0000:03:00.0", "5", 1000, 2000, 100, 1000)   # the same client
+        self.client(proc, "9999", "9", "renderD129", "0000:08:00.0", "6", 500, 200, 50, 1000)
+
+    def test_readings(self):
+        from serve import telemetry
+        real = telemetry.render_clients                        # the fake /proc, read the way the sampler reads it
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as e:
+            self.tree(d, e)
+            with mock.patch.object(telemetry, "SYSFS", d), \
+                 mock.patch.object(telemetry, "render_clients", lambda proc=None: real(e)):
+                self.assertEqual([os.path.basename(p) for p in telemetry.intel_device_dirs()],
+                                 ["0000:03:00.0", "0000:08:00.0"])
+                self.assertTrue(telemetry.intel_device_dir(1).endswith("0000:08:00.0"))
+                self.assertIsNone(telemetry.intel_device_dir(2))
+                g = telemetry.gpu_reader(0, intel=True)
+                self.assertTrue(g.ok())
+                self.assertTrue(g.name().startswith("Intel") or "Battlemage" in g.name())
+                self.assertEqual((g.labels["temp2"], g.labels["temp5"]), ("pkg", "pcie"))
+                with mock.patch.object(telemetry.time, "time", return_value=100.0):
+                    r = g.read()                               # the first read has no interval behind it
+                self.assertIsNone(r["power"])
+                self.assertEqual(r["temp"], 66.0)              # the sensor whose label is "pkg", not "temp1"
+                self.assertEqual((r["temp_vram"], r["temp_pcie"], r["temp_vram_max"]), (68.0, 61.0, 69.0))
+                self.assertEqual((r["fan_rpm"], r["power_limit"], r["power_crit"]), (1354, 230.0, 460.0))
+                self.assertEqual(r["mem_used"], 1000 << 10)                # this card's clients; the repeat counted once
+                self.assertEqual(r["mem_gtt"], 2000 << 10)
+                self.assertEqual(r["mem_total"], 1 << 35)                   # 32 GiB, PCI BAR 2
+                self.assertEqual((r["freq_mhz"], r["freq_max_mhz"], r["gt_idle"]), (2800, 2800, "gt-c0"))
+                self.assertIsNone(r["util"])                                # no interval yet, and not a zero
+                for field in ("pcie_gen", "pcie_gen_max", "pcie_width", "pcie_rx_mb", "pcie_tx_mb"):
+                    self.assertIsNone(r[field])                             # never 0: there is no source
+                self.assertEqual(set(telemetry.gpu_reader(0, intel=True).unsupported()),
+                                 {"pcie_gen", "pcie_gen_max", "pcie_width", "pcie_rx_mb", "pcie_tx_mb"})
+                (Path(d) / "bus/pci/devices/0000:03:00.0/hwmon/hwmon8/energy1_input").write_text("3000000\n")
+                self.client(Path(e), "4321", "7", "renderD128", "0000:03:00.0", "5", 1000, 2000, 300, 2000)
+                self.client(Path(e), "4321", "8", "renderD128", "0000:03:00.0", "5", 1000, 2000, 300, 2000)
+                self.client(Path(e), "9999", "9", "renderD129", "0000:08:00.0", "6", 500, 200, 150, 2000)
+                with mock.patch.object(telemetry.time, "time", return_value=101.0):
+                    r2 = g.read()                                          # 1 s later: the deltas mean something
+                self.assertEqual(r2["power"], 2.0)                         # (3e6-1e6)µJ over 1 s
+                self.assertEqual((r2["util"], r2["copy_busy"]), (20.0, 0.0))
+                with mock.patch.object(telemetry.time, "time", return_value=102.0):
+                    self.assertIsNone(g.read()["util"])       # the counters did not move: unknown, and not a 0
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as e:   # no Intel card, no crash
+            (Path(d) / "bus/pci/devices").mkdir(parents=True)
+            with mock.patch.object(telemetry, "SYSFS", d):
+                self.assertFalse(telemetry.gpu_reader(0, intel=True).ok())
+                self.assertEqual(telemetry.intel_device_dirs(), [])
+
+    def test_telemetry_payload(self):
+        from serve import telemetry
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as e:
+            self.tree(d, e)
+            fake = telemetry.render_clients(e)                 # the fake /proc, read the way the sampler reads it
+            with mock.patch.object(telemetry, "SYSFS", d), \
+                 mock.patch.object(telemetry, "render_clients", lambda proc=None: fake), \
+                 mock.patch.object(telemetry.time, "time", return_value=100.0):
+                t = telemetry.Telemetry(gpu_index=0, gpu_indices=[0, 1], intel=True)
+                names = t.static["gpu_name"].split(" + ")
+                self.assertEqual(len(names), 2)                                  # one name per card
+                self.assertEqual(names[0], names[1])
+                self.assertIn("pcie_rx_mb", t.static["gpu_unsupported"])       # the payload says why, not a 0
+                self.assertEqual(t.static["gpu_sources"]["temp"], "hwmon temp2_input, the sensor whose label is 'pkg'")
+                s = t.sample()
+                self.assertEqual((s["gpu_mem_used"], s["gpu_mem_total"]), ((1000 + 500) << 10, 1 << 36))
+                self.assertEqual(s["gpu_temp"], 70.0)                          # the hotter of the two packages
+                self.assertEqual(len(s["gpus"]), 2)
+                self.assertIsNone(s["gpu_pcie_gen"])                           # there is no PCIe source here
+
+
 if __name__ == "__main__":
     unittest.main()

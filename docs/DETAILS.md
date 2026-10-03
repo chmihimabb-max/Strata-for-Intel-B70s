@@ -771,6 +771,49 @@ the document, +0.4% on the chat. Details: `bench/results/2026-09-27-esp/`.
 
 ---
 
+## The Monitor's hardware readings (which file each number comes from)
+
+The Monitor tab and `GET /metrics` read the card through whichever backend fits the machine (`serve/telemetry.py`).
+A metric a backend cannot read is reported as unavailable - `null` in the payload, with the reason in
+`hardware_static.gpu_unsupported`, and the Monitor shows that reason where the number would be - never as `0`: a
+zeroed load, power or PCIe figure reads as "idle" and that is a lie the dashboard should not tell.
+
+| Backend | Chosen when | Load | VRAM | Temperature | Power | PCIe |
+| --- | --- | --- | --- | --- | --- | --- |
+| NVML | an NVIDIA driver is present | `nvmlDeviceGetUtilizationRates` | memory info | NVML temperature | `nvmlDeviceGetPowerUsage` | link generation/width and rx/tx |
+| amdgpu sysfs | `"backend": "hip"` | `gpu_busy_percent` | `mem_info_vram_*` | `temp1_input` (edge) | `power1_average` / `power1_input` | not read |
+| xe/i915 sysfs + fdinfo | `"backend": "sycl"` (Intel Arc/XPU) | `drm-cycles-ccs` / `drm-total-cycles-ccs` over the card's clients, across the interval | `drm-total-vram0` over the card's clients / PCI BAR 2 | the hwmon sensor whose label is `pkg` | `energy1_input` (µJ) delta across the interval | not read |
+
+The Intel backend needs no extra tooling (no `xpu-smi`, `intel_gpu_top` or `perf` - none of them is on this host, and
+`perf_event_paranoid=4` blocks the last one). What it does per field, measured on two Arc B70s (xe, 32 GB each):
+
+- **Temperature by label, not by index.** That driver has no `temp1` at all; its sensors carry labels, and they are the
+  authority: `temp2=pkg`, `temp3=vram`, `temp4=mctrl`, `temp5=pcie`, `temp6..temp21=vram_ch_0..15` (60-72 °C measured).
+  The backend picks the one labelled `pkg` as the GPU temperature and reports the others as `gpu_temp_vram` and
+  `gpu_temp_pcie`; `gpu_fan_rpm` comes from `fan1_input` (854-1885 rpm measured).
+- **Power derived from the energy counter.** The driver has no `power1_average` and no `power1_input`: the only power
+  file is `energy1_input`, a microjoule counter, so power is that counter's delta across the sampler's interval
+  (measured 47-49 W per card at idle, 120-157 W while generating; `power1_cap` = 230 W, `power1_crit` = 460 W). The
+  first sample has no interval behind it and is empty - not 0.
+- **VRAM from the driver's own per-process accounting.** No VRAM-size file exists, so the total is the PCI BAR 2
+  aperture (32 GiB per card, where the driver reports 32,656 MiB usable) and `used` is what every process on that card
+  holds in local memory (`drm-total-vram0`, counted once per client - one process can hold several render-node fds of
+  the same card). Host memory mapped for the card (`drm-total-gtt`) and the smoke of system memory
+  (`drm-total-system`) are reported next to it.
+- **Load from the driver's cycle counters.** `drm-cycles-ccs` (the compute engines, the analogue of NVML's
+  utilization) over `drm-total-cycles-ccs`, summed over the card's clients and divided across the interval: the
+  derivation `intel_gpu_top` makes, and it needs no extra tooling. Checked against a known workload - a 3.03 s copy
+  burst inside a 147.7 s window reads 2.06% of the copy engines' cycles, which is `gpu_copy_busy` (`drm-cycles-bcs`).
+- **PCIe is reported as unavailable, on purpose.** The driver's `current_link_speed`, `max_link_speed` and
+  `_width` registers read `2.5 GT/s` x1 for both cards, and 26.6 GB/s host->device was measured on this machine (the
+  engine's own startup probe reads 26.5 GB/s; a standalone SYCL copy test reads 26.6 GB/s with the destination buffer
+  shown to be in VRAM and the source in pinned host memory). A Gen1 x1 link carries 0.5 GB/s at most, so the register
+  reading is wrong and no link figure is shown; the upstream end of the same switch tree reads the expected
+  `32 GT/s` x8, which is what 26.6 GB/s of payload needs. There is also no PCIe byte counter in sysfs on this driver,
+  so the throughput field has no source either.
+
+---
+
 ## Troubleshooting
 
 | Symptom | What to do |
