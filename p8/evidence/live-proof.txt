@@ -1,0 +1,44 @@
+wrote /home/michael/strata-xpu/strata/p8/evidence/live-proof.json
+=== the request
+{
+ "wall_s": 16.3
+}
+    message keys ['content', 'reasoning_content', 'role']; content 0 chars; usage {"prompt_tokens": 83, "completion_tokens": 300, "total_tokens": 383, "prompt_tokens_details": {"cached_tokens": 78}}
+    first 160 chars: ''
+    (no plain content - the raw message, trimmed: {"role": "assistant", "content": null, "reasoning_content": "We need answer user: \"Explain, in about 200 words, how a PCIe link trains and why a link can renegotiate its width and speed. Be concrete.\" Need produce final about 200 words. Need likely concise. Need explain PCIe link training: LTSSM states: Detect, Polling, Configuration, L0. Electrical idle, ordered sets, TS1/TS2, lane reversal/pol)
+
+=== /metrics while it ran (the Monitor's own fields)
+    t      state  tok_s  util  temp  power  copy     mem_used pcie_gen
+  0.0       idle   None   0.0  65.0  93.26   0.0  62595833856 None
+  1.0 generating   30.6 19.475519775926454  64.0 144.81 19.578383052748535  62593736704 None
+  2.0 generating   26.4 54.03770980858691  66.0 272.97 45.62716621051966  62597931008 None
+  3.0 generating   18.8 56.099759182070514  65.0 274.84 47.61107334293672  62597931008 None
+  4.0 generating   21.5 58.27639264394644  64.0 273.66999999999996 49.52429857627781  62602125312 None
+  5.0 generating   18.6 58.32772675899229  66.0  272.7 48.90650868591952  62602125312 None
+  6.0 generating   15.9 58.06014574517114  66.0 273.19 48.67351210860069  62606319616 None
+  7.0 generating   16.9 60.223495060112775  66.0 275.71 51.46079592922172  62606254080 None
+  8.0 generating   15.8 58.984932237434094  66.0 272.88 49.139525031270125  62610448384 None
+  9.0 generating   21.6 56.4547928513514  66.0  276.3 48.84551925283052  62610448384 None
+ 10.0 generating   21.3 57.809578486764224  66.0 275.13 49.01693208305983  62614642688 None
+ 11.0 generating   16.8 57.7439944370459  66.0 273.14 47.803744414106546  62614642688 None
+ 12.0 generating   18.7 57.174703041262504  67.0 272.98 49.3291072610638  62618836992 None
+ 13.0 generating   18.9 60.51138734910511  67.0 275.68 50.32719446672026  62585282560 None
+ 14.0 generating   18.8 58.70487009011504  67.0 274.89 50.01968049452493  62589476864 None
+ 15.0 generating   16.3 58.202232589301104  67.0 275.26 49.29474428838737  62589476864 None
+ 16.0 generating   15.9 58.743821025585646  68.0 274.26 49.11000624052338  62593671168 None
+
+=== raw sysfs behind it (card0 / card1)
+  t=  0.0 card0: 59000 mC pkg, 62000 mC vram, 63000 mC pcie, fan 1112 rpm, energy1 9260968027282 µJ, cap 230000000 µW, link 2.5 GT/s PCIe/x1, act_freq 0 MHz, gt gt-c6
+  t=  0.0 card1: 65000 mC pkg, 62000 mC vram, 66000 mC pcie, fan 1330 rpm, energy1 8354319338562 µJ, cap 230000000 µW, link 2.5 GT/s PCIe/x1, act_freq 0 MHz, gt gt-c6
+  t=  8.0 card0: 66000 mC pkg, 66000 mC vram, 66000 mC pcie, fan 1296 rpm, energy1 9261935566467 µJ, cap 230000000 µW, link 2.5 GT/s PCIe/x1, act_freq 2800 MHz, gt gt-c0
+  t=  8.0 card1: 66000 mC pkg, 64000 mC vram, 66000 mC pcie, fan 1325 rpm, energy1 8355530981445 µJ, cap 230000000 µW, link 2.5 GT/s PCIe/x1, act_freq 0 MHz, gt gt-c6
+  t= 16.0 card0: 68000 mC pkg, 66000 mC vram, 67000 mC pcie, fan 1305 rpm, energy1 9262907970703 µJ, cap 230000000 µW, link 2.5 GT/s PCIe/x1, act_freq 2800 MHz, gt gt-c0
+  t= 16.0 card1: 67000 mC pkg, 64000 mC vram, 67000 mC pcie, fan 1137 rpm, energy1 8356760501037 µJ, cap 230000000 µW, link 2.5 GT/s PCIe/x1, act_freq 0 MHz, gt gt-c6
+
+=== before / after the request (the same fields, at rest)
+    gpu_util         before=           0.0  after=26.623222077408304
+    gpu_temp         before=          65.0  after=67.0
+    gpu_power        before=         93.26  after=180.18
+    gpu_mem_used     before=   62595833856  after=62593671168
+    gpu_copy_busy    before=           0.0  after=22.497019801483617
+    gpu_mem_gtt      before=   10294339584  after=10294339584

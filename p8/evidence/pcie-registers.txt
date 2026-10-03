@@ -1,0 +1,16 @@
+=== 0000:03:00.0  (vendor 0x86 device 0x23 class 0x030000)
+  sysfs current_link_speed = 2.5 GT/s PCIe
+  sysfs current_link_width = 1
+  sysfs max_link_speed = 2.5 GT/s PCIe
+  sysfs max_link_width = 1
+  config space, first 64 bytes : 868023e20600100000000003100000000c000000b00000000c000000a0000000000000000000000000000000868001170000409d4000000000000000ff000000
+  bytes 0x40..0xff (capabilities live here): set() (all zero - not readable by a user process)
+  Status register (0x06) = 0x0010 (capability list bit 0x10: True)
+=== 0000:08:00.0  (vendor 0x86 device 0x23 class 0x030000)
+  sysfs current_link_speed = 2.5 GT/s PCIe
+  sysfs current_link_width = 1
+  sysfs max_link_speed = 2.5 GT/s PCIe
+  sysfs max_link_width = 1
+  config space, first 64 bytes : 868023e20600100000000003100000000c000000e00000000c000000d0000000000000000000000000000000868001170000009d4000000000000000ff000000
+  bytes 0x40..0xff (capabilities live here): set() (all zero - not readable by a user process)
+  Status register (0x06) = 0x0010 (capability list bit 0x10: True)

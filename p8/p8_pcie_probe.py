@@ -13,6 +13,17 @@ def cfg(bdf, n=256):
         return f.read(n)
 
 
+def dump_config(bdf):
+    """What a non-root process can actually read of the GPU's config space - lspci prints "<access denied>" for the
+    capability list on this host, so this says whether the kernel's own current_link_* files are all there is."""
+    d = cfg(bdf)
+    print(f"  config space, first 64 bytes : {d[:64].hex()}")
+    print(f"  bytes 0x40..0xff (capabilities live here): {set(d[64:])} "
+          f"({'all zero - not readable by a user process' if not any(d[64:]) else 'some bytes readable'})")
+    print(f"  Status register (0x06) = {int.from_bytes(d[6:8], 'little'):#06x} (capability list bit 0x10: "
+          f"{bool(d[6] & 0x10)})")
+
+
 def cap_list(d):
     if not (d[6] & 0x10):
         return []
@@ -54,3 +65,4 @@ def show(bdf):
 
 for bdf in sys.argv[1:] or ["0000:03:00.0", "0000:08:00.0"]:
     show(bdf)
+    dump_config(bdf)

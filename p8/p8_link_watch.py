@@ -39,6 +39,7 @@ def main():
             seen[key] = 1
         if out:
             out.write(line + "\n")
+            out.flush()
         time.sleep(iv)
     print(f"sampled {n} times in {time.time() - t0:.2f}s; distinct states: {len(seen)}")
     if out:

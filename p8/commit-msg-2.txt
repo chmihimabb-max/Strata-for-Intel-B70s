@@ -1,0 +1,16 @@
+P8 (t_bf6af1fb): the live proof, the PCIe resolution, and the status record
+
+The server was stopped in an idle window (live.state polled until it left "generating"; the operator's generation
+had finished) and restarted with the new backend: server pid 1040401, engine pid 1040410, 127.0.0.1:8099, READY.
+/metrics now carries the gpu_* fields on both cards: gpu_util, gpu_mem_used/gpu_mem_total, gpu_temp (and
+temp_vram/temp_pcie), gpu_power/gpu_power_limit, gpu_fan_rpm, gpu_freq_mhz, gpu_mem_gtt, gpu_copy_busy, plus
+hardware_static.gpu_sources and gpu_unsupported.  The PCIe fields stay null with a reason: the driver's link
+registers say Gen1 x1 for both cards, and 26.63 GB/s host->device was measured with the destination buffer in VRAM
+(fdinfo), which that link (0.5 GB/s raw) cannot carry; the upstream links of the same switch tree read 32 GT/s x8,
+which is what 26.6 GB/s of payload needs.  Card1 measures exactly half of card0 in four independent measurements.
+
+Evidence in p8/evidence/: metrics-before-restart.json (the old server: no gpu_* fields at all),
+metrics-after-restart-idle.json, live-proof.json/.txt (one real 300-token request with /metrics sampled every second:
+util 0->60%, power 93->276 W, copy engine 0->51%, temp 64->68 C, pcie_gen null throughout), pcie-registers.txt,
+pcie-h2d-account.txt.  p8/STATUS-P8.md is the report (field-by-field table, raw payloads, the PCIe verdict, the
+unavailable list, the dashboard check).  serve/test_server.py: 92 tests OK, serve/test_monitor.py: 7 OK.

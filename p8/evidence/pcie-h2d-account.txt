@@ -1,0 +1,27 @@
+link before: card0=2.5 GT/s PCIe/x1 card1=2.5 GT/s PCIe/x1
+--- bench output ---
+devices: 2
+  [0] Intel(R) Graphics [0xe223] | 1.15.37833+4 | max_work_group=1024, global_mem=32656 MiB
+  [1] Intel(R) Graphics [0xe223] | 1.15.37833+4 | max_work_group=1024, global_mem=32656 MiB
+
+=== device 0: Intel(R) Graphics [0xe223]
+  memcpy  H2D 256 MiB x20 in 0.202 s -> 26.52 GB/s  (host ptr type: host)
+  kernel  reads host 16 MiB x20 in 4.430 s -> 0.08 GB/s (1 thread, latency-bound; the point is that a device read of host memory over this link is not ~0.25 GB/s)
+
+=== device 1: Intel(R) Graphics [0xe223]
+  memcpy  H2D 256 MiB x20 in 0.401 s -> 13.38 GB/s  (host ptr type: host)
+  kernel  reads host 16 MiB x20 in 4.615 s -> 0.07 GB/s (1 thread, latency-bound; the point is that a device read of host memory over this link is not ~0.25 GB/s)
+--- link states seen while the transfer ran ---
+   card0=2.5 GT/s PCIe/x1 card1=2.5 GT/s PCIe/x1
+--- fdinfo of the transferring process (per card) ---
+   0000:03:00.0:
+      fd3:drm-resident-system = 64 KiB
+      fd3:drm-resident-vram0 = 976 KiB
+      fd3:drm-total-system = 184 MiB
+      fd3:drm-total-vram0 = 976 KiB
+   0000:08:00.0:
+      fd4:drm-resident-system = 64 KiB
+      fd4:drm-resident-vram0 = 852 KiB
+      fd4:drm-total-system = 184 MiB
+      fd4:drm-total-vram0 = 852 KiB
+link after: card0=2.5 GT/s PCIe/x1 card1=2.5 GT/s PCIe/x1
