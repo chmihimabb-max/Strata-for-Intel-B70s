@@ -70,6 +70,6 @@ PY=/usr/bin/python3
   grep -E "level_zero backend failed|Error OP" $R/p5/oracle/oracle-128k-ub512-server.log 2>/dev/null | tail -3
 } > "$E/oracle-128k-wall.txt" 2>&1
 
-cp -f "$R/p5/chain-engine.log" "$R/p5/chain-engine-fp16.log" "$R/p5/chain-oracle.log" \
-      "$R/p5/chain-oracle-ub512.log" "$E/" 2>/dev/null
+cp -f "$SRC/p5/chain-engine.log" "$SRC/p5/chain-engine-fp16.log" \
+      "$R/p5/chain-oracle.log" "$R/p5/chain-oracle-ub512.log" "$R/p5/chain-oracle-128k-ub512.log" "$E/" 2>/dev/null
 ls -la "$E"
