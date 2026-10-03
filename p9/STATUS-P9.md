@@ -149,10 +149,23 @@ tracer breaks is the latency of the handshakes, not the number of appends.
 
 ### 1.4 The instrument that still works for this file: the prefill
 
-The parser produces a complete per-kernel table for the *prefill* (a real, if partial, answer to "which kernel
-dominates": on card 0 the prompt attention is 3,419 ms of the 5,071 ms of device time = 67%), and the "big event"
-detector that finds the prefill/decode boundary by kernel size works.  Nothing else in the timeline is usable for
-this card's question.  `p9_window.py --tag <name>` prints the census for any tag in a timeline.
+The parser produces a complete per-kernel table for the *prefill*, and the "big event" detector that finds the
+prefill/decode boundary by kernel size works.  **Cross-check, trace against the engine's own line** — the one
+comparison this file does support:
+
+| reading | 4K prefill |
+|---|---|
+| the engine (`PP 3831 3832 14627 261.9`, its own wall clock for the read) | **14 627 ms** |
+| the trace, card 0 (0:3:0:0) device busy, all kernels | 5 071 ms |
+| the trace, card 1 (0:8:0:0) device busy, all kernels | 8 026 ms |
+| **trace, both cards** | **13 098 ms = 89.5% of the engine's prefill wall** |
+
+The two readings agree to 10%, and the residual is exactly what a device-busy sum cannot include (the staging
+between kernels, the flag copies, the request's own host work).  Inside the prefill, on card 0: the prompt
+attention is 3 419 ms of the 5 071 ms of device time (**67%**), with `iq_dequant_gu_f16` (10 168 launches at
+51.5 us) and `iq_dequant_f16` (10 168 at 32.0 us) the next two.  `p9_window.py --tag <name>` prints the census for
+any tag in a timeline; `p9_summary.py` prints the table.
+
 
 ### 1.5 And the engine's own GPU stage profiler was dead too
 
@@ -286,6 +299,13 @@ attention ~1.8%, copies/barriers ~0.5%, commit/emit 2 ms (1.5% of the window, me
 is the **index/score work over the paged KV (3.2 ms at 128K, 7.5% of the sampled time)** while the attention
 kernel itself is flat (0.83 -> 0.71), which is the decode-side mirror of P2's finding that the *prompt* attention
 is capped by `qsa_selection_width` and does not grow with depth.
+
+**Shares of `verify`, as floors.**  Because the sampler's coverage is 33-39%, the honest way to read the table
+against `verify` is as a floor per family: at 4K `verify` is 120.06 ms (123.17 in the profiled arm), so the
+experts' 14.68 ms is **>=12.2% of verify (11.0% of the window)**, the two projection GEMV groups' 8.17 ms is
+>=6.8% of verify, the hyper-connection reads' 7.97 ms is >=6.6%, the shared expert's 4.44 ms is >=3.7%, and the
+attention's 0.83 ms is **>=0.7% of verify (0.6% of the window)**.  Every other number in the table is a floor the
+same way.
 
 **Honest coverage limit.**  The stage sum (43-47 ms) is **33-39% of the window and of `verify`**: the sampler sees
 a stage code only if it is the latest one when the host samples, so stages the GPU raced through between two
