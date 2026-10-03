@@ -8,6 +8,8 @@ onecard=0  ZE_AFFINITY_MASK=0
 cd /home/michael/strata-xpu/p10/runs/1c-4k && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 4096 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --kv-resident 32768   (stdin from /home/michael/strata-xpu/p10/runs/1c-4k/stdin.fifo)
 
 -- the engine's own lines --
+strata generate: PCIe probe: 26.6 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
 strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
 strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
 strata generate: expert cache auto: 26.07 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 10153 slots
@@ -61,12 +63,10 @@ decode             7.7s  cores busy 15.57   threads>=50%:  20  >=10%:  21  of 74
 whole request     22.2s  cores busy  5.99   threads>=50%:   1  >=10%:  20  of 75 alive
                busiest: 1104204:74%, 1104310:27%, 1104311:27%, 1104314:27%, 1104316:27%, 1104312:27%, 1104302:27%, 1104309:27%, 1104313:27%, 1104315:27%, 1104317:27%, 1104303:27%, 1104305:27%, 1104304:27%, 1104301:27%, 1104308:27%, 1104300:26%, 1104306:26%, 1104307:25%, 1104299:24%, 1104386:5%, 1104443:4%
 
--- VRAM / RSS peaks (driver fdinfo) --
-== monitor peak (driver fdinfo / RSS) ==
-== monitor peak (driver fdinfo / RSS) ==
--rw-rw-r-- 1 michael michael    902 Oct  3 13:09 monitor.csv
+-- VRAM / RSS peaks and the tiers (p10_summary.py) --
   tiers_line               strata serve: expert tiers: GPU 85371 hits this request; since the start RAM 0 blobs, files 0 blobs 63089.6 MB read (the GGUF in place)
   vram_free_loaded         315
+  kv_stream_line           None
   peak_card0_gib           30.83
   peak_card1_gib           0.0
   peak_rss_gib             48.18
@@ -86,7 +86,10 @@ cd /home/michael/strata-xpu/p10/runs/2c-4k && /home/michael/strata-xpu/strata/bu
 
 -- the engine's own lines --
 strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+strata generate: PCIe probe: 26.5 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
 strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: layer split: CUDA1 PCIe probe 13.4 GB/s -> pcie_frac 0.28
 strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
 strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
 strata generate: expert cache auto: 27.52 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10822 slots
@@ -141,12 +144,10 @@ decode             7.0s  cores busy  1.10   threads>=50%:   1  >=10%:   2  of 10
 whole request     22.2s  cores busy  0.90   threads>=50%:   2  >=10%:   2  of 107 alive
                busiest: 1112329:84%, 1111823:55%, 1112144:5%, 1111921:0%, 1111901:0%, 1112330:0%, 1111905:0%, 1111907:0%, 1111908:0%, 1111909:0%, 1111910:0%, 1111911:0%, 1111912:0%, 1111913:0%, 1111915:0%, 1111916:0%, 1111918:0%, 1111919:0%, 1112172:0%, 1112173:0%, 1112174:0%, 1112175:0%
 
--- VRAM / RSS peaks (driver fdinfo) --
-== monitor peak (driver fdinfo / RSS) ==
-== monitor peak (driver fdinfo / RSS) ==
--rw-rw-r-- 1 michael michael   1182 Oct  3 13:12 monitor.csv
+-- VRAM / RSS peaks and the tiers (p10_summary.py) --
   tiers_line               strata serve: expert tiers: GPU 88320 hits this request; since the start RAM 0 blobs, files 0 blobs 54327.8 MB read (the GGUF in place)
   vram_free_loaded         2610
+  kv_stream_line           None
   peak_card0_gib           28.58
   peak_card1_gib           31.14
   peak_rss_gib             48.24
@@ -154,6 +155,83 @@ whole request     22.2s  cores busy  0.90   threads>=50%:   2  >=10%:   2  of 10
   req_ram_blobs            0
   req_file_blobs           0
   req_file_mb              0.0
+
+======================================================================================
+ARM 1c1-4k      dir /home/michael/strata-xpu/p10/runs/1c1-4k
+======================================================================================
+P10 arm 1c1-4k   2026-10-03T13:34:19-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768 pool=default
+onecard=1  ZE_AFFINITY_MASK=1
+-- the exact command --
+cd /home/michael/strata-xpu/p10/runs/1c1-4k && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 4096 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --kv-resident 32768   (stdin from /home/michael/strata-xpu/p10/runs/1c1-4k/stdin.fifo)
+
+-- the engine's own lines --
+strata generate: PCIe probe: 13.4 GB/s host->device -> pcie_frac 0.28 (default 0.55)
+strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
+strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+strata generate: expert cache auto: 26.81 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 10450 slots
+strata generate: expert cache 13649 slots, 25.91 GiB of VRAM; policy is
+strata generate: pre-filled 13649 of 13649 slots from the profile; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata generate: token graph hit path: 13649 resident experts, decided on the device
+strata serve: 317 MiB of VRAM free with everything loaded
+INFO context=4096 kv=int8 kv_resident=0 expert_slots=13649 expert_cache_mib=26531 expert_slots_primary=13649 expert_cache_primary_mib=26531 spec=6 mtp_max=4 lookup=3 vram_free_mib=317 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.28 spec_min_p=0.50 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+strata decode timing: 52 windows, avg T 3.62, 2.88 tokens/window, 136.27 ms/window = verify 118.40 (GPU-reach wait 77.18 + per-layer host 22.33 [plan 0.35 actq 0.27 jobs 13.36 CPU 3.76] + stage 1.02 + tail 9.01) + commit/emit 0.60 + draft 12.63; per layer-window: CPU experts 1.71 (2.10 entries), VRAM hits 34.06, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 14869 ms (257.7 tok/s), 150 generated in 7086 ms (21.2 tok/s), drafts accepted 98 of 136, 0 checkpoints
+strata serve: decode expert cache hit rate: 94.2% (85005 hits / 90240 lookups)
+strata serve: expert tiers: GPU 85005 hits this request; since the start RAM 0 blobs, files 0 blobs 61991.9 MB read (the GGUF in place)
+DONE 150 3832 14868.9 7086.2 stop 98 136 0 85005 90240 0 0 7601.9
+PP 3831 3832 14436 265.4
+
+-- per-thread CPU: top -b -H, busiest sample --
+[top] top-H.txt: busiest sample 13:34:48: 74 engine threads, 20 at >=50% of one core, 21 above 1%
+[top]    tid  1125341   90.0% cpu     19.76s cpu-time
+[top]    tid  1125467   81.0% cpu      1.13s cpu-time
+[top]    tid  1125470   81.0% cpu      1.13s cpu-time
+[top]    tid  1125472   81.0% cpu      1.13s cpu-time
+[top]    tid  1125473   81.0% cpu      1.13s cpu-time
+[top]    tid  1125475   81.0% cpu      1.05s cpu-time
+[top]    tid  1125479   81.0% cpu      1.13s cpu-time
+[top]    tid  1125480   81.0% cpu      1.13s cpu-time
+[top]    tid  1125464   80.0% cpu      1.13s cpu-time
+[top]    tid  1125465   80.0% cpu      1.13s cpu-time
+[top]    tid  1125466   80.0% cpu      1.12s cpu-time
+[top]    tid  1125476   80.0% cpu      1.12s cpu-time
+[top]    tid  1125477   80.0% cpu      1.10s cpu-time
+[top]    tid  1125478   80.0% cpu      1.10s cpu-time
+[top]    tid  1125481   80.0% cpu      1.12s cpu-time
+[top]    tid  1125468   79.0% cpu      1.10s cpu-time
+[top]    tid  1125474   79.0% cpu      1.11s cpu-time
+[top]    tid  1125471   78.0% cpu      1.09s cpu-time
+[top]    tid  1125469   77.0% cpu      1.10s cpu-time
+[top]    tid  1125463   67.0% cpu      0.99s cpu-time
+[top]    tid  1125670   17.0% cpu      0.22s cpu-time
+[top]    tid  1125418    1.0% cpu      0.08s cpu-time
+[pidstat] pidstat.txt: busiest sample 01:34:48: process aggregate %CPU 1695 (16.95 cores) against the MAXIMUM of any single thread 90.10% in the same sample
+[pidstat] samples where any thread read above 1%: 22 of 26
+
+-- per-thread CPU by phase (p10_threads.py deltas, phase boundaries from the engine's own DONE line) --
+[cpu] 1c1-4k/threads.csv: 1792 thread-ticks, 77 distinct threads; prompt 14.9s
+load           no samples
+prefill           14.9s  cores busy  0.89   threads>=50%:   1  >=10%:   1  of 75 alive
+               busiest: 1125341:62%, 1125750:8%, 1125674:1%, 1125679:1%, 1125687:1%, 1125693:1%, 1125696:1%, 1125698:1%, 1125676:1%, 1125677:1%, 1125682:1%, 1125692:1%, 1125694:1%, 1125697:1%, 1125699:1%, 1125700:1%, 1125701:1%, 1125702:1%, 1125672:1%, 1125675:1%, 1125678:1%, 1125680:1%
+decode             7.4s  cores busy 14.58   threads>=50%:  20  >=10%:  21  of 76 alive
+               busiest: 1125341:88%, 1125472:72%, 1125473:72%, 1125479:72%, 1125480:72%, 1125464:72%, 1125466:72%, 1125474:72%, 1125476:72%, 1125481:72%, 1125465:72%, 1125468:72%, 1125478:72%, 1125477:72%, 1125475:72%, 1125467:72%, 1125469:71%, 1125471:71%, 1125470:69%, 1125463:63%, 1125670:14%, 1125418:0%
+whole request     22.2s  cores busy  5.65   threads>=50%:   1  >=10%:  20  of 77 alive
+               busiest: 1125341:71%, 1125472:25%, 1125473:25%, 1125479:25%, 1125480:25%, 1125464:25%, 1125466:25%, 1125474:25%, 1125476:25%, 1125481:25%, 1125465:25%, 1125468:25%, 1125478:25%, 1125477:25%, 1125475:25%, 1125467:25%, 1125469:25%, 1125471:25%, 1125470:24%, 1125463:22%, 1125750:8%, 1125670:5%
+
+-- VRAM / RSS peaks and the tiers (p10_summary.py) --
+  tiers_line               strata serve: expert tiers: GPU 85005 hits this request; since the start RAM 0 blobs, files 0 blobs 61991.9 MB read (the GGUF in place)
+  vram_free_loaded         317
+  kv_stream_line           None
+  peak_card0_gib           0.0
+  peak_card1_gib           31.56
+  peak_rss_gib             48.18
+  peak_gtt0_gib            0.0
+  req_ram_blobs            0
+  req_file_blobs           0
+  req_file_mb              7601.9
 
 ======================================================================================
 ARM 1c-32k      dir /home/michael/strata-xpu/p10/runs/1c-32k
@@ -165,6 +243,8 @@ onecard=0  ZE_AFFINITY_MASK=0
 cd /home/michael/strata-xpu/p10/runs/1c-32k && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 32768 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --kv-resident 32768   (stdin from /home/michael/strata-xpu/p10/runs/1c-32k/stdin.fifo)
 
 -- the engine's own lines --
+strata generate: PCIe probe: 26.6 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
 strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
 strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
 strata generate: expert cache auto: 25.47 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 9911 slots
@@ -219,12 +299,10 @@ decode            12.3s  cores busy 15.78   threads>=50%:  20  >=10%:  21  of 75
 whole request    136.1s  cores busy  2.30   threads>=50%:   1  >=10%:   1  of 81 alive
                busiest: 1107666:86%, 1107778:7%, 1107774:7%, 1107781:7%, 1107779:7%, 1107767:7%, 1107773:7%, 1107777:7%, 1107780:7%, 1107766:7%, 1107770:7%, 1107768:7%, 1107775:7%, 1107769:7%, 1107765:7%, 1107776:7%, 1107764:7%, 1107772:7%, 1107771:7%, 1107763:6%, 1108890:3%, 1108252:3%
 
--- VRAM / RSS peaks (driver fdinfo) --
-== monitor peak (driver fdinfo / RSS) ==
-== monitor peak (driver fdinfo / RSS) ==
--rw-rw-r-- 1 michael michael   4229 Oct  3 13:11 monitor.csv
+-- VRAM / RSS peaks and the tiers (p10_summary.py) --
   tiers_line               strata serve: expert tiers: GPU 141322 hits this request; since the start RAM 0 blobs, files 0 blobs 150155.3 MB read (the GGUF in place)
   vram_free_loaded         527
+  kv_stream_line           None
   peak_card0_gib           30.62
   peak_card1_gib           0.0
   peak_rss_gib             48.24
@@ -244,7 +322,10 @@ cd /home/michael/strata-xpu/p10/runs/2c-32k && /home/michael/strata-xpu/strata/b
 
 -- the engine's own lines --
 strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+strata generate: PCIe probe: 26.4 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
 strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: layer split: CUDA1 PCIe probe 13.4 GB/s -> pcie_frac 0.28
 strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
 strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
 strata generate: expert cache auto: 27.35 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10755 slots
@@ -300,12 +381,10 @@ decode            11.9s  cores busy  1.14   threads>=50%:   1  >=10%:   2  of 10
 whole request    103.7s  cores busy  0.98   threads>=50%:   4  >=10%:   5  of 115 alive
                busiest: 1114021:92%, 1113918:62%, 1113831:61%, 1113737:59%, 1113035:41%, 1113579:2%, 1113255:0%, 1113200:0%, 1113740:0%, 1113239:0%, 1113242:0%, 1113254:0%, 1113834:0%, 1114022:0%, 1113920:0%, 1113240:0%, 1113241:0%, 1113243:0%, 1113244:0%, 1113245:0%, 1113246:0%, 1113247:0%
 
--- VRAM / RSS peaks (driver fdinfo) --
-== monitor peak (driver fdinfo / RSS) ==
-== monitor peak (driver fdinfo / RSS) ==
--rw-rw-r-- 1 michael michael   4306 Oct  3 13:15 monitor.csv
+-- VRAM / RSS peaks and the tiers (p10_summary.py) --
   tiers_line               strata serve: expert tiers: GPU 146400 hits this request; since the start RAM 0 blobs, files 0 blobs 69934.3 MB read (the GGUF in place)
   vram_free_loaded         2440
+  kv_stream_line           None
   peak_card0_gib           28.75
   peak_card1_gib           31.43
   peak_rss_gib             48.29
@@ -324,6 +403,8 @@ onecard=0  ZE_AFFINITY_MASK=0
 cd /home/michael/strata-xpu/p10/runs/1c-128k && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 131072 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --kv-resident 32768   (stdin from /home/michael/strata-xpu/p10/runs/1c-128k/stdin.fifo)
 
 -- the engine's own lines --
+strata generate: PCIe probe: 26.5 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
 strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
 strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
 strata generate: expert cache auto: 25.31 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 9845 slots
@@ -379,12 +460,10 @@ decode            15.0s  cores busy 15.61   threads>=50%:  20  >=10%:  21  of 79
 whole request    639.0s  cores busy  1.35   threads>=50%:   1  >=10%:   1  of 105 alive
                busiest: 1114554:86%, 1115079:6%, 1115430:6%, 1116281:6%, 1115592:3%, 1115915:3%, 1115235:3%, 1114925:3%, 1114742:3%, 1116083:3%, 1115752:2%, 1116860:2%, 1117447:2%, 1117239:2%, 1116451:2%, 1116621:2%, 1117048:2%, 1114654:2%, 1114659:2%, 1114651:2%, 1114658:2%, 1114655:2%
 
--- VRAM / RSS peaks (driver fdinfo) --
-== monitor peak (driver fdinfo / RSS) ==
-== monitor peak (driver fdinfo / RSS) ==
--rw-rw-r-- 1 michael michael   19038 Oct  3 13:26 monitor.csv
+-- VRAM / RSS peaks and the tiers (p10_summary.py) --
   tiers_line               strata serve: expert tiers: GPU 144636 hits this request; since the start RAM 0 blobs, files 0 blobs 495993.6 MB read (the GGUF in place)
   vram_free_loaded         537
+  kv_stream_line           strata serve: KV streaming: 93.91% of 1990344 block reads hit VRAM, 488.6 MiB read from RAM
   peak_card0_gib           30.67
   peak_card1_gib           0.0
   peak_rss_gib             48.29
@@ -404,7 +483,10 @@ cd /home/michael/strata-xpu/p10/runs/2c-128k && /home/michael/strata-xpu/strata/
 
 -- the engine's own lines --
 strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+strata generate: PCIe probe: 26.5 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
 strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: layer split: CUDA1 PCIe probe 13.4 GB/s -> pcie_frac 0.28
 strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
 strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
 strata generate: expert cache auto: 27.24 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10710 slots
@@ -461,12 +543,10 @@ decode            13.0s  cores busy  1.13   threads>=50%:   1  >=10%:   2  of 10
 whole request    385.4s  cores busy  0.98   threads>=50%:  16  >=10%:  17  of 142 alive
                busiest: 1124371:90%, 1124253:68%, 1124023:62%, 1124137:62%, 1123919:60%, 1123759:59%, 1123661:58%, 1123090:58%, 1123455:58%, 1123271:58%, 1123364:58%, 1123556:57%, 1122968:57%, 1122880:57%, 1123180:56%, 1122785:52%, 1122438:37%, 1122628:1%, 1123274:0%, 1122539:0%, 1122520:0%, 1124255:0%
 
--- VRAM / RSS peaks (driver fdinfo) --
-== monitor peak (driver fdinfo / RSS) ==
-== monitor peak (driver fdinfo / RSS) ==
--rw-rw-r-- 1 michael michael   15445 Oct  3 13:33 monitor.csv
+-- VRAM / RSS peaks and the tiers (p10_summary.py) --
   tiers_line               strata serve: expert tiers: GPU 145920 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
   vram_free_loaded         2218
+  kv_stream_line           strata serve: KV streaming: 92.13% of 780510 block reads hit VRAM, 247.6 MiB read from RAM
   peak_card0_gib           28.97
   peak_card1_gib           31.54
   peak_rss_gib             48.31
@@ -474,4 +554,1403 @@ whole request    385.4s  cores busy  0.98   threads>=50%:  16  >=10%:  17  of 14
   req_ram_blobs            0
   req_file_blobs           0
   req_file_mb              0.0
+
+======================================================================================
+ARM 2i-32k-9 (serve.server arm)   dir /home/michael/strata-xpu/p10/runs/2i-32k-9
+======================================================================================
+=== P10 two-instance arm 2i-32k-9 mode=2i pools=9/9 ctx=32768 maxnew=256 affinity=default 2026-10-03T13:35:03-06:00
+prompt: /home/michael/strata-xpu/p10/prompts/prompt-ctx32768-user.txt (105544 chars)
+[cfg] /home/michael/strata-xpu/p10/runs/2i-32k-9/cfg-a.json  gpu=0 port=8101 pool=9 affinity=default
+[cfg]   log /home/michael/strata-xpu/logs/p10-2i-32k-9-a-engine.log
+[cfg] /home/michael/strata-xpu/p10/runs/2i-32k-9/cfg-b.json  gpu=1 port=8102 pool=9 affinity=default
+[cfg]   log /home/michael/strata-xpu/logs/p10-2i-32k-9-b-engine.log
+[cfg] /home/michael/strata-xpu/p10/runs/2i-32k-9/cfg-1x2.json  gpu=[0,1] port=8103 pool=9 (the ZE_AFFINITY_MASK must stay unset)
+[cfg]   log /home/michael/strata-xpu/logs/p10-2i-32k-9-1x2-engine.log
+   no engine/server of ours
+TOTAL on card0                           868.6 MiB
+TOTAL on card1                             0.0 MiB
+ 
+:: initializing oneAPI environment ...
+   p10_two.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 2i-32k-9 2i 9 9 32768 256
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+started server a pid 1128405 port 8101 log /home/michael/strata-xpu/logs/p10-2i-32k-9-a-server.log
+started server b pid 1128407 port 8102 log /home/michael/strata-xpu/logs/p10-2i-32k-9-b-server.log
+== ready after 13 s (2026-10-03T13:35:15-06:00) ==
+engine 0 pid 1128416  ZE_AFFINITY_MASK=0
+engine 1 pid 1128418  ZE_AFFINITY_MASK=1
+== fired 2 concurrent requests at 2026-10-03T13:35:17-06:00 ==
+{"tag": "2i-32k-9-0", "label": "concurrent", "port": 8101, "wall_s": 345.565, "started": 1791056117.9130719, "ended": 1791056463.4779952, "error": null, "usage": {"prompt_tokens": 32277, "completion_tokens": 256, "total_tokens": 32533, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "length", "timings": {"cache_n": 0, "prompt_n": 32277, "prompt_ms": 324225.2, "prompt_per_token_ms": 10.045, "prompt_per_second": 99.6, "predicted_n": 256, "predicted_ms": 21272.8, "predicted_per_token_ms": 83.097, "predicted_per_second": 12.0, "draft_n": 178, "draft_n_accepted": 128}, "answer_chars": 0, "answer_head": ""}
+{"tag": "2i-32k-9-1", "label": "concurrent", "port": 8102, "wall_s": 350.306, "started": 1791056117.9127033, "ended": 1791056468.2191367, "error": null, "usage": {"prompt_tokens": 32277, "completion_tokens": 256, "total_tokens": 32533, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "length", "timings": {"cache_n": 0, "prompt_n": 32277, "prompt_ms": 334105.9, "prompt_per_token_ms": 10.351, "prompt_per_second": 96.6, "predicted_n": 256, "predicted_ms": 16132.6, "predicted_per_token_ms": 63.018, "predicted_per_second": 15.9, "draft_n": 200, "draft_n_accepted": 163}, "answer_chars": 0, "answer_head": ""}
+== all clients returned 2026-10-03T13:41:08-06:00 ==
+== the engines' own numbers ==
+--- instance 0 (port 8101) engine log /home/michael/strata-xpu/logs/p10-2i-32k-9-a-engine.log
+strata generate: expert cache auto: 25.45 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 9902 slots
+strata generate: expert cache 12931 slots, 24.55 GiB of VRAM; policy is
+strata generate: pre-filled 12931 of 12931 slots from the profile; slot 0 verified
+strata generate: 9 expert-pool workers + the host thread
+strata serve: 528 MiB of VRAM free with everything loaded
+strata decode timing: 129 windows, avg T 2.38, 1.98 tokens/window, 164.91 ms/window = verify 138.96 (GPU-reach wait 97.39 + per-layer host 17.84 [plan 0.53 actq 0.33 jobs 11.19 CPU 5.02] + stage 2.52 + tail 8.85) + commit/emit 0.49 + draft 13.53; per layer-window: CPU experts 0.76 (0.88 entries), VRAM hits 22.92, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 324225 ms (99.6 tok/s), 256 generated in 21273 ms (12.0 tok/s), drafts accepted 128 of 178, 2 checkpoints
+strata serve: decode expert cache hit rate: 96.3% (141896 hits / 147360 lookups)
+strata serve: expert tiers: GPU 141896 hits this request; since the start RAM 0 blobs, files 0 blobs 694926.6 MB read (the GGUF in place)
+--- instance 1 (port 8102) engine log /home/michael/strata-xpu/logs/p10-2i-32k-9-b-engine.log
+strata generate: expert cache auto: 26.21 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 10207 slots
+strata generate: expert cache 13329 slots, 25.31 GiB of VRAM; policy is
+strata generate: pre-filled 13329 of 13329 slots from the profile; slot 0 verified
+strata generate: 9 expert-pool workers + the host thread
+strata serve: 528 MiB of VRAM free with everything loaded
+strata decode timing: 94 windows, avg T 3.13, 2.72 tokens/window, 171.62 ms/window = verify 141.50 (GPU-reach wait 93.35 + per-layer host 25.98 [plan 0.49 actq 0.23 jobs 17.42 CPU 7.47] + stage 2.13 + tail 9.17) + commit/emit 0.50 + draft 14.32; per layer-window: CPU experts 1.46 (1.66 entries), VRAM hits 29.61, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 334106 ms (96.6 tok/s), 256 generated in 16133 ms (15.9 tok/s), drafts accepted 163 of 200, 2 checkpoints
+strata serve: decode expert cache hit rate: 94.7% (133613 hits / 141120 lookups)
+strata serve: expert tiers: GPU 133613 hits this request; since the start RAM 0 blobs, files 0 blobs 665288.2 MB read (the GGUF in place)
+== the clients ==
+--- client 0:
+{
+ "tag": "2i-32k-9-0",
+ "label": "concurrent",
+ "port": 8101,
+ "wall_s": 345.565,
+ "started": 1791056117.9130719,
+ "ended": 1791056463.4779952,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 324225.2,
+  "prompt_per_token_ms": 10.045,
+  "prompt_per_second": 99.6,
+  "predicted_n": 256,
+  "predicted_ms": 21272.8,
+  "predicted_per_token_ms": 83.097,
+  "predicted_per_second": 12.0,
+  "draft_n": 178,
+  "draft_n_accepted": 128
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}--- client 1:
+{
+ "tag": "2i-32k-9-1",
+ "label": "concurrent",
+ "port": 8102,
+ "wall_s": 350.306,
+ "started": 1791056117.9127033,
+ "ended": 1791056468.2191367,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 334105.9,
+  "prompt_per_token_ms": 10.351,
+  "prompt_per_second": 96.6,
+  "predicted_n": 256,
+  "predicted_ms": 16132.6,
+  "predicted_per_token_ms": 63.018,
+  "predicted_per_second": 15.9,
+  "draft_n": 200,
+  "draft_n_accepted": 163
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}== what is left ==
+   no engine
+   no server
+   ports 8101/8102/8103 free
+TOTAL on card0                           878.6 MiB
+TOTAL on card1                             0.0 MiB
+-- the clients, verbatim --
+--- /home/michael/strata-xpu/p10/runs/2i-32k-9/resp-0.json.timing.json
+{
+ "tag": "2i-32k-9-0",
+ "label": "concurrent",
+ "port": 8101,
+ "wall_s": 345.565,
+ "started": 1791056117.9130719,
+ "ended": 1791056463.4779952,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 324225.2,
+  "prompt_per_token_ms": 10.045,
+  "prompt_per_second": 99.6,
+  "predicted_n": 256,
+  "predicted_ms": 21272.8,
+  "predicted_per_token_ms": 83.097,
+  "predicted_per_second": 12.0,
+  "draft_n": 178,
+  "draft_n_accepted": 128
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}--- /home/michael/strata-xpu/p10/runs/2i-32k-9/resp-1.json.timing.json
+{
+ "tag": "2i-32k-9-1",
+ "label": "concurrent",
+ "port": 8102,
+ "wall_s": 350.306,
+ "started": 1791056117.9127033,
+ "ended": 1791056468.2191367,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 334105.9,
+  "prompt_per_token_ms": 10.351,
+  "prompt_per_second": 96.6,
+  "predicted_n": 256,
+  "predicted_ms": 16132.6,
+  "predicted_per_token_ms": 63.018,
+  "predicted_per_second": 15.9,
+  "draft_n": 200,
+  "draft_n_accepted": 163
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}-- the configs' engine args --
+--- /home/michael/strata-xpu/p10/runs/2i-32k-9/cfg-1x2.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "9"
+ ],
+--- /home/michael/strata-xpu/p10/runs/2i-32k-9/cfg-a.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "9"
+ ],
+--- /home/michael/strata-xpu/p10/runs/2i-32k-9/cfg-b.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "9"
+ ],
+-- SSD device (the arm's own sampler) --
+
+======================================================================================
+ARM 2i-32k-19 (serve.server arm)   dir /home/michael/strata-xpu/p10/runs/2i-32k-19
+======================================================================================
+=== P10 two-instance arm 2i-32k-19 mode=2i pools=19/19 ctx=32768 maxnew=256 affinity=default 2026-10-03T13:46:08-06:00
+prompt: /home/michael/strata-xpu/p10/prompts/prompt-ctx32768-user.txt (105544 chars)
+[cfg] /home/michael/strata-xpu/p10/runs/2i-32k-19/cfg-a.json  gpu=0 port=8101 pool=19 affinity=default
+[cfg]   log /home/michael/strata-xpu/logs/p10-2i-32k-19-a-engine.log
+[cfg] /home/michael/strata-xpu/p10/runs/2i-32k-19/cfg-b.json  gpu=1 port=8102 pool=19 affinity=default
+[cfg]   log /home/michael/strata-xpu/logs/p10-2i-32k-19-b-engine.log
+[cfg] /home/michael/strata-xpu/p10/runs/2i-32k-19/cfg-1x2.json  gpu=[0,1] port=8103 pool=19 (the ZE_AFFINITY_MASK must stay unset)
+[cfg]   log /home/michael/strata-xpu/logs/p10-2i-32k-19-1x2-engine.log
+   no engine/server of ours
+TOTAL on card0                           878.6 MiB
+TOTAL on card1                             0.0 MiB
+ 
+:: initializing oneAPI environment ...
+   p10_two.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 2i-32k-19 2i 19 19 32768 256
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+started server a pid 1134584 port 8101 log /home/michael/strata-xpu/logs/p10-2i-32k-19-a-server.log
+started server b pid 1134586 port 8102 log /home/michael/strata-xpu/logs/p10-2i-32k-19-b-server.log
+== ready after 13 s (2026-10-03T13:46:20-06:00) ==
+engine 0 pid 1134598  ZE_AFFINITY_MASK=0
+engine 1 pid 1134599  ZE_AFFINITY_MASK=1
+== fired 2 concurrent requests at 2026-10-03T13:46:22-06:00 ==
+{"tag": "2i-32k-19-0", "label": "concurrent", "port": 8101, "wall_s": 346.576, "started": 1791056782.8471835, "ended": 1791057129.4228942, "error": null, "usage": {"prompt_tokens": 32277, "completion_tokens": 256, "total_tokens": 32533, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "length", "timings": {"cache_n": 0, "prompt_n": 32277, "prompt_ms": 323710.7, "prompt_per_token_ms": 10.029, "prompt_per_second": 99.7, "predicted_n": 256, "predicted_ms": 22795.6, "predicted_per_token_ms": 89.045, "predicted_per_second": 11.2, "draft_n": 182, "draft_n_accepted": 124}, "answer_chars": 0, "answer_head": ""}
+{"tag": "2i-32k-19-1", "label": "concurrent", "port": 8102, "wall_s": 352.813, "started": 1791056782.8471835, "ended": 1791057135.6597908, "error": null, "usage": {"prompt_tokens": 32277, "completion_tokens": 256, "total_tokens": 32533, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "length", "timings": {"cache_n": 0, "prompt_n": 32277, "prompt_ms": 334334.8, "prompt_per_token_ms": 10.358, "prompt_per_second": 96.5, "predicted_n": 256, "predicted_ms": 18414.8, "predicted_per_token_ms": 71.933, "predicted_per_second": 13.9, "draft_n": 196, "draft_n_accepted": 147}, "answer_chars": 0, "answer_head": ""}
+== all clients returned 2026-10-03T13:52:15-06:00 ==
+== the engines' own numbers ==
+--- instance 0 (port 8101) engine log /home/michael/strata-xpu/logs/p10-2i-32k-19-a-engine.log
+strata generate: expert cache auto: 25.45 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 9901 slots
+strata generate: expert cache 12929 slots, 24.55 GiB of VRAM; policy is
+strata generate: pre-filled 12929 of 12929 slots from the profile; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata serve: 525 MiB of VRAM free with everything loaded
+strata decode timing: 133 windows, avg T 2.37, 1.92 tokens/window, 171.40 ms/window = verify 145.66 (GPU-reach wait 101.65 + per-layer host 20.36 [plan 1.30 actq 0.34 jobs 8.57 CPU 3.95] + stage 3.27 + tail 8.41) + commit/emit 0.98 + draft 14.46; per layer-window: CPU experts 0.74 (0.84 entries), VRAM hits 22.84, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 323711 ms (99.7 tok/s), 256 generated in 22796 ms (11.2 tok/s), drafts accepted 124 of 182, 2 checkpoints
+strata serve: decode expert cache hit rate: 96.5% (145834 hits / 151200 lookups)
+strata serve: expert tiers: GPU 145834 hits this request; since the start RAM 0 blobs, files 0 blobs 695217.1 MB read (the GGUF in place)
+--- instance 1 (port 8102) engine log /home/michael/strata-xpu/logs/p10-2i-32k-19-b-engine.log
+strata generate: expert cache auto: 26.21 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 10207 slots
+strata generate: expert cache 13329 slots, 25.31 GiB of VRAM; policy is
+strata generate: pre-filled 13329 of 13329 slots from the profile; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata serve: 528 MiB of VRAM free with everything loaded
+strata decode timing: 110 windows, avg T 2.78, 2.33 tokens/window, 167.41 ms/window = verify 139.21 (GPU-reach wait 89.59 + per-layer host 28.00 [plan 1.42 actq 0.26 jobs 10.95 CPU 5.83] + stage 2.41 + tail 8.53) + commit/emit 0.93 + draft 13.49; per layer-window: CPU experts 1.01 (1.16 entries), VRAM hits 26.66, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 334335 ms (96.5 tok/s), 256 generated in 18415 ms (13.9 tok/s), drafts accepted 147 of 196, 2 checkpoints
+strata serve: decode expert cache hit rate: 95.8% (140773 hits / 146880 lookups)
+strata serve: expert tiers: GPU 140773 hits this request; since the start RAM 0 blobs, files 0 blobs 662269.9 MB read (the GGUF in place)
+== the clients ==
+--- client 0:
+{
+ "tag": "2i-32k-19-0",
+ "label": "concurrent",
+ "port": 8101,
+ "wall_s": 346.576,
+ "started": 1791056782.8471835,
+ "ended": 1791057129.4228942,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 323710.7,
+  "prompt_per_token_ms": 10.029,
+  "prompt_per_second": 99.7,
+  "predicted_n": 256,
+  "predicted_ms": 22795.6,
+  "predicted_per_token_ms": 89.045,
+  "predicted_per_second": 11.2,
+  "draft_n": 182,
+  "draft_n_accepted": 124
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}--- client 1:
+{
+ "tag": "2i-32k-19-1",
+ "label": "concurrent",
+ "port": 8102,
+ "wall_s": 352.813,
+ "started": 1791056782.8471835,
+ "ended": 1791057135.6597908,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 334334.8,
+  "prompt_per_token_ms": 10.358,
+  "prompt_per_second": 96.5,
+  "predicted_n": 256,
+  "predicted_ms": 18414.8,
+  "predicted_per_token_ms": 71.933,
+  "predicted_per_second": 13.9,
+  "draft_n": 196,
+  "draft_n_accepted": 147
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}== what is left ==
+   no engine
+   no server
+   ports 8101/8102/8103 free
+TOTAL on card0                           882.6 MiB
+TOTAL on card1                             0.0 MiB
+-- the clients, verbatim --
+--- /home/michael/strata-xpu/p10/runs/2i-32k-19/resp-0.json.timing.json
+{
+ "tag": "2i-32k-19-0",
+ "label": "concurrent",
+ "port": 8101,
+ "wall_s": 346.576,
+ "started": 1791056782.8471835,
+ "ended": 1791057129.4228942,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 323710.7,
+  "prompt_per_token_ms": 10.029,
+  "prompt_per_second": 99.7,
+  "predicted_n": 256,
+  "predicted_ms": 22795.6,
+  "predicted_per_token_ms": 89.045,
+  "predicted_per_second": 11.2,
+  "draft_n": 182,
+  "draft_n_accepted": 124
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}--- /home/michael/strata-xpu/p10/runs/2i-32k-19/resp-1.json.timing.json
+{
+ "tag": "2i-32k-19-1",
+ "label": "concurrent",
+ "port": 8102,
+ "wall_s": 352.813,
+ "started": 1791056782.8471835,
+ "ended": 1791057135.6597908,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 334334.8,
+  "prompt_per_token_ms": 10.358,
+  "prompt_per_second": 96.5,
+  "predicted_n": 256,
+  "predicted_ms": 18414.8,
+  "predicted_per_token_ms": 71.933,
+  "predicted_per_second": 13.9,
+  "draft_n": 196,
+  "draft_n_accepted": 147
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}-- the configs' engine args --
+--- /home/michael/strata-xpu/p10/runs/2i-32k-19/cfg-1x2.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "19"
+ ],
+--- /home/michael/strata-xpu/p10/runs/2i-32k-19/cfg-a.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "19"
+ ],
+--- /home/michael/strata-xpu/p10/runs/2i-32k-19/cfg-b.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "19"
+ ],
+-- SSD device (the arm's own sampler) --
+
+======================================================================================
+ARM 1x2-32k (serve.server arm)   dir /home/michael/strata-xpu/p10/runs/1x2-32k
+======================================================================================
+=== P10 two-instance arm 1x2-32k mode=1x2 pools=19/ ctx=32768 maxnew=256 affinity=default 2026-10-03T13:52:22-06:00
+prompt: /home/michael/strata-xpu/p10/prompts/prompt-ctx32768-user.txt (105544 chars)
+[cfg] /home/michael/strata-xpu/p10/runs/1x2-32k/cfg-a.json  gpu=0 port=8101 pool=19 affinity=default
+[cfg]   log /home/michael/strata-xpu/logs/p10-1x2-32k-a-engine.log
+[cfg] /home/michael/strata-xpu/p10/runs/1x2-32k/cfg-b.json  gpu=1 port=8102 pool=default affinity=default
+[cfg]   log /home/michael/strata-xpu/logs/p10-1x2-32k-b-engine.log
+[cfg] /home/michael/strata-xpu/p10/runs/1x2-32k/cfg-1x2.json  gpu=[0,1] port=8103 pool=19 (the ZE_AFFINITY_MASK must stay unset)
+[cfg]   log /home/michael/strata-xpu/logs/p10-1x2-32k-1x2-engine.log
+   no engine/server of ours
+TOTAL on card0                           882.6 MiB
+TOTAL on card1                             0.0 MiB
+ 
+:: initializing oneAPI environment ...
+   p10_two.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 1x2-32k 1x2 19  32768 256
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+started server 1x2 pid 1139385 port 8103 log /home/michael/strata-xpu/logs/p10-1x2-32k-1x2-server.log
+== ready after 33 s (2026-10-03T13:52:55-06:00) ==
+engine 0 pid 1139393  ZE_AFFINITY_MASK=0,1
+== fired 2 concurrent requests at 2026-10-03T13:52:57-06:00 ==
+{"tag": "1x2-32k-0", "label": "concurrent", "port": 8103, "wall_s": 66.386, "started": 1791057177.7223647, "ended": 1791057244.1087332, "error": "HTTP 400: b'{\"error\": {\"type\": \"invalid_request_error\", \"message\": \"saving a checkpoint part failed\"}}'"}
+{"tag": "1x2-32k-1", "label": "concurrent", "port": 8103, "wall_s": 66.883, "started": 1791057177.7223647, "ended": 1791057244.605528, "error": "HTTP 503: b'{\"error\": {\"type\": \"server_error\", \"message\": \"the engine stopped unexpectedly (exit code 1); the next request restarts it\"}}'"}
+== all clients returned 2026-10-03T13:54:04-06:00 ==
+[threads] pid 1139393: 136 threads seen, 7310 rows, 69s
+[threads] threads that ever reached >=50% of one core: 21
+[threads] top threads by peak cpu%%: 1139792=83%, 1139808=81%, 1139838=78%, 1139757=77%, 1139393=74%, 1139794=72%, 1139811=71%, 1139739=71%, 1139737=70%, 1139767=69%, 1139741=66%, 1139784=65%, 1139735=64%, 1139816=64%, 1139743=63%, 1139797=61%, 1139840=59%, 1139745=56%, 1139819=55%, 1139786=54%, 1139800=54%, 1139751=50%, 1139747=50%, 1139788=50%, 1139804=50%
+[monitor 1x2-32k-0] samples 35  pid 1139393
+[monitor 1x2-32k-0] peak card0 vram 25.68 GiB (resident 25.68 GiB)
+[monitor 1x2-32k-0] peak card1 vram 31.38 GiB
+[monitor 1x2-32k-0] peak RSS 48.22 GiB
+== the engines' own numbers ==
+--- instance 0 (port 8103) engine log /home/michael/strata-xpu/logs/p10-1x2-32k-1x2-engine.log
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.89 GiB free before its session carve
+strata generate: layer split auto: CUDA1 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.59 GiB free before its session carve
+strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
+strata generate: expert cache auto: 27.32 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10742 slots
+strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+strata generate: layer split: CUDA1 runs layers 23-47, expert cache 12800 slots (25.63 GiB), 12800 of its 12800 profiled pairs; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve: 5541 MiB of VRAM free with everything loaded
+== the clients ==
+--- client 0:
+{
+ "tag": "1x2-32k-0",
+ "label": "concurrent",
+ "port": 8103,
+ "wall_s": 66.386,
+ "started": 1791057177.7223647,
+ "ended": 1791057244.1087332,
+ "error": "HTTP 400: b'{\"error\": {\"type\": \"invalid_request_error\", \"message\": \"saving a checkpoint part failed\"}}'"
+}== this arm's report ==
+ }
+}
+[two] {'generated_tokens': 0, 'wall_s': 66.386, 'aggregate_decode_tok_s': 0.0, 'sum_per_request_decode_tok_s': 0}
+[two] instance 0 gpu=0 pool=19 wall=Nones prefill=None decode=None tok/s window=Nonems CPU/lw=None rss=NoneGiB card0=None card1=None
+[two] instance 1 gpu=1 pool=default wall=Nones prefill=None decode=None tok/s window=Nonems CPU/lw=None rss=NoneGiB card0=None card1=None
+[two] instance 0 gpu=[0, 1] pool=19 wall=66.386s prefill=None decode=None tok/s window=Nonems CPU/lw=None rss=48.28GiB card0=25.68 card1=31.38
+[cpu] 1x2-32k: no prompt time (no DONE line and no --prompt-ms)
+[top] top-H-0.txt: busiest sample 13:53:06: 106 engine threads, 2 at >=50% of one core, 2 above 1%
+[top]    tid  1139393   50.0% cpu     27.48s cpu-time
+[top]    tid  1139739   50.0% cpu      0.54s cpu-time
+[top]    tid  1139468    0.0% cpu      0.06s cpu-time
+== what is left ==
+   no engine
+   no server
+   ports 8101/8102/8103 free
+TOTAL on card0                           872.4 MiB
+TOTAL on card1                             0.0 MiB
+-- the clients, verbatim --
+--- /home/michael/strata-xpu/p10/runs/1x2-32k/resp-0.json.timing.json
+{
+ "tag": "1x2-32k-0",
+ "label": "concurrent",
+ "port": 8103,
+ "wall_s": 66.386,
+ "started": 1791057177.7223647,
+ "ended": 1791057244.1087332,
+ "error": "HTTP 400: b'{\"error\": {\"type\": \"invalid_request_error\", \"message\": \"saving a checkpoint part failed\"}}'"
+}--- /home/michael/strata-xpu/p10/runs/1x2-32k/resp-1.json.timing.json
+{
+ "tag": "1x2-32k-1",
+ "label": "concurrent",
+ "port": 8103,
+ "wall_s": 66.883,
+ "started": 1791057177.7223647,
+ "ended": 1791057244.605528,
+ "error": "HTTP 503: b'{\"error\": {\"type\": \"server_error\", \"message\": \"the engine stopped unexpectedly (exit code 1); the next request restarts it\"}}'"
+}-- the configs' engine args --
+--- /home/michael/strata-xpu/p10/runs/1x2-32k/cfg-1x2.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "19"
+ ],
+--- /home/michael/strata-xpu/p10/runs/1x2-32k/cfg-a.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "19"
+ ],
+--- /home/michael/strata-xpu/p10/runs/1x2-32k/cfg-b.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats"
+ ],
+ "env": {
+  "STRATA_DECODE_TIMING": "1"
+-- SSD device (the arm's own sampler) --
+epoch,t_s,sectors_read,mib_s,sectors_delta,ms_reading_delta
+1791057247.437,104.02,3617611510,0.0,0,0
+
+======================================================================================
+ARM 1x2-32k-pc0 (serve.server arm)   dir /home/michael/strata-xpu/p10/runs/1x2-32k-pc0
+======================================================================================
+=== P10 two-instance arm 1x2-32k-pc0 mode=1x2 pools=19/ ctx=32768 maxnew=256 affinity=default pcache=pc0 2026-10-03T13:58:28-06:00
+prompt: /home/michael/strata-xpu/p10/prompts/prompt-ctx32768-user.txt (105544 chars)
+[cfg] /home/michael/strata-xpu/p10/runs/1x2-32k-pc0/cfg-a.json  gpu=0 port=8101 pool=19 affinity=default pc0=True
+[cfg]   log /home/michael/strata-xpu/logs/p10-1x2-32k-pc0-a-engine.log
+[cfg] /home/michael/strata-xpu/p10/runs/1x2-32k-pc0/cfg-b.json  gpu=1 port=8102 pool=default affinity=default pc0=True
+[cfg]   log /home/michael/strata-xpu/logs/p10-1x2-32k-pc0-b-engine.log
+[cfg] /home/michael/strata-xpu/p10/runs/1x2-32k-pc0/cfg-1x2.json  gpu=[0,1] port=8103 pool=19 (the ZE_AFFINITY_MASK must stay unset)
+[cfg]   log /home/michael/strata-xpu/logs/p10-1x2-32k-pc0-1x2-engine.log
+   no engine/server of ours
+TOTAL on card0                           840.7 MiB
+TOTAL on card1                             0.0 MiB
+ 
+:: initializing oneAPI environment ...
+   p10_two.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 1x2-32k-pc0 1x2 19  32768 256  pc0
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+started server 1x2 pid 1140896 port 8103 log /home/michael/strata-xpu/logs/p10-1x2-32k-pc0-1x2-server.log
+== ready after 33 s (2026-10-03T13:59:01-06:00) ==
+engine 0 pid 1140906  ZE_AFFINITY_MASK=0,1
+== fired 2 concurrent requests at 2026-10-03T13:59:03-06:00 ==
+{"tag": "1x2-32k-pc0-1", "label": "concurrent", "port": 8103, "wall_s": 152.159, "started": 1791057543.1110232, "ended": 1791057695.270044, "error": null, "usage": {"prompt_tokens": 32277, "completion_tokens": 256, "total_tokens": 32533, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "length", "timings": {"cache_n": 0, "prompt_n": 32277, "prompt_ms": 138037.1, "prompt_per_token_ms": 4.277, "prompt_per_second": 233.8, "predicted_n": 256, "predicted_ms": 14001.1, "predicted_per_token_ms": 54.692, "predicted_per_second": 18.3, "draft_n": 170, "draft_n_accepted": 114}, "answer_chars": 0, "answer_head": ""}
+{"tag": "1x2-32k-pc0-0", "label": "concurrent", "port": 8103, "wall_s": 303.484, "started": 1791057543.1110315, "ended": 1791057846.5951831, "error": null, "usage": {"prompt_tokens": 32277, "completion_tokens": 256, "total_tokens": 32533, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "length", "timings": {"cache_n": 0, "prompt_n": 32277, "prompt_ms": 137773.5, "prompt_per_token_ms": 4.268, "prompt_per_second": 234.3, "predicted_n": 256, "predicted_ms": 13548.6, "predicted_per_token_ms": 52.924, "predicted_per_second": 18.9, "draft_n": 167, "draft_n_accepted": 115}, "answer_chars": 0, "answer_head": ""}
+== all clients returned 2026-10-03T14:04:06-06:00 ==
+== the engines' own numbers ==
+--- instance 0 (port 8103) engine log /home/michael/strata-xpu/logs/p10-1x2-32k-pc0-1x2-engine.log
+strata generate: layer split: CUDA1 runs layers 23-47, expert cache 12800 slots (25.63 GiB), 12800 of its 12800 profiled pairs; slot 0 verified
+strata generate: 19 expert-pool workers + the host thread
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve: 5563 MiB of VRAM free with everything loaded
+strata decode timing: 142 windows, avg T 2.20, 1.80 tokens/window, 98.60 ms/window = verify 87.06 (GPU-reach wait 68.02 + per-layer host 0.80 [plan 0.27 actq 0.15 jobs 0.15 CPU 0.00] + stage 1.45 + tail 8.96) + commit/emit 1.83 + draft 9.70; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 21.97, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 138037 ms (233.8 tok/s), 256 generated in 14001 ms (18.3 tok/s), drafts accepted 114 of 170, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (149760 hits / 149760 lookups)
+strata serve: expert tiers: GPU 149760 hits this request; since the start RAM 0 blobs, files 0 blobs 58331.3 MB read (the GGUF in place)
+strata decode timing: 141 windows, avg T 2.18, 1.82 tokens/window, 96.09 ms/window = verify 84.58 (GPU-reach wait 67.15 + per-layer host 0.79 [plan 0.27 actq 0.15 jobs 0.15 CPU 0.00] + stage 0.43 + tail 8.90) + commit/emit 1.82 + draft 9.68; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 21.84, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 137774 ms (234.3 tok/s), 256 generated in 13549 ms (18.9 tok/s), drafts accepted 115 of 167, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (147840 hits / 147840 lookups)
+strata serve: expert tiers: GPU 147840 hits this request; since the start RAM 0 blobs, files 0 blobs 66366.0 MB read (the GGUF in place)
+== the clients ==
+--- client 0:
+{
+ "tag": "1x2-32k-pc0-0",
+ "label": "concurrent",
+ "port": 8103,
+ "wall_s": 303.484,
+ "started": 1791057543.1110315,
+ "ended": 1791057846.5951831,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 137773.5,
+  "prompt_per_token_ms": 4.268,
+  "prompt_per_second": 234.3,
+  "predicted_n": 256,
+  "predicted_ms": 13548.6,
+  "predicted_per_token_ms": 52.924,
+  "predicted_per_second": 18.9,
+  "draft_n": 167,
+  "draft_n_accepted": 115
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}== this arm's report ==
+ }
+}
+[two] {'generated_tokens': 256.0, 'wall_s': 303.484, 'aggregate_decode_tok_s': 0.84, 'sum_per_request_decode_tok_s': 18.3}
+[two] instance 0 gpu=0 pool=19 wall=Nones prefill=None decode=None tok/s window=Nonems CPU/lw=None rss=NoneGiB card0=None card1=None
+[two] instance 1 gpu=1 pool=default wall=Nones prefill=None decode=None tok/s window=Nonems CPU/lw=None rss=NoneGiB card0=None card1=None
+[two] instance 0 gpu=[0, 1] pool=19 wall=303.484s prefill=233.8 decode=18.3 tok/s window=98.6ms CPU/lw=0.0 rss=48.26GiB card0=25.69 card1=31.39
+[cpu] 1x2-32k-pc0/threads-0.csv: 32720 thread-ticks, 235 distinct threads; prompt 137.8s
+load           no samples
+prefill          137.8s  cores busy  0.69   threads>=50%:   0  >=10%:  63  of 170 alive
+               busiest: 1141519:49%, 1141328:44%, 1141384:44%, 1141376:44%, 1141424:44%, 1141411:43%, 1141314:43%, 1141395:42%, 1141490:41%, 1141507:41%, 1141346:41%, 1141516:39%, 1141278:36%, 1141332:36%, 1141480:36%, 1140906:35%, 1141276:35%, 1141348:35%, 1141386:35%, 1141316:34%, 1141280:34%, 1141413:34%
+decode           165.8s  cores busy  0.75   threads>=50%:   0  >=10%:  63  of 170 alive
+               busiest: 1141885:50%, 1140906:46%, 1141794:43%, 1141771:43%, 1141819:43%, 1141731:42%, 1141759:42%, 1141716:42%, 1141839:41%, 1141874:41%, 1141783:40%, 1141593:39%, 1141747:36%, 1141796:36%, 1141821:34%, 1141668:34%, 1141718:34%, 1141773:33%, 1141733:32%, 1141762:32%, 1141752:32%, 1141735:31%
+whole request    303.5s  cores busy  0.72   threads>=50%:   0  >=10%: 125  of 235 alive
+[top] top-H-0.txt: busiest sample 13:59:10: 106 engine threads, 2 at >=50% of one core, 2 above 1%
+[top]    tid  1140906   50.0% cpu     26.77s cpu-time
+[top]    tid  1141276   50.0% cpu      0.54s cpu-time
+[top]    tid  1140994    0.0% cpu      0.05s cpu-time
+== what is left ==
+   no engine
+   no server
+   ports 8101/8102/8103 free
+TOTAL on card0                           850.6 MiB
+TOTAL on card1                             0.0 MiB
+-- the clients, verbatim --
+--- /home/michael/strata-xpu/p10/runs/1x2-32k-pc0/resp-0.json.timing.json
+{
+ "tag": "1x2-32k-pc0-0",
+ "label": "concurrent",
+ "port": 8103,
+ "wall_s": 303.484,
+ "started": 1791057543.1110315,
+ "ended": 1791057846.5951831,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 137773.5,
+  "prompt_per_token_ms": 4.268,
+  "prompt_per_second": 234.3,
+  "predicted_n": 256,
+  "predicted_ms": 13548.6,
+  "predicted_per_token_ms": 52.924,
+  "predicted_per_second": 18.9,
+  "draft_n": 167,
+  "draft_n_accepted": 115
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}--- /home/michael/strata-xpu/p10/runs/1x2-32k-pc0/resp-1.json.timing.json
+{
+ "tag": "1x2-32k-pc0-1",
+ "label": "concurrent",
+ "port": 8103,
+ "wall_s": 152.159,
+ "started": 1791057543.1110232,
+ "ended": 1791057695.270044,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 138037.1,
+  "prompt_per_token_ms": 4.277,
+  "prompt_per_second": 233.8,
+  "predicted_n": 256,
+  "predicted_ms": 14001.1,
+  "predicted_per_token_ms": 54.692,
+  "predicted_per_second": 18.3,
+  "draft_n": 170,
+  "draft_n_accepted": 114
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}-- the configs' engine args --
+--- /home/michael/strata-xpu/p10/runs/1x2-32k-pc0/cfg-1x2.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "19",
+  "--prompt-cache",
+--- /home/michael/strata-xpu/p10/runs/1x2-32k-pc0/cfg-a.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "19",
+  "--prompt-cache",
+--- /home/michael/strata-xpu/p10/runs/1x2-32k-pc0/cfg-b.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--prompt-cache",
+  "0",
+  "--prompt-cache-every",
+-- SSD device (the arm's own sampler) --
+epoch,t_s,sectors_read,mib_s,sectors_delta,ms_reading_delta
+1791057848.915,340.06,3617611510,0.0,0,0
+
+======================================================================================
+ARM 2i-32k-9-pc0 (serve.server arm)   dir /home/michael/strata-xpu/p10/runs/2i-32k-9-pc0
+======================================================================================
+=== P10 two-instance arm 2i-32k-9-pc0 mode=2i pools=9/9 ctx=32768 maxnew=256 affinity=default pcache=pc0 2026-10-03T14:04:13-06:00
+prompt: /home/michael/strata-xpu/p10/prompts/prompt-ctx32768-user.txt (105544 chars)
+[cfg] /home/michael/strata-xpu/p10/runs/2i-32k-9-pc0/cfg-a.json  gpu=0 port=8101 pool=9 affinity=default pc0=True
+[cfg]   log /home/michael/strata-xpu/logs/p10-2i-32k-9-pc0-a-engine.log
+[cfg] /home/michael/strata-xpu/p10/runs/2i-32k-9-pc0/cfg-b.json  gpu=1 port=8102 pool=9 affinity=default pc0=True
+[cfg]   log /home/michael/strata-xpu/logs/p10-2i-32k-9-pc0-b-engine.log
+[cfg] /home/michael/strata-xpu/p10/runs/2i-32k-9-pc0/cfg-1x2.json  gpu=[0,1] port=8103 pool=9 (the ZE_AFFINITY_MASK must stay unset)
+[cfg]   log /home/michael/strata-xpu/logs/p10-2i-32k-9-pc0-1x2-engine.log
+   no engine/server of ours
+TOTAL on card0                           850.6 MiB
+TOTAL on card1                             0.0 MiB
+ 
+:: initializing oneAPI environment ...
+   p10_two.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 2i-32k-9-pc0 2i 9 9 32768 256  pc0
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+started server a pid 1142282 port 8101 log /home/michael/strata-xpu/logs/p10-2i-32k-9-pc0-a-server.log
+started server b pid 1142284 port 8102 log /home/michael/strata-xpu/logs/p10-2i-32k-9-pc0-b-server.log
+== ready after 13 s (2026-10-03T14:04:26-06:00) ==
+engine 0 pid 1142295  ZE_AFFINITY_MASK=0
+engine 1 pid 1142296  ZE_AFFINITY_MASK=1
+== fired 2 concurrent requests at 2026-10-03T14:04:28-06:00 ==
+{"tag": "2i-32k-9-pc0-0", "label": "concurrent", "port": 8101, "wall_s": 352.654, "started": 1791057868.574446, "ended": 1791058221.228218, "error": null, "usage": {"prompt_tokens": 32277, "completion_tokens": 256, "total_tokens": 32533, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "length", "timings": {"cache_n": 0, "prompt_n": 32277, "prompt_ms": 330815.9, "prompt_per_token_ms": 10.249, "prompt_per_second": 97.6, "predicted_n": 256, "predicted_ms": 21775.9, "predicted_per_token_ms": 85.062, "predicted_per_second": 11.8, "draft_n": 184, "draft_n_accepted": 129}, "answer_chars": 0, "answer_head": ""}
+{"tag": "2i-32k-9-pc0-1", "label": "concurrent", "port": 8102, "wall_s": 353.489, "started": 1791057868.574446, "ended": 1791058222.063591, "error": null, "usage": {"prompt_tokens": 32277, "completion_tokens": 256, "total_tokens": 32533, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "length", "timings": {"cache_n": 0, "prompt_n": 32277, "prompt_ms": 333309.3, "prompt_per_token_ms": 10.327, "prompt_per_second": 96.8, "predicted_n": 256, "predicted_ms": 20115.9, "predicted_per_token_ms": 78.578, "predicted_per_second": 12.7, "draft_n": 180, "draft_n_accepted": 142}, "answer_chars": 0, "answer_head": ""}
+== all clients returned 2026-10-03T14:10:22-06:00 ==
+== the engines' own numbers ==
+--- instance 0 (port 8101) engine log /home/michael/strata-xpu/logs/p10-2i-32k-9-pc0-a-engine.log
+strata generate: expert cache auto: 25.46 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 9906 slots
+strata generate: expert cache 12936 slots, 24.56 GiB of VRAM; policy is
+strata generate: pre-filled 12936 of 12936 slots from the profile; slot 0 verified
+strata generate: 9 expert-pool workers + the host thread
+strata serve: 526 MiB of VRAM free with everything loaded
+strata decode timing: 128 windows, avg T 2.44, 2.00 tokens/window, 170.12 ms/window = verify 143.28 (GPU-reach wait 101.60 + per-layer host 17.83 [plan 0.50 actq 0.21 jobs 10.59 CPU 5.95] + stage 3.04 + tail 8.80) + commit/emit 0.53 + draft 13.20; per layer-window: CPU experts 0.74 (0.84 entries), VRAM hits 23.54, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 330816 ms (97.6 tok/s), 256 generated in 21776 ms (11.8 tok/s), drafts accepted 129 of 184, 0 checkpoints
+strata serve: decode expert cache hit rate: 96.6% (144604 hits / 149760 lookups)
+strata serve: expert tiers: GPU 144604 hits this request; since the start RAM 0 blobs, files 0 blobs 694485.6 MB read (the GGUF in place)
+--- instance 1 (port 8102) engine log /home/michael/strata-xpu/logs/p10-2i-32k-9-pc0-b-engine.log
+strata generate: expert cache auto: 26.21 GiB free, 700 MiB reserved (+218 MiB for the draft head) -> 10207 slots
+strata generate: expert cache 13329 slots, 25.31 GiB of VRAM; policy is
+strata generate: pre-filled 13329 of 13329 slots from the profile; slot 0 verified
+strata generate: 9 expert-pool workers + the host thread
+strata serve: 528 MiB of VRAM free with everything loaded
+strata decode timing: 116 windows, avg T 2.55, 2.21 tokens/window, 173.41 ms/window = verify 143.58 (GPU-reach wait 97.43 + per-layer host 21.73 [plan 0.65 actq 0.21 jobs 12.71 CPU 7.56] + stage 3.10 + tail 8.65) + commit/emit 0.48 + draft 12.62; per layer-window: CPU experts 0.91 (1.05 entries), VRAM hits 24.47, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 333309 ms (96.8 tok/s), 256 generated in 20116 ms (12.7 tok/s), drafts accepted 142 of 180, 0 checkpoints
+strata serve: decode expert cache hit rate: 95.9% (136229 hits / 142080 lookups)
+strata serve: expert tiers: GPU 136229 hits this request; since the start RAM 0 blobs, files 0 blobs 661921.0 MB read (the GGUF in place)
+== the clients ==
+--- client 0:
+{
+ "tag": "2i-32k-9-pc0-0",
+ "label": "concurrent",
+ "port": 8101,
+ "wall_s": 352.654,
+ "started": 1791057868.574446,
+ "ended": 1791058221.228218,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 330815.9,
+  "prompt_per_token_ms": 10.249,
+  "prompt_per_second": 97.6,
+  "predicted_n": 256,
+  "predicted_ms": 21775.9,
+  "predicted_per_token_ms": 85.062,
+  "predicted_per_second": 11.8,
+  "draft_n": 184,
+  "draft_n_accepted": 129
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}--- client 1:
+{
+ "tag": "2i-32k-9-pc0-1",
+ "label": "concurrent",
+ "port": 8102,
+ "wall_s": 353.489,
+ "started": 1791057868.574446,
+ "ended": 1791058222.063591,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 333309.3,
+  "prompt_per_token_ms": 10.327,
+  "prompt_per_second": 96.8,
+  "predicted_n": 256,
+  "predicted_ms": 20115.9,
+  "predicted_per_token_ms": 78.578,
+  "predicted_per_second": 12.7,
+  "draft_n": 180,
+  "draft_n_accepted": 142
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}== this arm's report ==
+ }
+}
+[two] {'generated_tokens': 512.0, 'wall_s': 353.489, 'aggregate_decode_tok_s': 1.45, 'sum_per_request_decode_tok_s': 24.5}
+[two] instance 0 gpu=0 pool=9 wall=352.654s prefill=97.6 decode=11.8 tok/s window=170.12ms CPU/lw=0.74 rss=47.34GiB card0=30.61 card1=0.0
+[two] instance 1 gpu=1 pool=9 wall=353.489s prefill=96.8 decode=12.7 tok/s window=173.41ms CPU/lw=0.91 rss=47.35GiB card0=0.0 card1=31.36
+[two] instance 0 gpu=[0, 1] pool=9 wall=Nones prefill=None decode=None tok/s window=Nonems CPU/lw=None rss=NoneGiB card0=None card1=None
+[cpu] 2i-32k-9-pc0/threads-0.csv: 22981 thread-ticks, 69 distinct threads; prompt 330.8s
+load           no samples
+prefill          330.8s  cores busy  0.51   threads>=50%:   0  >=10%:   1  of 67 alive
+               busiest: 1142295:36%, 1142510:0%, 1142533:0%, 1142514:0%, 1142512:0%, 1142534:0%, 1142519:0%, 1142516:0%, 1142521:0%, 1142529:0%, 1142504:0%, 1142530:0%, 1142509:0%, 1142523:0%, 1142531:0%, 1142506:0%, 1142507:0%, 1142520:0%, 1142505:0%, 1142518:0%, 1142526:0%, 1142535:0%
+decode            22.7s  cores busy  4.89   threads>=50%:   0  >=10%:  11  of 66 alive
+               busiest: 1142450:48%, 1142452:48%, 1142455:48%, 1142457:48%, 1142449:48%, 1142451:48%, 1142454:48%, 1142453:48%, 1142456:48%, 1142295:47%, 1142503:10%, 1142402:0%, 1142408:0%, 1142411:0%, 1142412:0%, 1142422:0%, 1142424:0%, 1142426:0%, 1142504:0%, 1142509:0%, 1142510:0%, 1142410:0%
+whole request    353.5s  cores busy  0.80   threads>=50%:   0  >=10%:   1  of 69 alive
+[top] top-H-0.txt: busiest sample 14:04:26: 64 engine threads, 0 at >=50% of one core, 0 above 1%
+[top]    tid  1142295    0.0% cpu      8.21s cpu-time
+[top]    tid  1142402    0.0% cpu      0.00s cpu-time
+[top]    tid  1142408    0.0% cpu      0.00s cpu-time
+[cpu] 2i-32k-9-pc0/threads-1.csv: 22977 thread-ticks, 65 distinct threads; prompt 333.3s
+load           no samples
+prefill          333.3s  cores busy  0.50   threads>=50%:   0  >=10%:   1  of 64 alive
+               busiest: 1142296:36%, 1142559:0%, 1142572:0%, 1142562:0%, 1142550:0%, 1142553:0%, 1142561:0%, 1142565:0%, 1142571:0%, 1142574:0%, 1142576:0%, 1142552:0%, 1142557:0%, 1142555:0%, 1142554:0%, 1142570:0%, 1142558:0%, 1142577:0%, 1142568:0%, 1142564:0%, 1142579:0%, 1142560:0%
+decode            20.2s  cores busy  4.62   threads>=50%:   0  >=10%:  11  of 65 alive
+               busiest: 1142296:49%, 1142460:45%, 1142462:45%, 1142463:45%, 1142464:45%, 1142465:45%, 1142458:45%, 1142459:45%, 1142461:45%, 1142466:45%, 1142547:11%, 1142401:0%, 1142428:0%, 1142437:0%, 1142440:0%, 1142442:0%, 1142448:0%, 1142549:0%, 1142554:0%, 1142567:0%, 1142568:0%, 1142569:0%
+whole request    353.5s  cores busy  0.74   threads>=50%:   0  >=10%:   1  of 65 alive
+[top] top-H-1.txt: busiest sample 14:04:26: 64 engine threads, 0 at >=50% of one core, 0 above 1%
+[top]    tid  1142296    0.0% cpu      9.34s cpu-time
+[top]    tid  1142401    0.0% cpu      0.00s cpu-time
+[top]    tid  1142409    0.0% cpu      0.00s cpu-time
+== what is left ==
+   no engine
+   no server
+   ports 8101/8102/8103 free
+TOTAL on card0                           997.0 MiB
+TOTAL on card1                             0.0 MiB
+-- the clients, verbatim --
+--- /home/michael/strata-xpu/p10/runs/2i-32k-9-pc0/resp-0.json.timing.json
+{
+ "tag": "2i-32k-9-pc0-0",
+ "label": "concurrent",
+ "port": 8101,
+ "wall_s": 352.654,
+ "started": 1791057868.574446,
+ "ended": 1791058221.228218,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 330815.9,
+  "prompt_per_token_ms": 10.249,
+  "prompt_per_second": 97.6,
+  "predicted_n": 256,
+  "predicted_ms": 21775.9,
+  "predicted_per_token_ms": 85.062,
+  "predicted_per_second": 11.8,
+  "draft_n": 184,
+  "draft_n_accepted": 129
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}--- /home/michael/strata-xpu/p10/runs/2i-32k-9-pc0/resp-1.json.timing.json
+{
+ "tag": "2i-32k-9-pc0-1",
+ "label": "concurrent",
+ "port": 8102,
+ "wall_s": 353.489,
+ "started": 1791057868.574446,
+ "ended": 1791058222.063591,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 256,
+  "total_tokens": 32533,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 333309.3,
+  "prompt_per_token_ms": 10.327,
+  "prompt_per_second": 96.8,
+  "predicted_n": 256,
+  "predicted_ms": 20115.9,
+  "predicted_per_token_ms": 78.578,
+  "predicted_per_second": 12.7,
+  "draft_n": 180,
+  "draft_n_accepted": 142
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}-- the configs' engine args --
+--- /home/michael/strata-xpu/p10/runs/2i-32k-9-pc0/cfg-1x2.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "9",
+  "--prompt-cache",
+--- /home/michael/strata-xpu/p10/runs/2i-32k-9-pc0/cfg-a.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "9",
+  "--prompt-cache",
+--- /home/michael/strata-xpu/p10/runs/2i-32k-9-pc0/cfg-b.json
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats",
+  "--pool-workers",
+  "9",
+  "--prompt-cache",
+-- SSD device (the arm's own sampler) --
+epoch,t_s,sectors_read,mib_s,sectors_delta,ms_reading_delta
+1791058224.449,370.07,3617611510,0.0,0,0
 

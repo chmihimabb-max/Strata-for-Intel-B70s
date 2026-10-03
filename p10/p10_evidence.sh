@@ -5,9 +5,13 @@
 #
 # Every line under "the engine's own lines" is copied verbatim from the arm's err.txt/out.txt (the engine's own
 # --stats output); the CPU blocks come from the two samplers; the VRAM/RSS numbers come from the driver's fdinfo.
+# The two-instance arms keep their engine logs outside the arm dir (the server owns them), so their own log.txt -
+# which the rig fills with the same sections - is included as it stands.
 R=/home/michael/strata-xpu
 SRC=$R/strata
 ARMS=${*:-"1c-4k 2c-4k 1c1-4k 1c-32k 2c-32k 1c-128k 2c-128k"}
+TWO="2i-32k-9 2i-32k-19 1x2-32k 1x2-32k-pc0 2i-32k-9-pc0"
+
 for TAG in $ARMS; do
   D=$R/p10/runs/$TAG
   echo "======================================================================================"
@@ -19,7 +23,7 @@ for TAG in $ARMS; do
   grep -h "^cd $D &&" "$D/log.txt" 2>/dev/null
   echo
   echo "-- the engine's own lines --"
-  grep -hE "strata generate: expert cache auto|strata generate: expert cache [0-9]+ slots|pre-filled|layer split auto: K=|layer split across|layer split: [0-9.]+% of the experts resident|token graph hit path|of the experts resident|expert-pool workers|VRAM free with everything loaded|experts via mmap|SSD is kept awake" \
+  grep -hE "strata generate: expert cache auto|strata generate: expert cache [0-9]+ slots|pre-filled|layer split auto: K=|layer split across|layer split: [0-9.]+% of the experts resident|token graph hit path|of the experts resident|expert-pool workers|VRAM free with everything loaded|experts via mmap|SSD is kept awake|PCIe probe|has no AVX-512" \
       "$D/err.txt" 2>/dev/null
   grep -hE "^INFO context=" "$D/out.txt" "$D/err.txt" 2>/dev/null | head -1
   grep -hE "strata decode timing" "$D/err.txt" 2>/dev/null | tail -1
@@ -36,8 +40,27 @@ for TAG in $ARMS; do
   echo "-- per-thread CPU by phase (p10_threads.py deltas, phase boundaries from the engine's own DONE line) --"
   /usr/bin/python3 "$SRC/p10/p10_cpu_report.py" "$D" 2>&1
   echo
-  echo "-- VRAM / RSS peaks (driver fdinfo) --"
-  grep -h "monitor" "$D/log.txt" 2>/dev/null || echo "  (no monitor lines)"
-  /usr/bin/python3 "$SRC/p10/p10_summary.py" "$D" 2>/dev/null | grep -E "peak_|vram_free_loaded|req_file|req_ram|tiers_line"
+  echo "-- VRAM / RSS peaks and the tiers (p10_summary.py) --"
+  /usr/bin/python3 "$SRC/p10/p10_summary.py" "$D" 2>/dev/null | grep -E "peak_|vram_free_loaded|req_file|req_ram|tiers_line|kv_stream_line"
+  echo
+done
+
+for TAG in $TWO; do
+  D=$R/p10/runs/$TAG
+  echo "======================================================================================"
+  echo "ARM $TAG (serve.server arm)   dir $D"
+  echo "======================================================================================"
+  [ -d "$D" ] || { echo "  (no such arm)"; continue; }
+  cat "$D/log.txt" 2>/dev/null
+  echo "-- the clients, verbatim --"
+  for f in "$D"/resp-*.json.timing.json; do [ -r "$f" ] && { echo "--- $f"; cat "$f"; }; done
+  echo "-- the configs' engine args --"
+  for f in "$D"/cfg-*.json; do
+    [ -r "$f" ] || continue
+    echo "--- $f"; grep -A30 '"args"' "$f" | head -32
+  done
+  echo "-- SSD device (the arm's own sampler) --"
+  head -1 "$D/disk.csv" 2>/dev/null
+  tail -1 "$D/disk.csv" 2>/dev/null
   echo
 done

@@ -16,16 +16,16 @@ R=/home/michael/strata-xpu
 SRC=$R/strata
 set +e
 
-TAG=${1:?tag}; MODE=${2:?mode}; PA=${3:-}; PB=${4:-}; CTX=${5:-32768}; MAXNEW=${6:-256}; AFF=${7:-}
+TAG=${1:?tag}; MODE=${2:?mode}; PA=${3:-}; PB=${4:-}; CTX=${5:-32768}; MAXNEW=${6:-256}; AFF=${7:-}; PC=${8:-}
 D=$R/p10/runs/$TAG
 LOG=$D/log.txt; MK=$D/markers.tsv
 mkdir -p "$D"; : > "$LOG"; : > "$MK"
 PROMPTFILE=$R/p10/prompts/prompt-ctx$CTX-user.txt
 test -r "$PROMPTFILE" || { echo "no text prompt $PROMPTFILE (run p10_prompt_text.py $CTX)"; exit 2; }
 
-echo "=== P10 two-instance arm $TAG mode=$MODE pools=$PA/$PB ctx=$CTX maxnew=$MAXNEW affinity=${AFF:-default} $(date -Is)" >> "$LOG"
+echo "=== P10 two-instance arm $TAG mode=$MODE pools=$PA/$PB ctx=$CTX maxnew=$MAXNEW affinity=${AFF:-default} pcache=${PC:-default} $(date -Is)" >> "$LOG"
 echo "prompt: $PROMPTFILE ($(wc -c < "$PROMPTFILE") chars)" >> "$LOG"
-/usr/bin/python3 "$SRC/p10/p10_two_configs.py" "$TAG" "$CTX" "$PA" "$PB" "$AFF" >> "$LOG" 2>&1
+/usr/bin/python3 "$SRC/p10/p10_two_configs.py" "$TAG" "$CTX" "$PA" "$PB" "$AFF" "$PC" >> "$LOG" 2>&1
 pgrep -a -f "build-sycl/strata|serve/server.py" >> "$LOG" 2>&1 || echo "   no engine/server of ours" >> "$LOG"
 /usr/bin/python3 "$R/scripts/m6_occupancy.py" 2>&1 | tail -2 >> "$LOG"
 
