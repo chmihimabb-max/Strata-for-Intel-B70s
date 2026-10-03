@@ -65,8 +65,19 @@ constexpr int QS = HD + 8;        // q row stride in halves (bank-conflict-free 
 // select_from_group ops and does the 16-term dot products in FP32 (products of f16 values are exact in FP32, so
 // only the summation order differs from the hardware instruction).  Its fragment-layout convention is verified
 // on the device against a scalar reference by probe/probe23_mma_emul.cpp (128 of 128 outputs, max abs err 0).
-__device__ __forceinline__ void mma16816(float* c, const uint32_t* a, const uint32_t* b) {
+// t_a1b6fa6c (P2): [[maybe_unused]] because every call site now goes through mma16816_pair below, and this
+// body is reached only under the D1_NO_QLO / D1_NO_PLO precision switches (neither is on in a default build).
+[[maybe_unused]] __device__ __forceinline__ void mma16816(float* c, const uint32_t* a, const uint32_t* b) {
     ::strata::sycl_compat::mma16816_f32(::strata::sycl_compat::this_item().get_sub_group(), c, a, b);
+}
+// t_a1b6fa6c (P2): the two-call form the kernel uses at ALL FOUR of its mma sites - A's hi half and A's lo half
+// against ONE B fragment.  Both calls rebuild the same B fragment (16 select_from_group gathers + 32 f16->f32
+// conversions of the 16 B values), so the emulation can do that once for the pair: mma16816_f32_pair does, and
+// the arithmetic is unchanged (same products, same 16-term k order per half, the two halves added to c in the
+// same order).  Measured on BMG-G31: the pair 5.848 -> 4.755 ms per 4000 iterations over 8192 work-items, 18.7%
+// cheaper, against a 128-FMA floor of 0.792 ms (bench/micro/p2_qsa_emul_cost.cpp).
+__device__ __forceinline__ void mma16816_pair(float* c, const uint32_t* ahi, const uint32_t* alo, const uint32_t* b) {
+    ::strata::sycl_compat::mma16816_f32_pair(::strata::sycl_compat::this_item().get_sub_group(), c, ahi, alo, b);
 }
 
 // Two int8 codes (low byte first) as an exact half2: 1024 + (c + 128) built in the mantissa, minus 1152.
@@ -113,9 +124,9 @@ __global__ void __launch_bounds__(THREADS) prompt_attn_kernel(uint8_t* _sycl_dyn
                                                               int page_size, float scale_log2, float* __restrict__ attn,
                                                               int cap) {
     
-#line 99 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 110 "src/kernels/cuda/qsa_prompt_attn.cu"
 __align__(16) unsigned char* smem_raw = reinterpret_cast<__align__(16) unsigned char*>(_sycl_dyn);
-#line 99 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 110 "src/kernels/cuda/qsa_prompt_attn.cu"
 
     Smem<KV_MODE>& S = *reinterpret_cast<Smem<KV_MODE>*>(smem_raw);
     const int qi = blockIdx.x, kvh = blockIdx.y;
@@ -261,9 +272,10 @@ __align__(16) unsigned char* smem_raw = reinterpret_cast<__align__(16) unsigned 
                         b[0] = *reinterpret_cast<const uint32_t*>(&S.k[cb + gid][k0 + 2 * tig]);
                         b[1] = *reinterpret_cast<const uint32_t*>(&S.k[cb + gid][k0 + 2 * tig + 8]);
                     }
+#ifdef D1_NO_QLO
                     mma16816(tg, ah, b);
-#ifndef D1_NO_QLO
-                    mma16816(tg, al, b);
+#else
+                    mma16816_pair(tg, ah, al, b);
 #endif
                 }
                 const float s0 = S.ks[cb + 2 * tig][g], s1 = S.ks[cb + 2 * tig + 1][g];
@@ -358,9 +370,10 @@ __align__(16) unsigned char* smem_raw = reinterpret_cast<__align__(16) unsigned 
                         b[0] = *reinterpret_cast<const uint32_t*>(&h0);
                         b[1] = *reinterpret_cast<const uint32_t*>(&h1);
                     }
+#ifdef D1_NO_PLO
                     mma16816(tmp[j], ah, b);
-#ifndef D1_NO_PLO
-                    mma16816(tmp[j], al, b);
+#else
+                    mma16816_pair(tmp[j], ah, al, b);
 #endif
                 }
             }
@@ -427,9 +440,9 @@ __global__ void __launch_bounds__(THREADS) prompt_attn_i8_kernel(uint8_t* _sycl_
                                                                  int page_size, float scale_log2,
                                                                  float* __restrict__ attn, int cap) {
     
-#line 409 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 422 "src/kernels/cuda/qsa_prompt_attn.cu"
 __align__(16) unsigned char* smem_raw = reinterpret_cast<__align__(16) unsigned char*>(_sycl_dyn);
-#line 409 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 422 "src/kernels/cuda/qsa_prompt_attn.cu"
 
     Smem2& S = *reinterpret_cast<Smem2*>(smem_raw);
     const int qi = blockIdx.x, kvh = blockIdx.y;
@@ -526,8 +539,7 @@ __align__(16) unsigned char* smem_raw = reinterpret_cast<__align__(16) unsigned 
                 uint32_t b[2];
                 b[0] = i8x2_to_h2(*reinterpret_cast<const uint16_t*>(K + swz(cell, kk * 16 + 2 * tig)));
                 b[1] = i8x2_to_h2(*reinterpret_cast<const uint16_t*>(K + swz(cell, kk * 16 + 2 * tig + 8)));
-                mma16816(tg, qh[kk], b);
-                mma16816(tg, ql[kk], b);
+                mma16816_pair(tg, qh[kk], ql[kk], b);
             }
             const int c = nt * 8 + 2 * tig;
             const float s0 = S.sc[st][warp][0][c], s1 = S.sc[st][warp][0][c + 1];
@@ -609,8 +621,7 @@ __align__(16) unsigned char* smem_raw = reinterpret_cast<__align__(16) unsigned 
                     uint32_t b[2];
                     b[0] = i8x2_to_h2(x0);
                     b[1] = i8x2_to_h2(x1);
-                    mma16816(tmp[j], ah, b);
-                    mma16816(tmp[j], al, b);
+                    mma16816_pair(tmp[j], ah, al, b);
                 }
             }
             const float a0 = S.alpha[gid], a1 = S.alpha[gid + 8];
@@ -659,7 +670,7 @@ bool launch_i8(const float* q, const QsaAttnPools& pools, const int32_t* ids, co
     for (int64_t q0 = 0; q0 < n_q; q0 += 65535) {
         const int64_t nb = n_q - q0 < 65535 ? n_q - q0 : 65535;
         
-#line 637 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 648 "src/kernels/cuda/qsa_prompt_attn.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -668,7 +679,7 @@ bool launch_i8(const float* q, const QsaAttnPools& pools, const int32_t* ids, co
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; prompt_attn_i8_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( dim3((unsigned) nb, (unsigned) s.n_head_kv), THREADS, bytes, st, q + q0 * s.n_head * HD, pools, ids + q0 * cap, steps + q0 * kStepCount, (int) s.n_head_kv,
             (int) s.page_size, scale_log2, attn + q0 * s.n_head * HD, (int) cap)
-#line 639 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 650 "src/kernels/cuda/qsa_prompt_attn.cu"
 ;
     }
     const cudaError_t e = cudaGetLastError();
@@ -699,7 +710,7 @@ bool launch(const float* q, const QsaAttnPools& pools, const int32_t* ids, const
     for (int64_t q0 = 0; q0 < n_q; q0 += 65535) {
         const int64_t nb = n_q - q0 < 65535 ? n_q - q0 : 65535;
         
-#line 668 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 679 "src/kernels/cuda/qsa_prompt_attn.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -708,7 +719,7 @@ bool launch(const float* q, const QsaAttnPools& pools, const int32_t* ids, const
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; prompt_attn_kernel<KV_MODE>(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( dim3((unsigned) nb, (unsigned) s.n_head_kv), THREADS, bytes, st, q + q0 * s.n_head * HD, pools, ids + q0 * cap, steps + q0 * kStepCount, (int) s.n_head_kv,
             (int) s.page_size, scale_log2, attn + q0 * s.n_head * HD, (int) cap)
-#line 670 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 681 "src/kernels/cuda/qsa_prompt_attn.cu"
 ;
     }
     const cudaError_t e = cudaGetLastError();
@@ -774,9 +785,9 @@ __global__ void __launch_bounds__(THREADS) prompt_attn_wmma_kernel(uint8_t* _syc
                                                                    float* __restrict__ attn, int cap) {
 #if STRATA_PA_WMMA
     
-#line 760 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 771 "src/kernels/cuda/qsa_prompt_attn.cu"
 SmemW& S = *::sycl::ext::oneapi::group_local_memory_for_overwrite<SmemW>(::strata::sycl_compat::this_item().get_group()).get();
-#line 760 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 771 "src/kernels/cuda/qsa_prompt_attn.cu"
 
     const int qi = blockIdx.x, kvh = blockIdx.y;
     const int n_head = n_kv_heads * G;
@@ -992,7 +1003,7 @@ bool launch_wmma(const float* q, const QsaAttnPools& pools, const int32_t* ids, 
     for (int64_t q0 = 0; q0 < n_q; q0 += 65535) {
         const int64_t nb = n_q - q0 < 65535 ? n_q - q0 : 65535;
         
-#line 948 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 959 "src/kernels/cuda/qsa_prompt_attn.cu"
 [](auto _sycl_grid, auto _sycl_block, auto _sycl_smem, auto _sycl_stream, auto... _sycl_args) {
     const ::strata::sycl_compat::launch_shape _sycl_shape =
         ::strata::sycl_compat::shape_of(_sycl_grid, _sycl_block);
@@ -1001,7 +1012,7 @@ bool launch_wmma(const float* q, const QsaAttnPools& pools, const int32_t* ids, 
         [=](sycl::nd_item<1> _sycl_item, uint8_t* _sycl_dyn) { (void) _sycl_item; (void) _sycl_dyn; prompt_attn_wmma_kernel(_sycl_dyn, _sycl_shape, _sycl_args...); });
 }( dim3((unsigned) nb, (unsigned) s.n_head_kv), THREADS, 0, st, q + q0 * s.n_head * HD, pools, ids + q0 * cap, steps + q0 * kStepCount, (int) s.n_head_kv,
             (int) s.page_size, scale_log2, attn + q0 * s.n_head * HD, (int) cap)
-#line 950 "src/kernels/cuda/qsa_prompt_attn.cu"
+#line 961 "src/kernels/cuda/qsa_prompt_attn.cu"
 ;
     }
     const cudaError_t e = cudaGetLastError();

@@ -83,8 +83,19 @@ REPLACEMENTS = [
 // select_from_group ops and does the 16-term dot products in FP32 (products of f16 values are exact in FP32, so
 // only the summation order differs from the hardware instruction).  Its fragment-layout convention is verified
 // on the device against a scalar reference by probe/probe23_mma_emul.cpp (128 of 128 outputs, max abs err 0).
-__device__ __forceinline__ void mma16816(float* c, const uint32_t* a, const uint32_t* b) {
+// t_a1b6fa6c (P2): [[maybe_unused]] because every call site now goes through mma16816_pair below, and this
+// body is reached only under the D1_NO_QLO / D1_NO_PLO precision switches (neither is on in a default build).
+[[maybe_unused]] __device__ __forceinline__ void mma16816(float* c, const uint32_t* a, const uint32_t* b) {
     ::strata::sycl_compat::mma16816_f32(::strata::sycl_compat::this_item().get_sub_group(), c, a, b);
+}
+// t_a1b6fa6c (P2): the two-call form the kernel uses at ALL FOUR of its mma sites - A's hi half and A's lo half
+// against ONE B fragment.  Both calls rebuild the same B fragment (16 select_from_group gathers + 32 f16->f32
+// conversions of the 16 B values), so the emulation can do that once for the pair: mma16816_f32_pair does, and
+// the arithmetic is unchanged (same products, same 16-term k order per half, the two halves added to c in the
+// same order).  Measured on BMG-G31: the pair 5.848 -> 4.755 ms per 4000 iterations over 8192 work-items, 18.7%
+// cheaper, against a 128-FMA floor of 0.792 ms (bench/micro/p2_qsa_emul_cost.cpp).
+__device__ __forceinline__ void mma16816_pair(float* c, const uint32_t* ahi, const uint32_t* alo, const uint32_t* b) {
+    ::strata::sycl_compat::mma16816_f32_pair(::strata::sycl_compat::this_item().get_sub_group(), c, ahi, alo, b);
 }""",
     ),
     # 4. cp.async: the predicated 16/0 byte copy, commit_group and wait_group 1
@@ -167,5 +178,42 @@ __device__ __forceinline__ void cp_async_wait1() {}""",
                          strata::sycl_compat::xmx_reason());
         }
     }""",
+    ),
+    # 6. t_a1b6fa6c (P2): the four mma sites' hi/lo PAIRS -> one fused call each.  mma16816(c, ah, b);
+    #    mma16816(c, al, b); rebuild the same B fragment twice; mma16816_pair builds it once.  Bit-identical
+    #    (same products, same order), measured 18.7% cheaper per pair on BMG-G31.  The D1_NO_QLO / D1_NO_PLO
+    #    compile-time precision switches keep exactly the meaning they had: with one defined, only the hi half
+    #    runs, as before.
+    (
+        r"""                    mma16816(tg, ah, b);
+#ifndef D1_NO_QLO
+                    mma16816(tg, al, b);
+#endif""",
+        r"""#ifdef D1_NO_QLO
+                    mma16816(tg, ah, b);
+#else
+                    mma16816_pair(tg, ah, al, b);
+#endif""",
+    ),
+    (
+        r"""                    mma16816(tmp[j], ah, b);
+#ifndef D1_NO_PLO
+                    mma16816(tmp[j], al, b);
+#endif""",
+        r"""#ifdef D1_NO_PLO
+                    mma16816(tmp[j], ah, b);
+#else
+                    mma16816_pair(tmp[j], ah, al, b);
+#endif""",
+    ),
+    (
+        r"""                mma16816(tg, qh[kk], b);
+                mma16816(tg, ql[kk], b);""",
+        r"""                mma16816_pair(tg, qh[kk], ql[kk], b);""",
+    ),
+    (
+        r"""                    mma16816(tmp[j], ah, b);
+                    mma16816(tmp[j], al, b);""",
+        r"""                    mma16816_pair(tmp[j], ah, al, b);""",
     ),
 ]
