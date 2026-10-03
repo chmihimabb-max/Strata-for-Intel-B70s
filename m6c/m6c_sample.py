@@ -17,6 +17,37 @@ import sys
 import time
 
 COLS = ["rchar", "read_bytes", "syscr", "majflt", "minflt"]
+CARD = {"0000:03:00.0": "card0", "0000:08:00.0": "card1"}
+
+
+def vram(pid: int) -> dict:
+    """Per-card VRAM held by this pid, from the driver's own DRM fdinfo (deduped by client id).
+
+    The field is `drm-total-vram0` (a regex of `drm-[a-z0-9]+` matches nothing and reports 0 as if it were
+    a measurement - the M6 pitfall).  One process holds several fds on the same DRM client and each repeats
+    the same figure, so dedupe on (drm-pdev, drm-client-id).
+    """
+    import glob
+    import re
+    seen: dict[tuple[str, str], int] = {}
+    for path in glob.glob("/proc/%d/fdinfo/*" % pid):
+        try:
+            txt = open(path).read()
+        except OSError:
+            continue
+        if "drm-client-id" not in txt:
+            continue
+        pdev = re.search(r"^drm-pdev:\s*(\S+)$", txt, re.M)
+        cid = re.search(r"^drm-client-id:\s*(\d+)$", txt, re.M)
+        v = re.search(r"^drm-total-vram0:\s*(\d+) KiB$", txt, re.M)
+        if not (pdev and cid):
+            continue
+        seen[(pdev.group(1), cid.group(1))] = int(v.group(1)) if v else 0
+    out: dict[str, int] = {}
+    for (pdev, _cid), kib in seen.items():
+        c = CARD.get(pdev, pdev)
+        out[c] = out.get(c, 0) + kib
+    return out
 
 
 def tree(root_pid: int) -> list[int]:
@@ -54,11 +85,13 @@ def sample(root_pid: int, csv: str, secs: float) -> None:
     peak_rss = 0
     n = 0
     with open(csv, "w") as f:
-        f.write("epoch,t_s,nprocs,rss_bytes,max_proc_rss,read_bytes,majflt,minflt,rchar,cached_kb,mlocked_kb\n")
+        f.write("epoch,t_s,nprocs,rss_bytes,max_proc_rss,read_bytes,majflt,minflt,rchar,cached_kb,mlocked_kb,"
+                "vram0_mib,vram1_mib\n")
         while time.time() - t0 < secs:
             d = {c: 0 for c in COLS}
             rss = 0
             maxp = 0
+            vr: dict = {}
             procs = tree(root_pid)
             for pid in procs:
                 try:
@@ -78,6 +111,8 @@ def sample(root_pid: int, csv: str, secs: float) -> None:
                                 rss += b
                                 maxp = max(maxp, b)
                                 break
+                    for c, kib in vram(pid).items():
+                        vr[c] = vr.get(c, 0) + kib
                 except (OSError, IndexError):
                     continue
             if not procs:
@@ -85,9 +120,10 @@ def sample(root_pid: int, csv: str, secs: float) -> None:
             mi = meminfo()
             peak_rss = max(peak_rss, rss)
             n += 1
-            f.write("%.3f,%.1f,%d,%d,%d,%d,%d,%d,%d,%d,%d\n" % (
+            f.write("%.3f,%.1f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.1f,%.1f\n" % (
                 time.time(), time.time() - t0, len(procs), rss, maxp, d["read_bytes"], d["majflt"],
-                d["minflt"], d["rchar"], mi.get("Cached", 0), mi.get("Mlocked", 0)))
+                d["minflt"], d["rchar"], mi.get("Cached", 0), mi.get("Mlocked", 0),
+                vr.get("card0", 0) / 1024.0, vr.get("card1", 0) / 1024.0))
             f.flush()
             time.sleep(1.0)
     print("sampled %d points over the tree of pid %d; peak tree RSS %.2f GiB" % (n, root_pid, peak_rss / 2 ** 30))

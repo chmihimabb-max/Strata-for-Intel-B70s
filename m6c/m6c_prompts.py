@@ -46,6 +46,11 @@ LENGTHS = {32768: 32256, 65536: 64512, 131072: 129024, 262144: 259943}
 # refuses n + max_new + 8 > max-context, so the 4K control's prompt is 3,832 tokens: 3832+256+8 = 4096)
 NEEDLE_LENGTHS = {4096: 3832, 262144: 259943}
 NEEDLE_DEPTH = 0.50
+# The 256K needle failed at 50% depth (the model answered "No such access code appears in the document"),
+# so one more arm locates the failure: the same 259,943-token prompt with the needle near the START
+# (5%).  If retrieval works there, the 256K path carries the content and the 50% failure is a position
+# effect; if it fails there too, the 256K path itself is the suspect.
+EXTRA_NEEDLE = [(262144, 259943, 0.05, "-d5")]
 
 NEEDLE = ("\n\nThe fallback station log for the Diversity Antenna Project array records one access code, "
           "and that code is ZK-4471-QX. It is unique to that array's fallback station.\n\n")
@@ -140,20 +145,20 @@ def main() -> int:
         man["prompts"].append(row)
         print(f"  prompt-ctx{ctx}.txt {n} tokens (body {body})  tail={row['tail_text'][-60:]!r}")
 
-    for ctx, n in NEEDLE_LENGTHS.items():
+    for (ctx, n, depth, suffix) in [(c, nn, NEEDLE_DEPTH, "") for c, nn in NEEDLE_LENGTHS.items()] + EXTRA_NEEDLE:
         body = n - len(head_ids) - len(q_ids)
         if body <= len(n_ids):
             print(f"FATAL: ctx {ctx} too short"); return 2
-        d = int(body * NEEDLE_DEPTH)
+        d = int(body * depth)
         sel = head_ids + ids[:d] + n_ids + ids[d + len(n_ids):body] + q_ids
         assert len(sel) == n, (len(sel), n)
-        row = {"kind": "needle", "ctx": ctx, "max_new": 256, "depth_frac": NEEDLE_DEPTH,
+        row = {"kind": "needle", "ctx": ctx, "max_new": 256, "depth_frac": depth,
                "needle_ids": n_ids, "needle_at": len(head_ids) + d, "question_ids": q_ids,
                "question_text": QUESTION, "needle_text": NEEDLE, "answer": "ZK-4471-QX",
                "head_text": tok.decode(sel[:60]), "tail_text": tok.decode(sel[-90:])}
-        row.update(write_prompt(OUT / f"prompt-needle-ctx{ctx}.txt", sel))
+        row.update(write_prompt(OUT / f"prompt-needle-ctx{ctx}{suffix}.txt", sel))
         man["prompts"].append(row)
-        print(f"  prompt-needle-ctx{ctx}.txt {n} tokens  needle at {row['needle_at']} "
+        print(f"  prompt-needle-ctx{ctx}{suffix}.txt {n} tokens  needle at {row['needle_at']} "
               f"({100.0 * row['needle_at'] / n:.1f}% depth)  {len(q_ids)} question ids")
 
     (OUT / "prompt-manifest.json").write_text(json.dumps(man, indent=1), encoding="utf-8")

@@ -1,0 +1,26 @@
+M6c: the two prompt-shape findings before the needle rows were usable (raw protocol evidence, first
+attempt at 4K on 2026-10-02 18:00, run m6c-needle-4k, prompt 3,968 tokens, --max-context 4096)
+
+1) The question as a plain continuation of the document produced EOS on the first token:
+     stdout:  REUSED 0 / T 248046 / DONE 1 3968 17384.0 187.6 stop 0 0 0 480 480 0 0 0.0
+     stderr:  strata serve: prompt 3968 tokens = 0 reused + 3968 read in 17384 ms (228.3 tok/s),
+              1 generated in 188 ms (5.3 tok/s), drafts accepted 0 of 0, 0 checkpoints
+   (248046 is the tokenizer's end-of-turn token.)  The prompt was the corpus with
+   "Question: ... What is that access code? Answer with the code only.\nAnswer:" appended as raw text.
+
+2) The same content as a real chat turn (<|im_start|>system ... <|im_end|><|im_start|>user ... question
+   <|im_end|>\n<|im_start|>assistant) is answered, but 64 generated tokens is not enough: the model opens a
+   <think> block and quotes the buried passage, then runs out of budget mid-quote:
+
+     DONE 64 3968 16487.2 2906.3 length 48 57 0 36960 36960 0 0 0.0
+     ids : [248068, 198, 760, 1156, 369, 9859, 883, 449, 2528, 1970, 364, 279, 62774, 6543, 14517, 5606,
+             1287, 9444, 303, 279, 2128, 13, 6558, 728, 2624, 1472, 279, 2128, 364, 411, 1928, 13, 271, 40,
+             1669, 411, 20438, 303, 279, 2128, 25, 328, 760, 31686, 7803, 1433, 364, 279, 62774, 6543,
+             14517, 5606, 1287, 7189, 799, 2528, 1970, 11, 321, 421, 1970, 369, 1799, 42]
+     text: '<think>\nThe user is asking about an access code for the Diversity Antenna Project array
+            mentioned in the document. Let me search through the document for this information.\n\n
+            I found this passage in the document: "The fallback station log for the Diversity Antenna
+            Project array records one access code, and that code is ZK'
+
+   So the needle rows run with max_new 256 (same as the curve rows), and the answer is read out of the
+   full generated text, not out of the first line.

@@ -1,0 +1,35 @@
+m6c: IQ3_S served at the full 262,144-token window on both B70s with KV streaming, and the depth curve
+
+The card's deliverable, measured 2026-10-02 on the project box with the config of record
+(strata-sycl-iq3s.json: "gpu": [0,1] -> --layer-split auto, ZE_AFFINITY_MASK unset, --kv int8,
+--expert-cache auto, --mmap-experts, --spec 4, --no-capture, --stats) plus --kv-resident 32768:
+
+Depth curve, --prefill auto, 256 usage-counted generated tokens per row (both cards, IQ3_S GSQ-RCO):
+  prompt 32,256   prefill 344.8 tok/s   decode 21.71 tok/s   TTFT  93.70 s
+  prompt 64,512   prefill 339.6 tok/s   decode 18.67 tok/s   TTFT 190.05 s
+  prompt 129,024  prefill 342.6 tok/s   decode 19.55 tok/s   TTFT 376.74 s
+  prompt 259,943  prefill 316.9 tok/s   decode 18.45 tok/s   TTFT 820.52 s   <- the full window
+--prefill 512 (the second arm, and what M6/I1/I2 used) is 1.47x/1.56x slower at 32K/64K with decode
+unchanged: the chunk size is a measured prefill term, and it is why the card names --prefill auto.
+
+KV streaming engaged and measured, not assumed: kv_resident=32768 cells per QSA layer (8,192 pages of 4
+cells; a no-op at 32K by construction), 1.29 GiB pinned per stage at 262,144 cells, and 90.99% of 790,765
+block reads served from VRAM with 287.1 MiB read from RAM over the 256K request.  The RAM cost is
+12,672 B per context token (12.4 KiB) against the docs' 13.7 KB, which counts 13 QSA layers where the
+model has 12.
+
+On this box streaming does NOT buy expert residency -- 24,576 slots against 24,302 (+1.1%) at 256K, both
+100%/-99% resident -- and it costs 18.9% of the prompt read (316.9 against 390.7 tok/s) while decode moves
+3% the other way.  Upstream's 1,589 -> 3,872 experts was a 12 GB card; here the K/V (3.32 GB) is 5% of the
+63.8 GiB of VRAM and the expert profile fits either way.  Stated as a finding, as the card asked.
+
+SSD tier: the 83.62 GB file sat in the page cache (Cached 90 GB of 123 GB), the warm 256K runs still read
+10.32 GiB from the device once the engine's own 48 GiB RSS squeezed the cache, and the page-cache-dropped
+arm read 54.45 GiB with 73,864 major faults while prefilling at exactly the same 316.9 tok/s.
+
+Correctness at depth: the needle at 50% depth is answered exactly (ZK-4471-QX) at the 4K control and is
+NOT retrieved at 256K (the model concludes no such code is in the document) -- the negative result the
+card asked not to paper over.  A 5%-depth arm of the same 256K prompt locates it (see the write-up), and
+the oracle differential was attempted but this fork crashes at 262,144 with a quantised KV cache.
+
+Evidence: m6c/ in the repo (harness, tables, all runs) and ~/strata-xpu/WRITEUP.md Part II.

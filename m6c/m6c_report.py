@@ -155,9 +155,14 @@ def report(d: pathlib.Path) -> dict:
         r["cached_before_gib"] = round(rows[0]["cached_kb"] / 2 ** 20, 1)
         r["cached_after_gib"] = round(rows[-1]["cached_kb"] / 2 ** 20, 1)
         r["mlocked_peak_gib"] = round(max(x["mlocked_kb"] for x in rows) / 2 ** 20, 2)
+        if "vram0_mib" in rows[0]:
+            r["peak_vram0_mib"] = round(max(x["vram0_mib"] for x in rows), 1)
+            r["peak_vram1_mib"] = round(max(x["vram1_mib"] for x in rows), 1)
         if tl.get("ready") is not None:
             s = at(rows, tl["ready"])
             r["rss_at_ready_gib"] = round(s.get("rss_bytes", 0) / 2 ** 30, 2)
+            if "vram0_mib" in s:
+                r["vram_at_ready_mib"] = (round(s.get("vram0_mib", 0), 1), round(s.get("vram1_mib", 0), 1))
             r["epoch_ready"] = tl["ready"]
             r["epoch_first_sample"] = rows[0]["epoch"]
     r["generated_ids"] = [int(l.split()[1]) for l in out.splitlines() if l.startswith("T ")]
@@ -201,6 +206,9 @@ def main() -> int:
         if "peak_rss_gib" in r:
             print("  RSS: peak %.2f GiB, at READY %.2f GiB, peak proc %.2f GiB, Mlocked peak %.2f GiB"
                   % (r["peak_rss_gib"], r.get("rss_at_ready_gib", -1), r["peak_max_proc_rss_gib"], r["mlocked_peak_gib"]))
+            if "peak_vram0_mib" in r:
+                print("  VRAM: peak %.1f + %.1f MiB (card0+card1), at READY %s MiB"
+                      % (r["peak_vram0_mib"], r["peak_vram1_mib"], r.get("vram_at_ready_mib", "-")))
             print("  SSD/RAM: read_bytes +%.2f GiB, majflt +%d, minflt +%d, Cached %.1f -> %.1f GiB"
                   % (r["read_bytes_gib"], r["majflt"], r["minflt"], r["cached_before_gib"], r["cached_after_gib"]))
         for l in r.get("cache_lines", [])[:12]:
