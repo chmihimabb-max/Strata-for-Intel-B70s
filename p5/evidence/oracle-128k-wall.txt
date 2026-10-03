@@ -34,4 +34,19 @@
 121:#6  0x000072ae9181bf38 in ggml_sycl_error(char const*, char const*, char const*, int, char const*) () from /home/michael/llama.cpp-qwen4-exp/build/bin/libggml-sycl.so.0
 
 -- the ub-512 attempt (bounded to 1500 s of prompt processing)
-=== P5 oracle 128K attempt at -ub 512 (bounded)  2026-10-03T09:22:40-06:00 ===
+   pos  3 chosen=1156 logprob=-0.0019 top: [(1156, -0.0019), (2128, -7.0976), (3286, -7.9615), (1379, -9.1537), (1622, -9.2324)]
+== wrote /home/michael/strata-xpu/p5/oracle/oracle-128k-ub512.json
+--- probe rc=0 (124 = the 1500 s bound) ---
+== after stop: who holds the cards ==
+   nothing of ours running
+4867 Xwayland                card0         0.2
+5200 ibus-x11                card0         0.0
+5201 mutter-x11-fram         card0         0.1
+----------------------------------------------
+TOTAL on card0                           800.5 MiB
+TOTAL on card1                             0.0 MiB
+=== done 2026-10-03T09:40:41-06:00 ===
+16.35.353.818 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens = 124928, progress = 0.97, t = 965.26 s / 129.42 tokens per second
+17.01.024.221 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens = 126976, progress = 0.98, t = 990.93 s / 128.14 tokens per second
+17.19.624.176 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens = 128508, progress = 1.00, t = 1009.53 s / 127.30 tokens per second
+17.26.185.001 I slot print_timing: id  0 | task 0 | prompt processing, n_tokens = 129020, progress = 1.00, t = 1016.09 s / 126.98 tokens per second

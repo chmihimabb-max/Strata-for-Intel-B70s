@@ -74,6 +74,8 @@ for r in rows:
         st = a["serve_stats"] or {}
         div = a["first_divergence"]
         ub = ub512_agrees(r["ctx"], label, div)
+        if "ub512" in str(r.get("oracle", "")):
+            ub = None   # this row's reference IS the -ub 512 instantiation; the cross-check would be circular
         # "decided" = the oracle's own margin at that position clears its own implementation band AND its other
         # instantiation does not itself emit our token there.  A position where the -ub 512 oracle emits our token
         # is one the oracle cannot decide, whatever its margin was.

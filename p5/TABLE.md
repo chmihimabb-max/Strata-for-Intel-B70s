@@ -30,3 +30,15 @@ oracle: 256 generated, prefill 380.80207854467875 tok/s, decode 15.0287296267889
 | shipped-fp16 | 275.2 | 21.60 | 256 | 75 | 3983 vs 3992 | 0.0120 | no | YES | 75/76 (98.7%) | 162/256 (63.3%) |
 | batched-fp16 | 765.3 | 21.60 | 256 | 75 | 3983 vs 3992 | 0.0120 | no | YES | 75/76 (98.7%) | 255/256 (99.6%) |
 
+
+## ctx 131072  (prompt 129024 ids)
+
+oracle: 256 generated, prefill 126.94795834054923 tok/s, decode 8.896350814581279 tok/s; its own top1-top2 margins: min 0.0195 / median 3.3493 / max 30.8656 nats; 12 of 256 positions below 0.15 nats
+
+| arm | prefill tok/s | decode tok/s | gen | first div | @div oracle vs engine | margin (nats) | decided? | ub-512 agrees? | prefix agreed | aligned matched |
+|---|---|---|---|---|---|---|---|---|---|---|
+| shipped | 411.5 | 19.80 | 256 | 132 | 709 vs 4880 | 0.0688 | no | n/a | 132/133 (99.2%) | 141/256 (55.1%) |
+| batched | 883.0 | 19.00 | 256 | 53 | 55404 vs 21851 | 0.0771 | no | n/a | 53/54 (98.1%) | 76/256 (29.7%) |
+| shipped-fp16 | 332.3 | 19.90 | 256 | **none** | - vs - | n/a | - | n/a | 256/256 (100.0%) | 256/256 (100.0%) |
+| batched-fp16 | 877.1 | 18.30 | 256 | 59 | 332 vs 9764 | 0.1436 | **YES** | n/a | 59/60 (98.3%) | 78/256 (30.5%) |
+

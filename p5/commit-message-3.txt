@@ -1,0 +1,29 @@
+P5 (t_bc967b65): the 128K oracle row exists - at -ub 512 - and it sides with the shipped path too
+
+The -ub 2048 oracle cannot process the 128K prompt on this box (two attempts, both DEVICE_LOST at n_tokens 49,152
+= 38%, 286.11 s, once in FLASH_ATTN_EXT and once in mul_mat_id). The wall is the query-batch times the depth, not
+the context: at -ub 512 the same prompt, file and cards processed all 129,024 tokens (prefill 126.9 tok/s, decode
+8.9 tok/s, wall 1,045 s) and generated 256 tokens with n_probs. That stream is the 128K reference, with the
+caveat measured at the other two lengths (the -ub 512 instantiation differs from the -ub 2048 one by one inserted
+token at 32K/75, 0.0120 nats, and by a divergence at 4K/78, 0.1731 nats).
+
+Against it, with matched f16 KV:
+
+* shipped-fp16: 256/256 - byte-identical to the oracle.
+* batched-fp16: first divergence at index 59, margin 0.1436 nats (odds 1.15:1) - the only margin in this card
+  above the oracle's own measured band of 0.106 nats, and the only "decided by the oracle" cell in the table.
+* config of record (int8): shipped first diverges at 132 (0.0688 nats), batched at 53 (0.0771).
+
+So the cards' ship condition - the fast path must match or beat the shipped path's oracle agreement at all three
+lengths - fails at 4K AND 128K, and the batched path is level at best at 32K. Verdict: refused, default
+configuration unchanged.
+
+Mechanism, named from the source (both kernels' parity against FP64 is 1.2e-06 of scale apart, so neither is
+grossly wrong): the batched decode kernel uses sycl::native::exp (three expf_fast sites) and writes per-chunk
+partials that a second kernel re-normalises, while the v1 prompt kernel uses exp2f with an in-kernel online
+softmax - a different exponential, summation order and one extra rounding stage. The 4K/78 evidence says the
+batched kernel's difference there is larger than the int8-KV perturbation and stable in direction (batched int8
+and fp16 are byte-identical), which is what a reduction-path difference looks like at a 0.17-nat tie. That is the
+lead for a correct-and-fast kernel: the batched block shape (6.5x) with the v1 arithmetic.
+
+p5/STATUS-P5.md carries the full three-length table, the band analysis, the speeds and the not-validated list.

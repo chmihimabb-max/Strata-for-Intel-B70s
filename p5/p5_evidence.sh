@@ -11,11 +11,13 @@ PY=/usr/bin/python3
 {
   echo "== P5 the three-way tables (28_compare: oracle vs every arm)"
   echo "== oracle = llama.cpp-SYCL qwen4exp, the same IQ3_S file, f16 KV, -ub 2048 unless stated"
-  for ctx in 4096 32768; do
-    case $ctx in 4096) c=4k ;; 32768) c=32k ;; esac
+  echo "== 128K: the -ub 2048 oracle dies at 38% of the prompt, so that row's reference is the -ub 512 oracle"
+  for ctx in 4096 32768 131072; do
+    case $ctx in 4096) c=4k; O=oracle-4k.json ;; 32768) c=32k; O=oracle-32k.json ;;
+                 131072) c=128k; O=oracle-128k-ub512.json ;; esac
     echo
     echo "########## ctx $ctx ##########"
-    $PY p5/p5_compare.py "$ctx" "$R/p5/oracle/oracle-$c.json" \
+    $PY p5/p5_compare.py "$ctx" "$R/p5/oracle/$O" \
       shipped:$R/p5/runs/p5-$c-shipped/out.txt \
       batched:$R/p5/runs/p5-$c-batched/out.txt \
       shipped-fp16:$R/p5/runs/p5-$c-shipped-fp16/out.txt \

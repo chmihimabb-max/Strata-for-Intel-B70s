@@ -1,5 +1,6 @@
 == P5 the three-way tables (28_compare: oracle vs every arm)
 == oracle = llama.cpp-SYCL qwen4exp, the same IQ3_S file, f16 KV, -ub 2048 unless stated
+== 128K: the -ub 2048 oracle dies at 38% of the prompt, so that row's reference is the -ub 512 oracle
 
 ########## ctx 4096 ##########
 ======================================================================================================================
@@ -151,3 +152,94 @@ ATTRIBUTABLE: batched                first divergence idx 75 at 0.0120 nats -> i
 ATTRIBUTABLE: shipped-fp16           first divergence idx 75 at 0.0120 nats -> inside the oracle's own band (0.106 nats)
 ATTRIBUTABLE: batched-fp16           first divergence idx 75 at 0.0120 nats -> inside the oracle's own band (0.106 nats)
 wrote /home/michael/strata-xpu/strata/p5/compare-32768.json
+
+########## ctx 131072 ##########
+======================================================================================================================
+P5 ctx 131072  oracle=oracle-128k-ub512.json (129024 prompt ids, 256 generated, prefill 126.94795834054923 tok/s, decode 8.896350814581279 tok/s)
+  oracle's own decision margins over its 256 positions: min 0.0195 / median 3.3493 / max 30.8656 nats; below {'0.05': 3, '0.1': 6, '0.15': 12, '0.5': 28}
+----------------------------------------------------------------------------------------------------------------------
+ARM shipped                generated 256
+   engine prefill 411.5 tok/s (129024 prompt tokens, 129024 read), decode 19.8 tok/s
+   PREFIX: 132/133 agreed, first divergence idx 132 (99.25%): oracle chose 709 over 4880 by 0.0688 nats (odds 1.071183157783322:1) -> engine chose 4880
+           smallest oracle margin among the agreed positions: 0.0322 nats
+   ALIGNED: 141/256 positions match (55.08%); 6 differing block(s):
+      replace oracle[132:134] vs engine[132:134]  margin@start 0.0688  max-in-block 4.1716  oracle [709, 2407] vs engine [4880, 7873]
+      replace oracle[137:138] vs engine[137:170]  margin@start 0.7147  max-in-block 0.7147  oracle [1061] vs engine [561, 1510, 67, 70938, 24337, 16871]
+      insert  oracle[139:139] vs engine[171:230]  margin@start 1.2822  max-in-block n/a  oracle [] vs engine [1510, 10272, 51, 348, 580, 63]
+      replace oracle[140:153] vs engine[231:245]  margin@start 0.9136  max-in-block 4.5596  oracle [8751, 4125, 471, 279, 1970, 15433] vs engine [2843, 1562, 682, 264, 7875, 1510]
+      delete  oracle[154:218] vs engine[246:246]  margin@start 2.4079  max-in-block 17.7658  oracle [271, 17, 13, 2972, 63, 21558] vs engine []
+      replace oracle[221:256] vs engine[249:256]  margin@start 1.6161  max-in-block 15.9371  oracle [82, 2518, 220, 15, 976, 274] vs engine [77, 73555, 348, 580, 835, 580]
+   blocks whose own oracle margin >= 0.05/0.10/0.15/0.50 nats: [5, 5, 5, 5]
+----------------------------------------------------------------------------------------------------------------------
+ARM batched                generated 256
+   engine prefill 883.0 tok/s (129024 prompt tokens, 129024 read), decode 19.0 tok/s
+   PREFIX: 53/54 agreed, first divergence idx 53 (98.15%): oracle chose 55404 over 21851 by 0.0771 nats (odds 1.080146779760157:1) -> engine chose 21851
+           smallest oracle margin among the agreed positions: 0.0807 nats
+   ALIGNED: 76/256 positions match (29.69%); 14 differing block(s):
+      insert  oracle[53:53] vs engine[53:55]  margin@start 0.0771  max-in-block n/a  oracle [] vs engine [21851, 11]
+      insert  oracle[54:54] vs engine[56:61]  margin@start 1.0186  max-in-block n/a  oracle [] vs engine [4562, 11, 4906, 14832, 11]
+      replace oracle[55:57] vs engine[62:64]  margin@start 11.5083  max-in-block 11.5083  oracle [4906, 4562] vs engine [2790, 5154]
+      replace oracle[59:65] vs engine[66:74]  margin@start 0.1436  max-in-block 14.1685  oracle [332, 31995, 2022, 51572, 2699, 64700] vs engine [9764, 728, 708, 1472, 279, 1970]
+      replace oracle[70:163] vs engine[79:81]  margin@start 1.0193  max-in-block 17.7658  oracle [71376, 15248, 41571, 24337, 63, 471] vs engine [442, 29456]
+      replace oracle[166:170] vs engine[84:91]  margin@start 0.0195  max-in-block 1.0230  oracle [15866, 9761, 16000, 4499] vs engine [1167, 17, 62, 15, 23016, 55687]
+      delete  oracle[171:218] vs engine[92:92]  margin@start 0.1376  max-in-block 14.4301  oracle [733, 1510, 1960, 19197, 7561, 279] vs engine []
+      replace oracle[220:223] vs engine[94:104]  margin@start 2.5127  max-in-block 2.5127  oracle [1510, 82, 2518] vs engine [47029, 85, 606, 471, 67, 8]
+      replace oracle[225:235] vs engine[106:150]  margin@start 12.1288  max-in-block 15.9371  oracle [976, 274, 478, 304, 2564, 1994] vs engine [13, 15, 69, 8, 1321, 318]
+      insert  oracle[237:237] vs engine[152:156]  margin@start 0.2713  max-in-block n/a  oracle [] vs engine [1546, 2526, 466, 413]
+      insert  oracle[238:238] vs engine[157:165]  margin@start 0.6753  max-in-block n/a  oracle [] vs engine [513, 49825, 4562, 303, 279, 401]
+      replace oracle[239:240] vs engine[166:182]  margin@start 7.7095  max-in-block 7.7095  oracle [694] vs engine [411, 1362, 7936, 867, 61507, 466]
+      replace oracle[241:243] vs engine[183:249]  margin@start 1.3026  max-in-block 1.3026  oracle [4880, 7873] vs engine [2663, 513, 6681, 1510, 67, 348]
+      replace oracle[244:256] vs engine[250:256]  margin@start 5.4858  max-in-block 11.6489  oracle [1510, 21558, 47440, 35196, 4747, 63] vs engine [293, 11, 748, 411, 1220, 381]
+   blocks whose own oracle margin >= 0.05/0.10/0.15/0.50 nats: [10, 10, 10, 10]
+----------------------------------------------------------------------------------------------------------------------
+ARM shipped-fp16           generated 256
+   engine prefill 332.3 tok/s (129024 prompt tokens, 129024 read), decode 19.9 tok/s
+   PREFIX: 256/256 agreed, NO divergence in the first 256 positions (oracle margins: min 0.0195)
+   ALIGNED: 256/256 positions match (100.00%); 0 differing block(s):
+   blocks whose own oracle margin >= 0.05/0.10/0.15/0.50 nats: [0, 0, 0, 0]
+----------------------------------------------------------------------------------------------------------------------
+ARM batched-fp16           generated 256
+   engine prefill 877.1 tok/s (129024 prompt tokens, 129024 read), decode 18.3 tok/s
+   PREFIX: 59/60 agreed, first divergence idx 59 (98.33%): oracle chose 332 over 9764 by 0.1436 nats (odds 1.154447141387423:1) -> engine chose 9764
+           smallest oracle margin among the agreed positions: 0.0322 nats
+   ALIGNED: 78/256 positions match (30.47%); 13 differing block(s):
+      replace oracle[59:65] vs engine[59:67]  margin@start 0.1436  max-in-block 14.1685  oracle [332, 31995, 2022, 51572, 2699, 64700] vs engine [9764, 728, 708, 1472, 279, 1970]
+      replace oracle[70:74] vs engine[72:148]  margin@start 1.0193  max-in-block 11.2509  oracle [71376, 15248, 41571, 24337] vs engine [3431, 53683, 20123, 21849, 29456, 6982]
+      replace oracle[76:86] vs engine[150:178]  margin@start 0.7387  max-in-block 6.6404  oracle [31084, 709, 593, 4499, 4011, 16000] vs engine [1061, 5533, 4581, 18484, 16086, 21106]
+      replace oracle[87:90] vs engine[179:199]  margin@start 0.1947  max-in-block 3.5199  oracle [1546, 809, 314] vs engine [401, 29456, 1954, 11, 411, 1362]
+      replace oracle[91:92] vs engine[200:222]  margin@start 0.3225  max-in-block 0.3225  oracle [1970] vs engine [2663, 513, 6681, 1510, 19390, 67]
+      replace oracle[93:98] vs engine[223:226]  margin@start 1.4296  max-in-block 5.8784  oracle [3799, 974, 4937, 12, 13957] vs engine [3404, 4252, 1532]
+      replace oracle[99:101] vs engine[227:228]  margin@start 0.1085  max-in-block 2.2215  oracle [1049, 14619] vs engine [1921]
+      delete  oracle[102:155] vs engine[229:229]  margin@start 0.2831  max-in-block 13.5140  oracle [74, 5786, 4127, 23758, 283, 220] vs engine []
+      replace oracle[157:158] vs engine[231:235]  margin@start 11.0698  max-in-block 11.0698  oracle [2972] vs engine [15, 69, 348, 293]
+      replace oracle[159:168] vs engine[236:237]  margin@start 0.6103  max-in-block 9.0068  oracle [21558, 47440, 88194, 4306, 6982, 63] vs engine [1362]
+      replace oracle[169:243] vs engine[238:244]  margin@start 0.6870  max-in-block 15.9371  oracle [4499, 92217, 733, 1510, 1960, 19197] vs engine [466, 1172, 4804, 364, 13818, 2663]
+      replace oracle[245:253] vs engine[246:251]  margin@start 9.4180  max-in-block 11.6489  oracle [21558, 47440, 35196, 4747, 63, 4290] vs engine [67, 27653, 198, 5690, 256]
+      replace oracle[254:256] vs engine[252:256]  margin@start 3.9470  max-in-block 3.9470  oracle [413, 424] vs engine [561, 1510, 1234, 89]
+   blocks whose own oracle margin >= 0.05/0.10/0.15/0.50 nats: [13, 13, 13, 12]
+----------------------------------------------------------------------------------------------------------------------
+ARM-vs-ARM (no oracle): shipped(256 ids) vs batched(256 ids) -- aligned matched 80; 18 differing op(s):
+      insert  shipped[53:53] [] vs batched[53:55] [21851, 11]
+      insert  shipped[54:54] [] vs batched[56:61] [4562, 11, 4906, 14832, 11]
+      replace shipped[55:57] [4906, 4562] vs batched[62:64] [2790, 5154]
+      replace shipped[59:65] [332, 31995, 2022, 51572, 2699, 64700] vs batched[66:74] [9764, 728, 708, 1472, 279, 1970, 57710, 25]
+      replace shipped[70:74] [71376, 15248, 41571, 24337] vs batched[79:82] [442, 29456, 6982]
+      replace shipped[76:82] [31084, 709, 593, 4499, 4011, 16000] vs batched[84:91] [1167, 17, 62, 15, 23016, 55687, 1716]
+      replace shipped[84:86] [709, 506] vs batched[93:161] [1716, 47029, 85, 606, 471, 67, 8, 1321]
+      replace shipped[87:90] [1546, 809, 314] vs batched[162:182] [401, 29456, 1954, 11, 411, 1362, 7936, 867]
+      replace shipped[91:101] [1970, 369, 3799, 974, 4937, 12, 13957, 13] vs batched[183:186] [2663, 513, 6681]
+      replace shipped[102:107] [74, 5786, 4127, 23758, 283] vs batched[187:195] [67, 348, 28700, 16, 11, 220, 15, 11]
+      insert  shipped[109:109] [] vs batched[197:199] [11, 220]
+      replace shipped[110:111] [23] vs batched[200:222] [5368, 748, 4581, 11960, 1220, 944, 413, 279]
+      replace shipped[112:138] [321, 1510, 10272, 51, 348, 220, 16, 15] vs batched[223:224] [5972]
+      replace shipped[140:153] [70938, 24337, 16871, 1148, 2073, 516, 8, 318] vs batched[226:228] [478, 293]
+      delete  shipped[154:159] [5533, 1510, 74, 63, 864] vs batched[229:229] []
+      replace shipped[160:206] [381, 685, 310, 220, 16, 15, 11, 694] vs batched[230:234] [1684, 303, 6607, 4886]
+      replace shipped[208:222] [3655, 471, 424, 577, 4603, 310, 1510, 10272] vs batched[236:241] [364, 1167, 17, 62, 15]
+      replace shipped[223:256] [1428, 3136, 579, 1331, 13, 1921, 413, 264] vs batched[242:256] [2663, 513, 6681, 3875, 470, 430, 62862, 314]
+======================================================================================================================
+ATTRIBUTABLE: shipped                first divergence idx 132 at 0.0688 nats -> inside the oracle's own band (0.106 nats)
+ATTRIBUTABLE: batched                first divergence idx 53 at 0.0771 nats -> inside the oracle's own band (0.106 nats)
+ATTRIBUTABLE: shipped-fp16           no divergence at all in the first 256 positions
+ATTRIBUTABLE: batched-fp16           first divergence idx 59 at 0.1436 nats -> OUTSIDE the oracle's own band (0.106 nats)
+wrote /home/michael/strata-xpu/strata/p5/compare-131072.json
