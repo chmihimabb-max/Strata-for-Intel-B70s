@@ -100,6 +100,51 @@ bool flag_mapped(size_t bytes, void** h, void** d) {
     return cudaMemset(*d, 0, bytes) == cudaSuccess;
 }
 
+/// P1 (card t_44a0ac61): raise the release flag in DEVICE memory on a stream, and return WITHOUT waiting for
+/// the copy (SYCL) - or with the original blocking copy where the shim is not in the way (CUDA/HIP).
+///
+/// WHAT WAS WRONG WITH THE BLOCKING `cudaMemcpy` THE RELEASE USED.  On this build that call is the shim's
+/// faithful emulation of CUDA's blocking copy: memcpy_impl(..., &default_queue(), wait = true)
+/// (include/strata/sycl_compat/cuda_runtime.h:636-640), which submits on the DEFAULT queue and then waits for
+/// the copy's event (cuda_runtime.h:596-604).  Two measured consequences, both on the path whose whole purpose
+/// is to end a window that has already failed (~/strata-xpu/p1/logs, this card):
+///
+///   * it WAITS, and the wait can be the thing that never returns.  Under unitrace the host thread was parked
+///     in exactly this wait for as long as the engine lived (S3UT, card t_7e1307a6, gdb stack:
+///     release_gpu_waits -> memcpy_impl -> urEventWait -> libze_tracing_layer.so.1), and the engine's 60 s
+///     watchdog then SIGKILLed the process, which is why unitrace never wrote a report.
+///   * it runs on the DEFAULT queue, which is not the verifier's own stream.  Measured at HEAD (instrument-only
+///     commit 3ccb530) in both the untraced STRATA_TEST_VERIFY_STALL=1 rig and under `unitrace --device-timing`,
+///     all three of the release's copies failed:
+///         strata/sycl: memcpy failed: level_zero backend failed with error: 39 (UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY)
+///     i.e. the release never reached the device flag word at all, and the #267 guarantee it exists for was not
+///     being met on this path.
+///
+/// WHY SUBMIT ON `copy_` AND NOT WAIT.  `copy_` is the verifier's own copy stream - the one every other flag
+/// publication in a window already uses (publish_flag / raise_flag_dev), on the verifier's own device, and the
+/// stream M5b measured a 4-byte copy through to reach a spinning kernel (10 of 10 rings, three runs).  The
+/// release value is UINT32_MAX, past every ring the kernels compare against, so putting it on the same
+/// in-order stream as the windows' other publications cannot make a kernel read a ring it has not been served
+/// (a later, larger value never satisfies an earlier wait it should not have).  And the drain loop that
+/// follows polls exactly this stream, so "did the release get through" is still answered before this returns.
+///
+/// WHY NOT `cudaMemcpyAsync`.  That is the shim's submitting spelling, but it is capture-aware: with a capture
+/// open it RECORDS a node instead of submitting (cuda_runtime.h:648-651).  A recorded release reaches the
+/// spinning kernel only if the graph is launched later - and the window that just failed is the one that would
+/// have launched it.  The release must be submitted even then, which is the guarantee the old blocking call was
+/// picked for.  This helper keeps that guarantee and drops the wait.
+void publish_release_word(cudaStream_t s, void* dev, const void* host) {
+#if defined(STRATA_USE_SYCL)
+    (void) sycl_compat::memcpy_impl(dev, host, sizeof(uint32_t),
+                                    sycl_compat::queue_for(reinterpret_cast<void*>(s)), /*wait=*/false);
+#else
+    // CUDA/HIP: unchanged.  The defect above is measured on the SYCL backend only, and this box cannot build
+    // or run the other two, so their release stays the blocking cudaMemcpy it always was (see flag.hpp for the
+    // same backend-split convention).
+    cudaMemcpy(dev, host, sizeof(uint32_t), cudaMemcpyHostToDevice);
+#endif
+}
+
 strata::kernels::QsaShapes shapes_of(const ModelGeometry& g) {
     strata::kernels::QsaShapes s = strata::kernels::qsa_real_shapes();
     s.n_head = g.n_head;
@@ -187,14 +232,17 @@ bool Verifier::release_gpu_waits(int timeout_ms) {
     _mm_sfence();
     // M5b: the words the spin kernels read are DEVICE memory, so the release has to be published there too -
     // and a plain mapped store would never be observed by a poll loop on this backend (see flag_mapped's note).
-    // SYNCHRONOUS on purpose: the release runs while a window may still be recording (a capture in the compat
-    // layer is a global flag, and an async copy would be recorded as a node instead of submitted).
+    // P1 (card t_44a0ac61): SUBMITTED on the verifier's own copy stream, not a blocking copy on the default
+    // queue - see publish_release_word's note for what the old form cost (a wait that never returned under the
+    // instrument, and three copies that failed with UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY at HEAD).
     uint32_t* const flag_host[3] = {h_flag_, h_flagA_, h_flagB_};
     uint32_t* const flag_dev[3] = {m_flag_, m_flagA_, m_flagB_};
     const Clock::time_point t_pub = Clock::now();
-    for (int i = 0; i < 3; ++i)
-        if (flag_host[i] != nullptr && flag_dev[i] != nullptr)
-            cudaMemcpy(flag_dev[i], flag_host[i], sizeof(uint32_t), cudaMemcpyHostToDevice);
+    for (int i = 0; i < 3; ++i) {
+        if (flag_host[i] == nullptr || flag_dev[i] == nullptr) continue;
+        if (copy_ != nullptr) publish_release_word(copy_, flag_dev[i], flag_host[i]);
+        else cudaMemcpy(flag_dev[i], flag_host[i], sizeof(uint32_t), cudaMemcpyHostToDevice);
+    }
     // P1 (card t_44a0ac61) instrumentation, off by default: this path only ever runs after something has
     // already failed, so without a line here its cost - the publication of the flag to the DEVICE words above,
     // and the drain below - is invisible in a log.  STRATA_VERIFY_RELEASE_DEBUG=1 prints both.
