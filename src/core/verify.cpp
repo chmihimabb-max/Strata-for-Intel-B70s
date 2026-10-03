@@ -74,6 +74,14 @@ int teardown_wait_ms() {
     const long long v = std::atoll(e);
     return v >= 0 ? (int) v : 5000;
 }
+// P1b: how long the process's own finalizers get, once the engine has decided to end on a window it cannot drain
+// (STRATA_FINALIZER_WAIT_S, default 10 s).  See the comment at the exit in ~Verifier.
+int finalizer_wait_s() {
+    const char* e = std::getenv("STRATA_FINALIZER_WAIT_S");
+    if (e == nullptr) return 10;
+    const long long v = std::atoll(e);
+    return v > 0 ? (int) v : 10;
+}
 /// P1b (card t_58d5592c): A BOUNDED, TRUTHFUL "has this stream finished?".  Returns true if the stream was
 /// observed complete within `budget_ms`; false if the budget ran out.  ONE recorded event, polled with
 /// cudaEventQuery - deliberately NOT cudaStreamQuery, which is not a "is the stream done" spelling on this
@@ -404,7 +412,21 @@ Verifier::~Verifier() {
                              "ends now (a queue release on a queue whose work never finished spins in queueFinish)\n",
                              w);
                 std::fflush(stderr);
-                std::_Exit(250);   // no atexit handlers, no driver call: the L0 driver drops everything with us
+                // P1b: `std::exit` rather than `std::_Exit` so the process's OWN finalizers run - they are what
+                // flushes the injected tracing layer and completes its chrome timeline.  Measured, mode 9, same
+                // workload: with the finalizers allowed to run the timeline is 1,131,673,822 bytes / 1,987,510
+                // device events, against 612,845,511 bytes / 1,063,792 events when the process is ended hard - half
+                // the trace is what a hard end costs.  Those finalizers can themselves wedge on the queue this
+                // window left behind, so a detached thread gives them a bounded window and then ends the process
+                // hard with the report already written.
+                std::thread([budget = finalizer_wait_s()] {
+                    std::this_thread::sleep_for(std::chrono::seconds(budget));
+                    std::fprintf(stderr, "verify teardown: the process's own finalizers have not finished in %d s; "
+                                         "ending hard (the traced report was already flushed)\n", budget);
+                    std::fflush(stderr);
+                    std::_Exit(250);
+                }).detach();
+                std::exit(250);
             }
             std::fprintf(stderr, "verify teardown: the window on cs_ was released (#267); it finished (%.3f ms of a %d ms budget)\n",
                          w, teardown_wait_ms());

@@ -1,6 +1,5 @@
-binary md5s (2026-10-02T22:52:33-06:00)
-14861c54671d005733d89ff53cb9dc52  /home/michael/strata-xpu/strata/build-sycl/strata
-14861c54671d005733d89ff53cb9dc52  /home/michael/strata-xpu/p1/strata-after-P1b
-5af1f0115d00da17ee7c0df0fb11be3d  /home/michael/strata-xpu/p1/strata-after-P1
-b5c3e48a9cef18784de1bfa0b56ed5b8  /home/michael/strata-xpu/p1/strata-before-timed
-repo: f21ba10 P1b (t_58d5592c): the release's drain and the verifier's teardown are both bounded, and the drain is truthful
+binary md5s (2026-10-02T23:21:00-06:00)
+d493e320fb212380e2e3d582180bc370  /home/michael/strata-xpu/p1/strata-after-P1b
+d493e320fb212380e2e3d582180bc370  /home/michael/strata-xpu/strata/build-sycl/strata
+d493e320fb212380e2e3d582180bc370  /home/michael/strata-xpu/strata/p1/../build-sycl/strata
+repo: e839275 P1b (t_58d5592c): the verifier's teardown is bounded, and the #267 release's drain is measured truthfully

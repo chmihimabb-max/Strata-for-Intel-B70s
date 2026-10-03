@@ -1,0 +1,30 @@
+== the instrument's own verdict ==
+-- trace dir --
+total 2324
+drwxrwxr-x  2 michael michael    4096 Oct  2 23:13 .
+drwxrwxr-x 22 michael michael    4096 Oct  2 23:11 ..
+-rw-rw-r--  1 michael michael 2370150 Oct  2 23:13 p1b-z-ut1.866275.json
+-- S3's stall signature (a stall report with no finished request) --
+0
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata verify: captured the 1-token window (upload no error, sync no error)
+verify release: enter (thread 12082914959333067519, budget 5000 ms)
+verify release: flag publication 0.082 ms; drain budget 5000 ms
+verify release: the GPU did NOT finish; drain 5000.314 ms, release 5000.419 ms
+verify release: host flag words 4294967295 4294967295 4294967295; window state:
+-- the request's numbers --
+T lines: 0
+-- the last 12 lines of the engine's stderr --
+qsa_block_scores: no TF32 tc path on this backend (the device refuses tf32 joint_matrix); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3) -> warp kernel
+qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+strata verify: captured the 1-token window (upload no error, sync no error)
+verify release: enter (thread 12082914959333067519, budget 5000 ms)
+verify release: flag publication 0.082 ms; drain budget 5000 ms
+verify release: the GPU did NOT finish; drain 5000.314 ms, release 5000.419 ms
+verify release: host flag words 4294967295 4294967295 4294967295; window state:
+  verify window: 1 tokens at position 3831, host at layer step 1; the GPU rang 1; flags: served 4294967295, plan (A) 4294967295, copies (B) 4294967295; tail beacons 0 0 0 0 0 0 0 0
+verify teardown: the window on cs_ was released (#267) and has NOT finished in 5000.435 ms; the GPU work cannot be ended from here and the driver teardown is skipped - the engine ends now (a queue release on a queue whose work never finished spins in queueFinish)
+[INFO] Log is stored in /home/michael/strata-xpu/p1/traces/p1b-z-ut1/p1b-z-ut1.866275.json
+[INFO] Timeline is stored in strata.866275.json
+verify teardown: the process's own finalizers have not finished in 10 s; ending hard (the traced report was already flushed)

@@ -1,0 +1,24 @@
+P1b engine arm p1b-aa-stall   2026-10-02T23:15:19-06:00
+binary: /home/michael/strata-xpu/strata/build-sycl/strata   (2026-10-02 23:03:57.780772181 -0600 34935760 bytes)
+repo: e839275 P1b (t_58d5592c): the verifier's teardown is bounded, and the #267 release's drain is measured truthfully
+env: STRATA_TEST_VERIFY_STALL=1 STRATA_RELEASE_DRAIN_MS=unset STRATA_TEARDOWN_WAIT_MS=unset SECOND_ASK=0
+arm: max-new=16 max-context=4096 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B of ids)
+engine exited -6
+== exit 250, wall 110s ==
+45:strata serve: no progress for 60 s during a request (verify window: waiting for the GPU to finish the window (flags A/B/M raised) 1) - stopping the engine so the server starts it again (issue #29)
+57:verify release: enter (thread 9384748997910904842, budget 5000 ms)
+58:verify release: flag publication 0.084 ms; drain budget 5000 ms
+59:verify release: the GPU finished; drain 3.187 ms, release 3.274 ms (publication 3.273 ms)
+60:strata: released the verify window's GPU waits (#267): the GPU finished in 3 ms
+62:verify release: enter (thread 9384748997910904842, budget 5000 ms)
+63:verify release: flag publication 0.017 ms; drain budget 5000 ms
+64:verify teardown: the window on cs_ was released (#267); it finished (1.063 ms of a 5000 ms budget)
+65:verify release: the GPU finished; drain 2.430 ms, release 2.448 ms (publication 2.448 ms)
+66:strata: released the verify window's GPU waits (#267): the GPU finished in 2 ms
+-- generated T lines: 0 --
+d41d8cd98f00b204e9800998ecf8427e  /home/michael/strata-xpu/p1/runs/p1b-aa-stall/tokens.txt
+PP 2560 3832 10023 255.4
+PP 3072 3832 12129 253.3
+PP 3584 3832 14216 252.1
+PP 3831 3832 15626 245.2
+ERR verify: an earlier window never finished on the GPU (#267); restart the engine

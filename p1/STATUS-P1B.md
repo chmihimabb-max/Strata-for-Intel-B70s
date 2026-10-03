@@ -5,8 +5,10 @@ write-up), the change is **f21ba10** and the commit that adds this file.  Nothin
 `sycl-xpu`).  Config of record throughout: `strata-sycl-iq3s.json` — IQ3_S GSQ-RCO snapshot `ed59f92…`, both B70s
 (`ZE_AFFINITY_MASK` unset, `--layer-split auto`), `--kv int8`, `--no-capture`, `--mmap-experts`, `--spec 4`, one
 engine at a time.  Failure arms use the repo's own hook (`STRATA_TEST_VERIFY_STALL=1`, the N-th verify window keeps
-its last layer's served flag withheld).  Binary under test: `build-sycl/strata`, md5 `14861c54671d005733d89ff53cb9dc52`,
-kept at `~/strata-xpu/p1/strata-after-P1b`; the arms' own lines are quoted verbatim below.
+its last layer's served flag withheld).  Binary under test: `build-sycl/strata`, md5
+`d493e320fb212380e2e3d582180bc370`, kept at `~/strata-xpu/p1/strata-after-P1b`; an arm that ran an earlier build of
+the same change says so in place (`f21ba10` = the first form, `14861c5…` = the form before the bounded finalizer
+window).  The arms' own lines are quoted verbatim below.
 
 ## 0. Verdict
 
@@ -35,6 +37,13 @@ The glibc `corrupted double-linked list` → SIGABRT that P1 saw on this path is
 SYCL/UR program-release path at process exit, with a release still in flight in another thread; with a truthful
 drain the release is over in ~3 ms and the race does not happen.
 
+**And the instrument now yields a written report — the deliverable P2 was gated on.**  With the engine ending
+through its own finalizers (§4), `unitrace --chrome-kernel-logging --chrome-device-logging` writes a **closed
+1,131,673,822-byte chrome JSON** and the full `UTRACE=1` set additionally writes the **API Timing Summary** (2.4 MB,
+into `--output`, i.e. the trace dir).  They were never missing: the engine had never exited, and the harness's
+`-- trace dir --` check looks at `~/strata-xpu/p1/traces/$TAG/` while the chrome JSON lands in the **app's working
+directory** as `strata.<pid>.json`.  Every arm before this printed `0 files` for that reason.
+
 ## 1. The change
 
 `src/core/verify.cpp` (+ the harnesses under `p1/`), commit **f21ba10**:
@@ -42,10 +51,10 @@ drain the release is over in ~3 ms and the race does not happen.
 | site | before (3d84db0) | after |
 |---|---|---|
 | `~Verifier`: the window's stream | `verify.cpp:299` — `if (cs_) cudaStreamSynchronize(cs_);` (unbounded) | `verify.cpp:394-412` — the clean path keeps that call (`:396`); a **released** window (`released_`, the same state P1's release sets) gets `wait_stream_bounded(cs_, STRATA_TEARDOWN_WAIT_MS=5000)` |
-| the same, when the GPU cannot be ended | (blocked there forever) | `verify.cpp:398-407` — the line is printed and `std::_Exit(250)` is called (`:407`): the driver teardown of this verifier is skipped, because the next driver call (`cudaStreamDestroy`) is itself a `queueFinish` spin (§4) |
+| the same, when the GPU cannot be ended | (blocked there forever) | `verify.cpp:398-421` — the line is printed and the process ends with `std::exit(250)` (`:421`), after arming a detached thread that ends it hard 10 s later (`:414-420`) if the process's own finalizers park: the driver teardown of this verifier is skipped, and those finalizers are what flush and close the tracer's report (§4) |
 | `release_gpu_waits`'s drain | `verify.cpp:261` — `while (cudaStreamQuery(s) == cudaErrorNotReady)` (false negative by construction, and it queues one barrier per millisecond on the stream it is asking about) | `verify.cpp:316` — `wait_stream_bounded(s, timeout_ms, &w)` |
 | the primitive | — | `verify.cpp:88` `wait_stream_bounded()`: one `cudaEventRecord` + a `cudaEventQuery` poll with a budget |
-| rig knobs (off by default) | — | `STRATA_RELEASE_DRAIN_MS` (a call site's drain bound), `STRATA_TEARDOWN_WAIT_MS` (the teardown's, 5000 ms) |
+| rig knobs (off by default) | — | `STRATA_RELEASE_DRAIN_MS` (a call site's drain bound), `STRATA_TEARDOWN_WAIT_MS` (the teardown's, 5000 ms), `STRATA_FINALIZER_WAIT_S` (the finalizers' window, 10 s) |
 
 Instrumentation that stays (all on `STRATA_VERIFY_RELEASE_DEBUG=1`, which the failure rigs already set): the release
 enters with the thread id and the budget, prints the publication/drain wall times, and on a timeout the host flag
@@ -62,7 +71,8 @@ sure: `p1-4k-{before,after}` = `ad985c23cad68dcf1c462da621fc66e4`, `p1-32k-{befo
 |---|---|---|---|---|---|
 | P1 record 4K (before / after) | 3832 | 150 | `ad985c23cad68dcf1c462da621fc66e4` | 243.5 / 242.3 tok/s | 21.4 / 21.5 tok/s |
 | **P1b 4K**, `p1b-j-clean4k` (f21ba10) | 3832 | 150 | `ad985c23cad68dcf1c462da621fc66e4` | 241.8 | 21.4 |
-| **P1b 4K**, `p1b-u-clean4k` (final binary) | 3832 | 150 | `ad985c23cad68dcf1c462da621fc66e4` | 243.3 | 21.5 |
+| **P1b 4K**, `p1b-u-clean4k` (first final build) | 3832 | 150 | `ad985c23cad68dcf1c462da621fc66e4` | 243.3 | 21.5 |
+| **P1b 4K**, `p1b-ab-clean4k` (shipped binary) | 3832 | 150 | `ad985c23cad68dcf1c462da621fc66e4` | 242.5 | 21.5 |
 | P1 record 32K (before / after) | 32256 | 256 | `124a3cd39b33f7da31e225829625983a` | 347.9 / 347.2 | 21.8 / 21.8 |
 | **P1b 32K**, `p1b-k-clean32k` | 32256 | 256 | `124a3cd39b33f7da31e225829625983a` | 347.2 | 21.8 |
 
@@ -92,17 +102,44 @@ drain 3.508 ms` and `2.472 ms`, and the request's window unblocks (`p1b-t-stall/
 
 `unitrace --start-paused --session X …`, config of record, 4K, `GEN 16`:
 
-| mode | engine, **P1 binary** | engine, **final binary** | trace dir |
+| mode | engine, **P1 binary** | engine, **final binary** | written report |
 |---|---|---|---|
-| `7` `--device-timing` (S3's minimal stalling mode) | never exits; harness stops the session (P1: main parked in `~Verifier → cudaStreamSynchronize → urQueueFinish` for 6+ min) | **exits by itself, `exit 250`, wall 88 s** (`p1b-r-ut7`) | **0 files** |
-| `9` `--chrome-kernel-logging --chrome-device-logging` | (not run by P1) with the intermediate binary still alive 180 s past the release, SIGINT at 575 s | **exits by itself, `exit 250`, wall 91 s** (`p1b-s-ut9`) | **0 files** |
-| `1` the full set (`--host-timing --device-timing --verbose` + all three chrome logs) | with the intermediate binary alive 300 s past QUIT, SIGINT at 574 s | **exits by itself, `exit 250`, wall 90 s** (`p1b-v-ut1`) | **0 files** |
+| `7` `--device-timing` (S3's minimal stalling mode) | never exits; harness stops the session (P1: main parked in `~Verifier → cudaStreamSynchronize → urQueueFinish` for 6+ min) | **exits by itself, `exit 250`, wall 99 s** (`p1b-y-ut7`) | **none** — no chrome file appears and no device-timing summary is captured |
+| `9` `--chrome-kernel-logging --chrome-device-logging` | (not run by P1) with the intermediate binary alive 180 s past the release, SIGINT at 575 s | **exits by itself, `exit 250`, wall 101 s** (`p1b-x-ut9`) | **YES** — `strata.862316.json`, **1,131,673,822 bytes, closed (`]}`)**, and unitrace prints `[INFO] Timeline is stored in strata.862316.json` |
+| `1` the full set (`--host-timing --device-timing --verbose` + all three chrome logs) | with the intermediate binary alive 300 s past QUIT, SIGINT at 574 s | **exits by itself, `exit 250`, wall 102 s** (`p1b-z-ut1`) | **YES, two files** — the human-readable **API Timing Summary** (`…/traces/p1b-z-ut1/p1b-z-ut1.866275.json`, 2,370,150 bytes, first line `=== API Timing Summary ===`, `Total Execution Time (ns): 92093572213`, `Total API Time for L0 backend (ns): 14125458124`) plus the closed 1,245,446,644-byte chrome timeline `strata.866275.json` |
 
-So every configuration now yields **no** chrome JSON and no device-timing summary (the same 0-byte trace dir
-P1 recorded), and the difference from P1 is that the app is no longer the reason: the engine terminates on its own
-within ~90 s in all three modes instead of being SIGKILLed/SIGINTed with the tracer still holding its buffers.
+**Where the report actually lands — the `0 files` P1 (and every P1b arm before this) recorded is a
+where-we-looked result, not an absent report.**  The harness's `-- trace dir --` check lists
+`~/strata-xpu/p1/traces/$TAG/`, but the tracer writes the **chrome timeline into the traced app's working
+directory** (`p1_utrace.sh` runs the engine from `$SRC`) as `strata.<pid>.json`, where the pid is the tracer's, not
+the engine's.  `--output` receives the *log* (mode 1's timing summary above), not the timeline.  The engine never
+having exited is the other half of the old `0 files`: nothing is finalized until it does.
 
-**The frames, in order — this is the "new frame" the card asked for.**
+**And the timeline is only COMPLETE when the app's own finalizers run — a hard end costs half the trace.**  Four
+variants of the same exit, measured (every one of these files is syntactically closed JSON; what differs is the
+number of events in it):
+
+| the exit the engine took | chrome timeline | engine |
+|---|---|---|
+| killed by the harness (early arms, e.g. `p1b-s-ut9`'s tracer) | 612,845,511 bytes / 1,063,792 device events — **half a trace** | SIGINT |
+| `std::_Exit(250)` (the first "end hard" form, `p1b-r/s/v-ut*`) | 603–670 MB / 1.06–1.46 M events — **half a trace** | `exit 250` |
+| `std::exit(250)`, finalizers allowed to run (`p1b-w-ut9`) | **1,131,589,492 bytes / ~1.99 M events**, unitrace: `[INFO] Timeline is stored in …` | the finalizers **wedged** — still alive minutes later |
+| `std::exit(250)` **+ a bounded finalizer window** (`STRATA_FINALIZER_WAIT_S=10`, the shipped design) | **1,131,673,822 B / 1,987,510 events (`p1b-x-ut9`) and 1,245,446,644 B / 2,744,041 events + the 2.37 MB API timing summary (`p1b-z-ut1`)** | **`exit 250`, wall 101 s / 102 s** |
+
+The last line is the whole trick, and it is two lines of code: the engine ends via `std::exit` so the process's own
+finalizers run — they are what flushes and completes the tracing layer's file — and a detached thread ends the
+process hard after `STRATA_FINALIZER_WAIT_S` (default 10 s) instead of letting those finalizers park on the queue the
+failed window left behind.  Measured log, `p1b-x-ut9-eng.log`:
+
+```
+verify teardown: the window on cs_ was released (#267) and has NOT finished in 5000.047 ms; the GPU work cannot be
+ended from here and the driver teardown is skipped - the engine ends now (a queue release on a queue whose work
+never finished spins in queueFinish)
+[INFO] Timeline is stored in strata.862316.json
+verify teardown: the process's own finalizers have not finished in 10 s; ending hard (the traced report was already flushed)
+```
+
+**The frames, in order — this is the "new frame" P1's card asked for.**
 
 1. P1's frame (before): `~Verifier → cudaStreamSynchronize(cs_) → urQueueFinish → libze_intel_gpu`
    (`~/strata-xpu/p1/logs/p1-gdb7-after-out.log`).
@@ -121,24 +158,17 @@ within ~90 s in all three modes instead of being SIGKILLed/SIGINTed with the tra
 #9  main
 ```
 
-3. Final binary: **no frame at all** — the host is not parked anywhere.  Under the tracer the released window's
+3. Shipped design: **no frame at all** — the host is not parked anywhere.  Under the tracer the released window's
    stream is never observed complete (`the GPU did NOT finish; drain 5000.536 ms`, with the device flag words already
-   `4294967295 4294967295 4294967295`), so `~Verifier` ends the engine instead of walking into (2):
+   `4294967295 4294967295 4294967295`), so `~Verifier` ends the engine instead of walking into (2), having first
+   given the finalizers the bounded window that produces the report above.
 
-```
-verify teardown: the window on cs_ was released (#267) and has NOT finished in 5000.560 ms; the GPU work cannot be
-ended from here and the driver teardown is skipped - the engine ends now (a queue release on a queue whose work
-never finished spins in queueFinish)
-```
-
-**What this says about the instrument, and what it does not.**  The engine-side blocker the card exists for is gone:
-a failed window no longer leaves a host thread spinning in `urQueueFinish`, and the process ends under every mode.
-The tracer still produces no report, and the engine can no longer be the explanation (it exits); the leading
-hypothesis, not yet tested, is on the instrument's side: `--device-timing` wedges the verify window's GPU work (the
-release cannot end it — measured here, 5 s and 30 s bounds both, with the flags already past every ring), and an
-engine that cannot end that work can only leave through a path that runs no app-side finalizers
-(`std::_Exit`), which is also the path that skips the in-process tracing layer's own flush.  Deciding that is P2's
-job; the evidence it needs is `p1b-r-ut7`, `p1b-s-ut9`, `p1b-v-ut1` and the frame above.
+**What is still open for the instrument (P2's side).**  Mode `7` alone — `--device-timing` with no chrome logging —
+writes neither a file nor a printed summary even now that the engine exits on its own (99 s, `exit 250`); its trace
+dir stays empty and unitrace's stdout carries only the app's own lines (`p1b-y-ut7-out.log`).  Whether that summary
+needs one of the `--chrome-*` flags on in this unitrace build, or is dropped when the process's finalizers are cut
+short, was not investigated.  The chrome modes (`1`, `9`) do produce reports, and `p1b-x-ut9`'s timeline is the one
+to load first.
 
 ## 5. The pre-existing SIGABRT on the failure path: settled, with the mechanism
 
@@ -179,9 +209,16 @@ mutual exclusion between the release and the exit was added, and that is on the 
   budget and the untraced case needs 1 ms, but nothing between was measured.
 * **No mutual exclusion between the release and the process exit.** The glibc abort no longer reproduces (3 runs),
   and it is explained by the measured ordering above, but the race is closed by timing, not by a lock.
-* **The instrument's own reason for 0 files is a hypothesis.** `--device-timing` wedging the verify window's GPU
-  work is measured from the engine's side (the release cannot end it, at 5 s and 30 s); that the tracer's in-process
-  flush is what a `std::_Exit` skips was not tested.  No unitrace mode writes a report in any configuration tried.
+* **Mode 7 (`--device-timing` alone) still writes no report.**  The engine exits on its own (99 s, `exit 250`) but
+  neither a file nor the device-timing summary appears: the trace dir stays empty and unitrace's stdout carries only
+  the app's own lines.  Whether that summary needs one of the `--chrome-*` flags in this unitrace build was not
+  investigated.
+* **The report needs the app's own finalizers, and those wedge.**  That the tracer's `[INFO] Timeline is stored in …`
+  arrives inside the 10 s window is measured (twice, `p1b-x-ut9`, `p1b-z-ut1`), but the call the finalizers then park
+  in was not captured, and `STRATA_FINALIZER_WAIT_S` was not swept (10 s everywhere).
+* **`--device-timing`'s own effect on the window is still measured only from the engine's side**: the release cannot
+  end the traced window at either bound (5 s, 30 s) with the device flags already past every ring.  Why the tracer
+  wedges that work is P2's question.
 * **The pool's release call sites were not exercised** (`pool.cpp:486,509`): they need the pool's own stall watchdog,
   which this rig does not reach (19 of 19 workers parked in every arm).
 * One prompt, one engine per arm, no variance estimate; no 64K/256K arms; no MTP-off arm; no quality sweep.
@@ -202,10 +239,12 @@ mutual exclusion between the release and the exit was added, and that is on the 
 | gdb-as-parent under unitrace, held for the abort | `~/strata-xpu/p1/p1b_gdb_abort.sh` |
 | md5 / report helpers | `~/strata-xpu/p1/p1b_md5.sh`, `p1b_clean_report.sh`, `p1b_evidence.sh` |
 | P1's harnesses (unchanged, reused) | `p1/evidence/{p1_run_engine.sh,p1_utrace.sh,p1_gdb.sh,p1_threadstate.sh}` |
-| the failure path before / after | `~/strata-xpu/p1/runs/p1b-a-longdrain/`, `…/p1b-e-fixed/`, `…/p1b-o-stall/`, `…/p1b-t-stall/` |
+| the failure path before / after | `~/strata-xpu/p1/runs/p1b-a-longdrain/`, `…/p1b-e-fixed/`, `…/p1b-o-stall/`, `…/p1b-t-stall/`, `…/p1b-aa-stall/` (shipped binary) |
 | the second ask | `~/strata-xpu/p1/runs/p1b-l-secondask/` |
-| the clean arms | `~/strata-xpu/p1/runs/p1b-{j,u}-clean4k/`, `…/p1b-k-clean32k/` |
+| the clean arms | `~/strata-xpu/p1/runs/p1b-{j,p,u,ab}-clean4k/`, `…/p1b-k-clean32k/` |
+| **the instrument's reports** | `~/strata-xpu/p1/traces/p1b-x-ut9/chrome-timeline-strata.862316.json` (1,131,673,822 B), `~/strata-xpu/p1/traces/p1b-z-ut1/chrome-timeline-strata.866275.json` (1,245,446,644 B) + `…/p1b-z-ut1.866275.json` (the 2.37 MB API timing summary) |
+| the trace-file inventory (every `strata.*.json` any arm produced, with size and closure) | `~/strata-xpu/p1/logs/p1b-trace-files.txt` |
 | the frames | `~/strata-xpu/p1/logs/p1b-m-gdb7-out.log`, `~/strata-xpu/p1/logs/p1b-d-abort.log` |
 | the instrument arms | `~/strata-xpu/p1/logs/p1b-{f,g,h,i,n,q,r,s,v}-ut*`, traces in `~/strata-xpu/p1/traces/` |
-| the binaries compared | `~/strata-xpu/p1/strata-after-P1b` (md5 `14861c54671d005733d89ff53cb9dc52`), `~/strata-xpu/p1/strata-before-timed`, `~/strata-xpu/p1/strata-after-P1` (P1's) |
+| the binaries compared | `~/strata-xpu/p1/strata-after-P1b` (md5 `d493e320fb212380e2e3d582180bc370`, the shipped one; `14861c5…` = before the finalizer window), `~/strata-xpu/p1/strata-before-timed`, `~/strata-xpu/p1/strata-after-P1` (P1's) |
 | curated copies committed with this file | `p1/evidence/p1b-*` |
