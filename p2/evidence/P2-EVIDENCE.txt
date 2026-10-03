@@ -1,0 +1,172 @@
+############ P2 evidence: raw lines, per arm
+
+### p2-32k-trace   (/home/michael/strata-xpu/m6c/runs/p2-32k-trace)
+engine binary: 2026-10-02 23:16:08.079513870 -0600  34935760 bytes
+HEAD: 569569c P1b (t_58d5592c): the engine ends through its own finalizers, which is what produces the tracer's report
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.89 GiB free before its session carve
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 92820 ms (347.5 tok/s), 256 generated in 11754 ms (21.8 tok/s), drafts accepted 171 of 214, 0 checkpoints
+strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 138.28 ms/window = verify 115.38 (GPU-reach wait 44.34 + per-layer host 0.50 [plan 0.30 actq 0.24 jobs 0.26 CPU 0.00] + stage 1.28) + commit/emi
+   T lines: 256   ids md5: 124a3cd39b33f7da31e225829625983a
+
+### p2-32k-timing   (/home/michael/strata-xpu/m6c/runs/p2-32k-timing)
+engine binary: 2026-10-02 23:16:08.079513870 -0600  34935760 bytes
+HEAD: 569569c P1b (t_58d5592c): the engine ends through its own finalizers, which is what produces the tracer's report
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.89 GiB free before its session carve
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 94866 ms (340.0 tok/s), 256 generated in 11778 ms (21.7 tok/s), drafts accepted 171 of 214, 0 checkpoints
+strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 138.57 ms/window = verify 115.67 (GPU-reach wait 44.43 + per-layer host 0.50 [plan 0.30 actq 0.24 jobs 0.25 CPU 0.00] + stage 1.52) + commit/emi
+   T lines: 256   ids md5: 124a3cd39b33f7da31e225829625983a
+
+### p2-128k-timing   (/home/michael/strata-xpu/m6c/runs/p2-128k-timing)
+engine binary: 2026-10-02 23:16:08.079513870 -0600  34935760 bytes
+HEAD: 569569c P1b (t_58d5592c): the engine ends through its own finalizers, which is what produces the tracer's report
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.88 GiB free before its session carve
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 385249 ms (334.9 tok/s), 256 generated in 13073 ms (19.6 tok/s), drafts accepted 159 of 206, 0 checkpoints
+strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 132.05 ms/window = verify 110.62 (GPU-reach wait 42.44 + per-layer host 0.46 [plan 0.30 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.37) + commit/emi
+   T lines: 256   ids md5: c60e72d397e9b1cd44dab9c5ab1187c8
+
+### p2-32k-oldattn   (/home/michael/strata-xpu/m6c/runs/p2-32k-oldattn)
+engine binary: 2026-10-02 23:16:08.079513870 -0600  34935760 bytes
+HEAD: 569569c P1b (t_58d5592c): the engine ends through its own finalizers, which is what produces the tracer's report
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.89 GiB free before its session carve
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 41967 ms (768.6 tok/s), 256 generated in 11512 ms (22.2 tok/s), drafts accepted 174 of 211, 0 checkpoints
+strata decode timing: 83 windows, avg T 3.54, 3.08 tokens/window, 138.69 ms/window = verify 115.68 (GPU-reach wait 44.39 + per-layer host 0.52 [plan 0.31 actq 0.24 jobs 0.27 CPU 0.00] + stage 1.25) + commit/emi
+   T lines: 256   ids md5: c52712f457344f264e0df07b5891a1e4
+
+### p2-32k-fused   (/home/michael/strata-xpu/m6c/runs/p2-32k-fused)
+engine binary: 2026-10-02 23:44:55.476187488 -0600  34952144 bytes
+HEAD: c7f20cb P2 (t_a1b6fa6c): the QSA prompt attention's hi/lo mma pair rebuilds its B fragment once
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.89 GiB free before its session carve
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 96433 ms (334.5 tok/s), 256 generated in 11733 ms (21.8 tok/s), drafts accepted 171 of 214, 0 checkpoints
+strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 138.04 ms/window = verify 115.13 (GPU-reach wait 44.29 + per-layer host 0.51 [plan 0.31 actq 0.23 jobs 0.26 CPU 0.00] + stage 1.17) + commit/emi
+   T lines: 256   ids md5: 124a3cd39b33f7da31e225829625983a
+
+### p2-128k-fused   (/home/michael/strata-xpu/m6c/runs/p2-128k-fused)
+engine binary: 2026-10-02 23:44:55.476187488 -0600  34952144 bytes
+HEAD: c7f20cb P2 (t_a1b6fa6c): the QSA prompt attention's hi/lo mma pair rebuilds its B fragment once
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.88 GiB free before its session carve
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 381683 ms (338.0 tok/s), 256 generated in 13069 ms (19.6 tok/s), drafts accepted 159 of 206, 0 checkpoints
+strata decode timing: 99 windows, avg T 3.08, 2.59 tokens/window, 132.01 ms/window = verify 110.58 (GPU-reach wait 42.46 + per-layer host 0.46 [plan 0.29 actq 0.21 jobs 0.23 CPU 0.00] + stage 1.34) + commit/emi
+   T lines: 256   ids md5: c60e72d397e9b1cd44dab9c5ab1187c8
+
+### p2-4k-before   (/home/michael/strata-xpu/p1/runs/p2-4k-before)
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.88 GiB free before its session carve
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15792 ms (242.7 tok/s), 150 generated in 7008 ms (21.4 tok/s), drafts accepted 102 of 139, 0 checkpoints
+strata decode timing: 49 windows, avg T 3.84, 3.06 tokens/window, 143.02 ms/window = verify 121.74 (GPU-reach wait 47.03 + per-layer host 0.53 [plan 0.31 actq 0.26 jobs 0.28 CPU 0.00] + stage 1.22) + commit/emi
+   T lines: 150   ids md5: ad985c23cad68dcf1c462da621fc66e4
+
+### p2-4k-after   (/home/michael/strata-xpu/p1/runs/p2-4k-after)
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.88 GiB free before its session carve
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15728 ms (243.6 tok/s), 150 generated in 6997 ms (21.4 tok/s), drafts accepted 102 of 139, 0 checkpoints
+strata decode timing: 49 windows, avg T 3.84, 3.06 tokens/window, 142.79 ms/window = verify 121.49 (GPU-reach wait 46.91 + per-layer host 0.53 [plan 0.31 actq 0.26 jobs 0.27 CPU 0.00] + stage 1.20) + commit/emi
+   T lines: 150   ids md5: ad985c23cad68dcf1c462da621fc66e4
+
+### p2-32k-before3   (/home/michael/strata-xpu/p1/runs/p2-32k-before3)
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.88 GiB free before its session carve
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 92905 ms (347.2 tok/s), 256 generated in 11726 ms (21.8 tok/s), drafts accepted 171 of 214, 0 checkpoints
+strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 137.96 ms/window = verify 115.03 (GPU-reach wait 44.22 + per-layer host 0.50 [plan 0.30 actq 0.23 jobs 0.25 CPU 0.00] + stage 1.15) + commit/emi
+   T lines: 256   ids md5: 124a3cd39b33f7da31e225829625983a
+
+### p2-32k-after3   (/home/michael/strata-xpu/p1/runs/p2-32k-after3)
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.88 GiB free before its session carve
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91878 ms (351.1 tok/s), 256 generated in 11723 ms (21.8 tok/s), drafts accepted 171 of 214, 0 checkpoints
+strata decode timing: 85 windows, avg T 3.52, 3.01 tokens/window, 137.92 ms/window = verify 115.01 (GPU-reach wait 44.10 + per-layer host 0.50 [plan 0.30 actq 0.24 jobs 0.25 CPU 0.00] + stage 1.20) + commit/emi
+   T lines: 256   ids md5: 124a3cd39b33f7da31e225829625983a
+
+############ the 32K prefill's GPU-timeline attribution (the engine's own STRATA_PREFILL_TIMING)
+
+/home/michael/strata-xpu/m6c/runs/p2-32k-timing/err.txt
+   lines: 5 (4 chunk lines + 1 request-level)
+   wall                     79818 ms        -
+   GPU timeline             71172 ms   100.0%
+   qsa attn                 53679 ms    75.4%
+   host staging             15406 ms        -
+   dequant                   5082 ms     7.1%
+   qsa select                3201 ms     4.5%
+   host grouping             2561 ms     3.6%
+   gemm gate/up              1565 ms     2.2%
+   gdn recurrence            1141 ms     1.6%
+   hc read                    859 ms     1.2%
+   gemm down                  806 ms     1.1%
+   qsa proj                   472 ms     0.7%
+   gdn                        441 ms     0.6%
+   combine                    370 ms     0.5%
+   gdn out proj               309 ms     0.4%
+   gdn conv+gates             212 ms     0.3%
+   router+shared              145 ms     0.2%
+   gather                     144 ms     0.2%
+   embed+steps                143 ms     0.2%
+   wait copy                   37 ms     0.1%
+   qsa indexer                  2 ms     0.0%
+   [request line] 32255 tokens, GPU timeline 64970 ms, wall 92510 ms
+
+/home/michael/strata-xpu/m6c/runs/p2-32k-fused/err.txt
+   lines: 5 (4 chunk lines + 1 request-level)
+   wall                     78972 ms        -
+   GPU timeline             70275 ms   100.0%
+   qsa attn                 52748 ms    75.1%
+   host staging             15582 ms        -
+   dequant                   5087 ms     7.2%
+   qsa select                3204 ms     4.6%
+   host grouping             2574 ms     3.7%
+   gemm gate/up              1559 ms     2.2%
+   gdn recurrence            1142 ms     1.6%
+   hc read                    886 ms     1.3%
+   gemm down                  812 ms     1.2%
+   qsa proj                   469 ms     0.7%
+   gdn                        445 ms     0.6%
+   combine                    370 ms     0.5%
+   gdn out proj               309 ms     0.4%
+   gdn conv+gates             212 ms     0.3%
+   router+shared              146 ms     0.2%
+   gather                     141 ms     0.2%
+   embed+steps                131 ms     0.2%
+   wait copy                   37 ms     0.1%
+   qsa indexer                  2 ms     0.0%
+   [request line] 32255 tokens, GPU timeline 66686 ms, wall 93926 ms
+
+/home/michael/strata-xpu/m6c/runs/p2-128k-timing/err.txt
+   lines: 17 (16 chunk lines + 1 request-level)
+   wall                    368341 ms        -
+   GPU timeline            358270 ms   100.0%
+   host staging            224729 ms        -
+   qsa attn                219891 ms    61.4%
+   qsa select               45130 ms    12.6%
+   qsa proj                 36406 ms    10.2%
+   dequant                  20902 ms     5.8%
+   host grouping            11285 ms     3.1%
+   gemm gate/up              6088 ms     1.7%
+   gdn recurrence            4567 ms     1.3%
+   hc read                   3135 ms     0.9%
+   gemm down                 3047 ms     0.9%
+   gdn                       1784 ms     0.5%
+   combine                   1481 ms     0.4%
+   gdn out proj              1233 ms     0.3%
+   gdn conv+gates             850 ms     0.2%
+   embed+steps                609 ms     0.2%
+   router+shared              584 ms     0.2%
+   gather                     566 ms     0.2%
+   kv stage                   544 ms     0.2%
+   wait copy                  167 ms     0.0%
+   qsa indexer                  0 ms     0.0%
+   [request line] 129023 tokens, GPU timeline 347939 ms, wall 382623 ms
+
+############ token-id equality (the guardrail)
+/home/michael/strata-xpu/m6c/runs/p2-32k-trace/out.txt: 256 ids
+/home/michael/strata-xpu/m6c/runs/p2-32k-fused/out.txt: 256 ids
+IDENTICAL: all 256 token ids equal
+/home/michael/strata-xpu/m6c/runs/p2-128k-timing/out.txt: 256 ids
+/home/michael/strata-xpu/m6c/runs/p2-128k-fused/out.txt: 256 ids
+IDENTICAL: all 256 token ids equal
+/home/michael/strata-xpu/p1/runs/p2-4k-before/out.txt: 150 ids
+/home/michael/strata-xpu/p1/runs/p2-4k-after/out.txt: 150 ids
+IDENTICAL: all 150 token ids equal
+
+############ the 4K arms' own lines (same harness, explicit binaries)
+-- p2-4k-before
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15792 ms (242.7 tok/s), 150 generated in 7008 ms (21.4 tok/s), drafts accepted 102 of 139, 0 checkpoints
+strata decode timing: 49 windows, avg T 3.84, 3.06 tokens/window, 143.02 ms/window = verify 121.74 (GPU-reach wait 47.03 + per-layer host 0.
+strata serve: expert tiers: GPU 90240 hits this request; since the start RAM 0 blobs, files 0 blobs 51117.1 MB read (the GGUF in place)
+-- p2-4k-after
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15728 ms (243.6 tok/s), 150 generated in 6997 ms (21.4 tok/s), drafts accepted 102 of 139, 0 checkpoints
+strata decode timing: 49 windows, avg T 3.84, 3.06 tokens/window, 142.79 ms/window = verify 121.49 (GPU-reach wait 46.91 + per-layer host 0.
+strata serve: expert tiers: GPU 90240 hits this request; since the start RAM 0 blobs, files 0 blobs 51117.1 MB read (the GGUF in place)

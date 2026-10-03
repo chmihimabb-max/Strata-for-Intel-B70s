@@ -1,0 +1,10 @@
+device Intel(R) Graphics [0xe223]  (1.15.37833+4), iters 4000, blocks 64, 8192 work-items
+  mode 0  mma as shipped (2 calls, 64 sel + 128 cvt + 128 FMA)     5.848 ms     0.178 ns per work-item-iteration   5603.46 M iter/s
+  mode 1  fused pair      (24+24 sel + 96 cvt + 128 FMA)           4.725 ms     0.144 ns per work-item-iteration   6934.49 M iter/s
+  mode 2  128 FMA only    (no exchange, no cvt)                    0.751 ms     0.023 ns per work-item-iteration   43649.05 M iter/s
+  mode 3  64 select_from_group only                                1.616 ms     0.049 ns per work-item-iteration   20281.87 M iter/s
+  mode 4  128 f16->f32 only                                        0.683 ms     0.021 ns per work-item-iteration   47964.89 M iter/s
+
+  shippped pair 5.848 ms vs FMA floor 0.751 ms = 7.79x the pure arithmetic
+  fused pair    4.725 ms vs FMA floor 0.751 ms = 6.29x ; fusion saves 19.2% of the shipped pair
+  the exchange alone (mode 3) is 1.616 ms against 0.751 ms of FMAs (mode 2)

@@ -1,0 +1,14 @@
+== qsa prompt attention parity, ctx 32768 / 2048 queries / 3 reps, card 0 (ZE_AFFINITY_MASK=0)
+== AFTER  (fused hi/lo pair, commit c7f20cb): ./build-sycl/sycl_prompt_attn_parity 32768 2048 3
+PASS int8 ctx 32768, 2048 queries: vs FP64 old 2.13e-06 new 2.14e-06 (output scale 3.62); new vs old 4.53e-06 (1.2e-06 of scale); 78.785 -> 502.476 ms per chunk (0.16x)
+PASS fp16 ctx 32768, 2048 queries: vs FP64 old 1.89e-06 new 1.9e-06 (output scale 3.53); new vs old 3.78e-06 (9.2e-07 of scale); 80.894 -> 683.682 ms per chunk (0.12x)
+PASS int8 ctx 1500, 1500 queries: vs FP64 old 1.78e-06 new 3.29e-06 (output scale 3.57); new vs old 4.89e-06 (1.3e-06 of scale); 22.364 -> 139.634 ms per chunk (0.16x)
+PASS int8 ctx 2100, 256 queries: vs FP64 old 2.03e-06 new 2.24e-06 (output scale 3.61); new vs old 4.17e-06 (1.2e-06 of scale); 14.464 -> 63.077 ms per chunk (0.23x)
+FAILURES: 0
+
+== BEFORE (two mma16816 calls): /home/michael/strata-xpu/p2/sycl_prompt_attn_parity-before-P2 32768 2048 3
+PASS int8 ctx 32768, 2048 queries: vs FP64 old 2.13e-06 new 2.14e-06 (output scale 3.62); new vs old 4.53e-06 (1.2e-06 of scale); 79.257 -> 510.618 ms per chunk (0.16x)
+PASS fp16 ctx 32768, 2048 queries: vs FP64 old 1.89e-06 new 1.9e-06 (output scale 3.53); new vs old 3.78e-06 (9.2e-07 of scale); 80.797 -> 643.291 ms per chunk (0.13x)
+PASS int8 ctx 1500, 1500 queries: vs FP64 old 1.78e-06 new 3.29e-06 (output scale 3.57); new vs old 4.89e-06 (1.3e-06 of scale); 22.390 -> 140.515 ms per chunk (0.16x)
+PASS int8 ctx 2100, 256 queries: vs FP64 old 2.03e-06 new 2.24e-06 (output scale 3.61); new vs old 4.17e-06 (1.2e-06 of scale); 9.286 -> 64.574 ms per chunk (0.14x)
+FAILURES: 0
