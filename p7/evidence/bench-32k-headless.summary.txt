@@ -1,0 +1,7 @@
+speculation              188 rounds of 6, drafts accepted 71 of 547 (0.130), 1.38 tokens per round
+window sizes             T1:1 T2:5 T3:15 T4:161 T5:1 T6:5  (min draft probability 0.50)
+suffix drafts            36 windows, drafts accepted 71 of 94
+accepted per round       0:159 1:9 2:6 3:9 4:2 5:3
+verify window            wait for rings 91.143  pool 12.369  host 1.420  commit 0.543 ms/round; CPU experts 0.76 distinct / 0.84 routed per layer
+decode                   256 tokens in 24161.6 ms  ->  10.60 tok/s
+prefill                  32255 tokens in 123940.6 ms  ->  260.25 tok/s  (time to first token 124130.1 ms)

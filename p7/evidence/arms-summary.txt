@@ -108,6 +108,24 @@ ARM p7-4096-old
   -- peak VRAM/RSS --
   1791043252.673,49.4,3,51812352000,51787673600,178884608,0,1686794,4096653581,96016160,16,26134.8,31651.5
 ================================================================
+ARM p7-bench-32768-headless
+  mtp runtime: <none: headless>
+  -- DONE (serve) --
+  -- serve summary --
+  -- engine's own timing --
+  -- drafter VRAM --
+  strata generate: expert cache auto: 26.59 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10448 slots
+  strata generate: expert cache 13647 slots, 25.91 GiB of VRAM; policy is
+  strata generate: pre-filled 13647 of 13647 slots from the profile; slot 0 verified
+  -- bench summary (if the arm ran the bench path) --
+  speculation              188 rounds of 6, drafts accepted 71 of 547 (0.130), 1.38 tokens per round
+  suffix drafts            36 windows, drafts accepted 71 of 94
+  accepted per round       0:159 1:9 2:6 3:9 4:2 5:3
+  decode                   256 tokens in 24161.6 ms  ->  10.60 tok/s
+  prefill                  32255 tokens in 123940.6 ms  ->  260.25 tok/s  (time to first token 124130.1 ms)
+  -- tokens --
+  -- peak VRAM/RSS --
+================================================================
 ARM p7-bench-32768-mtp
   mtp runtime: /home/michael/strata-xpu/mtp/rt
   -- DONE (serve) --
@@ -120,6 +138,11 @@ ARM p7-bench-32768-mtp
   strata generate: pre-filled 13102 of 13102 slots from the profile; slot 0 verified
   strata mtp: draft head over 106299 tokens (212.9 MiB)
   -- bench summary (if the arm ran the bench path) --
+  speculation              84 rounds of 6, drafts accepted 174 of 213 (0.817), 3.07 tokens per round
+  suffix drafts            6 windows, drafts accepted 20 of 24
+  accepted per round       0:15 1:15 2:7 3:45 4:0 5:2
+  decode                   256 tokens in 11833.3 ms  ->  21.63 tok/s
+  prefill                  32255 tokens in 124223.7 ms  ->  259.65 tok/s  (time to first token 124445.9 ms)
   -- tokens --
   -- peak VRAM/RSS --
 ================================================================
