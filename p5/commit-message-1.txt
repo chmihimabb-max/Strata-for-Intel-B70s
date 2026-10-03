@@ -1,0 +1,23 @@
+P5 (t_bc967b65): the harness for the oracle-attributed prompt-vs-batched attention A/B
+
+The card asks which of two of our own attention implementations is right, and the answer has to come
+from outside the engine. So the harness is three re-runnable pieces, one per side of the comparison, and
+nothing in it is a one-off shell in a log:
+
+* p5/p5_arm.sh         one engine arm on the config of record, through the engine's own serve protocol.
+                       Sets (and clears) the A/B switch itself - P2's pitfall was a STRATA_PROMPT_ATTN_OLD
+                       left exported by a previous arm - and records which prompt-attention path actually
+                       ran (the shipped path prints the portable-v1 line at load, the batched path does
+                       not, prefill.cpp:1621).  Raw T <id> lines, the request's own prefill/decode rates,
+                       the per-chunk STRATA_PREFILL_TIMING phases, peak RSS/VRAM.
+* p5/p5_oracle_launch.sh / p5_oracle_probe.py / p5_oracle_stop.sh
+                       the independent oracle: I2's llama.cpp-SYCL (qwen4exp) harness, parameterised by
+                       context (I2 only ran ctx 4096), fed THE SAME prompt-id file as the engine arm, plus
+                       n_probs 5 so every divergence carries the oracle's own top1-top2 logprob margin.
+* p5/p5_compare.py     the three-way table: per arm, the prefix view up to the first divergence (I2's)
+                       AND the aligned view (an insertion otherwise charges every later position), with
+                       the nats margin at every difference and thresholded counts of the differences the
+                       oracle itself was decisive about.
+
+Lengths come from the prompts P2's own arms used (3832 / 32256 / 129024 ids), so the A/B is on the
+record's prompts, not on new ones.
