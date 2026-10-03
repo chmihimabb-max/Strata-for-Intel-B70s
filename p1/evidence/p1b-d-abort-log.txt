@@ -1,0 +1,157 @@
+P1b gdb abort run p1b-d-abort   2026-10-02T21:29:32-06:00
+HEAD: 3d84db0 P1 (t_44a0ac61): the release write-up, its evidence, and the harnesses
+binary: /home/michael/strata-xpu/strata/build-sycl/strata (2026-10-02 21:19:40.291349205 -0600 34934648 bytes)
+env: STRATA_TEST_VERIFY_STALL=1 STRATA_RELEASE_DRAIN_MS=30000
+watchdog: STRATA_WATCHDOG_S=default (p1_gdb.sh forces 900; this one does not)
+gdb: parent; NOT interrupted - it returns on the signal itself (interrupt fallback 300s)
+ 
+:: initializing oneAPI environment ...
+   p1b_gdb_abort.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: p1b-d-abort 300
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+== loaded 2026-10-02T21:30:04-06:00 ==
+== ask fed 2026-10-02T21:30:04-06:00; waiting up to 300s (the abort ends it earlier) ==
+== gdb exited on its own after 112s ==
+
+== the engine's own lines about the window ==
+46:strata serve: no progress for 60 s during a request (verify window: waiting for the GPU to finish the window (flags A/B/M raised) 1) - stopping the engine so the server starts it again (issue #29)
+47:strata serve: stall report (engine 0.1.34): stage "verify window: waiting for the GPU to finish the window (flags A/B/M raised) 1" for 59 s; 23 layers served since the last finished step (0 = stopped, more = slow)
+57:strata: #267 release pass over live verifier slot 0 (thread 7145150022342115812)
+58:verify release: enter (thread 7145150022342115812, budget 30000 ms)
+59:verify release: flag publication 0.081 ms; drain budget 30000 ms
+60:verify release: the GPU did NOT finish; drain 30000.869 ms, release 30000.955 ms
+61:verify release: device flag words 4294967295 4294967295 4294967295 (host words 4294967295 4294967295 4294967295); window state:
+63:strata: released the verify window's GPU waits (#267): the GPU did not finish within 5 s
+64:strata: #267 release pass over live verifier slot 1 (thread 7145150022342115812)
+65:verify release: enter (thread 7145150022342115812, budget 30000 ms)
+66:verify release: flag publication 0.030 ms; drain budget 30000 ms
+67:verify teardown: syncing cs_ (released_=1, thread 14559445709699955333) ...
+68:verify teardown: cs_ synced after 0.003 ms
+69:verify teardown: syncing cs_ (released_=1, thread 14559445709699955333) ...
+70:verify teardown: cs_ synced after 1.023 ms
+71:corrupted double-linked list
+
+== gdb: the fatal signal and the stacks ==
+=== SIG %s STOPPED THE PROGRAM ===
+#0  __pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+#1  __pthread_kill_internal (threadid=<optimized out>, signo=6) at ./nptl/pthread_kill.c:89
+#2  __GI___pthread_kill (threadid=<optimized out>, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+#3  0x00007fffdaa45b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#4  0x00007fffdaa288ec in __GI_abort () at ./stdlib/abort.c:77
+#5  0x00007fffdaa29979 in __libc_message_impl (vma_name=vma_name@entry=0x7fffdabdb569 "glibc: fatal", fmt=fmt@entry=0x7fffdabdebbe "%s\n") at ../sysdeps/posix/libc_fatal.c:138
+#6  0x00007fffdaab08ac in __libc_message_wrapper (vmaname=0x7fffdabdb569 "glibc: fatal", fmt=0x7fffdabdebbe "%s\n") at ../include/stdio.h:203
+#7  malloc_printerr (str=str@entry=0x7fffdabdc96a "corrupted double-linked list") at ./malloc/malloc.c:5341
+#8  0x00007fffdaab1014 in unlink_chunk (p=p@entry=0x976a690, av=0x7fffdac12ac0 <main_arena>) at ./malloc/malloc.c:1601
+#9  0x00007fffdaab2175 in _int_free_merge_chunk (av=0x7fffdac12ac0 <main_arena>, p=0x976a690, size=<optimized out>) at ./malloc/malloc.c:4440
+#10 0x00007fffdaab23b4 in _int_free_chunk (av=0x7fffdac12ac0 <main_arena>, p=<optimized out>, size=<optimized out>, have_lock=<optimized out>) at ./malloc/malloc.c:4368
+#11 0x00007fffd3474abb in ?? () from /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1
+#12 0x00007fffd3477037 in ?? () from /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1
+#13 0x00007fffd3487add in ?? () from /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1
+#14 0x00007fffdfceb576 in ur_program_handle_t_::ur_release_program_resources(bool) () from /opt/intel/oneapi/compiler/2026.1/lib/libur_adapter_level_zero_v2.so.0
+#15 0x00007fffdfceb232 in ur_program_handle_t_::~ur_program_handle_t_() () from /opt/intel/oneapi/compiler/2026.1/lib/libur_adapter_level_zero_v2.so.0
+#16 0x00007fffdfce7493 in ur::level_zero::urProgramRelease(ur_program_handle_t_*) () from /opt/intel/oneapi/compiler/2026.1/lib/libur_adapter_level_zero_v2.so.0
+#17 0x00007fffda15e9d3 in urProgramRelease () from /opt/intel/oneapi/compiler/2026.1/lib/libur_loader.so.0
+#18 0x00007ffff7b00b1e in sycl::_V1::detail::Managed<ur_program_handle_t_*>::~Managed() () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#19 0x00007ffff7c9cc12 in emhash8::HashMap<std::pair<std::pair<std::vector<unsigned char, std::allocator<unsigned char> >, unsigned long>, std::set<ur_device_handle_t_*, std::less<ur_device_handle_t_*>, std::allocator<ur_device_handle_t_*> > >, std::shared_ptr<sycl::_V1::detail::KernelProgramCache::ProgramBuildResult>, std::hash<std::pair<std::pair<std::vector<unsigned char, std::allocator<unsigned char> >, unsigned long>, std::set<ur_device_handle_t_*, std::less<ur_device_handle_t_*>, std::allocator<ur_device_handle_t_*> > > >, std::equal_to<std::pair<std::pair<std::vector<unsigned char, std::allocator<unsigned char> >, unsigned long>, std::set<ur_device_handle_t_*, std::less<ur_device_handle_t_*>, std::allocator<ur_device_handle_t_*> > > >, std::allocator<std::pair<std::pair<std::pair<std::vector<unsigned char, std::allocator<unsigned char> >, unsigned long>, std::set<ur_device_handle_t_*, std::less<ur_device_handle_t_*>, std::allocator<ur_device_handle_t_*> > >, std::shared_ptr<sycl::_V1::detail::KernelProgramCache::ProgramBuildResult> > >, emhash8::DefaultPolicy>::erase_slot(unsigned int, unsigned int) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#20 0x00007ffff7c9b3b2 in sycl::_V1::detail::KernelProgramCache::removeProgramByKey(std::pair<std::pair<std::vector<unsigned char, std::allocator<unsigned char> >, unsigned long>, std::set<ur_device_handle_t_*, std::less<ur_device_handle_t_*>, std::allocator<ur_device_handle_t_*> > > const&, sycl::_V1::detail::KernelProgramCache::ProgramCache&) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#21 0x00007ffff7c7c8f1 in sycl::_V1::detail::KernelProgramCache::removeAllRelatedEntries(unsigned int) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#22 0x00007ffff7c7b58e in sycl::_V1::detail::ProgramManager::removeImages(sycl_device_binaries_struct*) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#23 0x000000000040ec60 in sycl.descriptor_unreg ()
+#24 0x00007ffff7fc20d2 in _dl_call_fini (closure_map=closure_map@entry=0x7ffff7ffe2e0) at ./elf/dl-call_fini.c:43
+#25 0x00007ffff7fc66f0 in _dl_fini () at ./elf/dl-fini.c:120
+#26 0x00007fffdaa485e1 in __run_exit_handlers (status=1, listp=0x7fffdac12680 <__exit_funcs>, run_list_atexit=run_list_atexit@entry=true, run_dtors=run_dtors@entry=true) at ./stdlib/exit.c:118
+#27 0x00007fffdaa486be in __GI_exit (status=<optimized out>) at ./stdlib/exit.c:148
+#28 0x00007fffdaa2a608 in __libc_start_call_main (main=main@entry=0x40f010 <main>, argc=argc@entry=33, argv=argv@entry=0x7fffffffc728) at ../sysdeps/nptl/libc_start_call_main.h:83
+#29 0x00007fffdaa2a718 in __libc_start_main_impl (main=0x40f010 <main>, argc=33, argv=0x7fffffffc728, init=<optimized out>, fini=<optimized out>, rtld_fini=<optimized out>, stack_end=0x7fffffffc718) at ../csu/libc-start.c:360
+#30 0x000000000040ef45 in _start ()
+
+=== ALL THREADS ===
+
+Thread 105 (Thread 0x7ff219bbe6c0 (LWP 804598) "strata"):
+#0  __futex_abstimed_wait_common (futex_word=0x7ff219bb2324, expected=0, clockid=0, abstime=0x0, private=0, cancel=false) at ./nptl/futex-internal.c:103
+#1  __GI___futex_abstimed_wait64 (futex_word=futex_word@entry=0x7ff219bb2324, expected=expected@entry=0, clockid=clockid@entry=0, abstime=abstime@entry=0x0, private=private@entry=0) at ./nptl/futex-internal.c:128
+#2  0x00007fffdaaa74b9 in __pthread_mutex_lock_full (mutex=0x88f9d30) at ./nptl/pthread_mutex_lock.c:430
+#3  0x00007ffff7cb2db9 in std::shared_ptr<sycl::_V1::detail::event_impl> sycl::_V1::detail::queue_impl::finalizeHandlerOutOfOrder<sycl::_V1::handler>(sycl::_V1::handler&) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#4  0x00007ffff7cb2224 in sycl::_V1::detail::queue_impl::submit_impl(sycl::_V1::detail::type_erased_cgfo_ty const&, bool, sycl::_V1::detail::code_location const&, bool, sycl::_V1::detail::_V1::SubmissionInfo const&) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#5  0x00007ffff7d78299 in sycl::_V1::queue::submit_with_event_impl(sycl::_V1::detail::type_erased_cgfo_ty const&, sycl::_V1::detail::_V1::SubmissionInfo const&, sycl::_V1::detail::code_location const&, bool) const () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#6  0x00007ffff7d788ff in sycl::_V1::queue::ext_oneapi_submit_barrier(std::vector<sycl::_V1::event, std::allocator<sycl::_V1::event> > const&, sycl::_V1::detail::code_location const&) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#7  0x00007ffff7d784e3 in sycl::_V1::queue::ext_oneapi_submit_barrier(sycl::_V1::detail::code_location const&) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#8  0x00000000004a2c0f in strata::core::Verifier::release_gpu_waits(int) ()
+#9  0x00000000004a5b74 in strata::core::(anonymous namespace)::release_live_verifiers(_IO_FILE*) ()
+#10 0x000000000043dff5 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<main::{lambda()#10}> > >::_M_run() ()
+#11 0x00007fffdaef5ef9 in ?? () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#12 0x00007fffdaaa3dfa in start_thread (arg=<optimized out>) at ./nptl/pthread_create.c:454
+#13 0x00007fffdab375cc in __GI___clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:78
+
+Thread 104 (Thread 0x7ff21a3bf6c0 (LWP 804597) "strata"):
+#0  __syscall_cancel_arch () at ../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S:56
+#1  0x00007fffdaaa039c in __internal_syscall_cancel (a1=<optimized out>, a2=<optimized out>, a3=<optimized out>, a4=0, a5=0, a6=0, nr=0) at ./nptl/cancellation.c:49
+#2  __syscall_cancel (a1=<optimized out>, a2=<optimized out>, a3=<optimized out>, a4=a4@entry=0, a5=a5@entry=0, a6=a6@entry=0, nr=0) at ./nptl/cancellation.c:75
+#3  0x00007fffdab2816e in __GI___libc_read (fd=<optimized out>, buf=<optimized out>, nbytes=<optimized out>) at ../sysdeps/unix/sysv/linux/read.c:26
+#4  0x000000000043d251 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<main::{lambda()#8}> > >::_M_run() ()
+#5  0x00007fffdaef5ef9 in ?? () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#6  0x00007fffdaaa3dfa in start_thread (arg=<optimized out>) at ./nptl/pthread_create.c:454
+#7  0x00007fffdab375cc in __GI___clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:78
+
+Thread 2 (Thread 0x7fffb73ff6c0 (LWP 804361) "strata"):
+#0  __syscall_cancel_arch () at ../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S:56
+#1  0x00007fffdaaa030c in __internal_syscall_cancel (a1=a1@entry=130609980, a2=<optimized out>, a3=a3@entry=139, a4=a4@entry=0, a5=a5@entry=0, a6=a6@entry=4294967295, nr=202) at ./nptl/cancellation.c:49
+#2  0x00007fffdaaa06e7 in __futex_abstimed_wait_common64 (private=0, futex_word=0x7c8f33c, expected=139, op=393, abstime=0x0, cancel=true) at ./nptl/futex-internal.c:57
+#3  __futex_abstimed_wait_common (futex_word=0x7c8f33c, expected=139, clockid=0, abstime=0x0, private=0, cancel=true) at ./nptl/futex-internal.c:87
+#4  __GI___futex_abstimed_wait_cancelable64 (futex_word=futex_word@entry=0x7c8f33c, expected=expected@entry=20895, clockid=clockid@entry=0, abstime=abstime@entry=0x0, private=private@entry=0) at ./nptl/futex-internal.c:139
+#5  0x00007fffdaaa30c7 in __pthread_cond_wait_common (cond=<optimized out>, mutex=0x7c8f348, clockid=0, abstime=0x0) at ./nptl/pthread_cond_wait.c:421
+#6  ___pthread_cond_wait (cond=<optimized out>, mutex=0x7c8f348) at ./nptl/pthread_cond_wait.c:453
+#7  0x00007fffd388f02a in ?? () from /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1
+#8  0x00007fffdaaa3dfa in start_thread (arg=<optimized out>) at ./nptl/pthread_create.c:454
+#9  0x00007fffdab375cc in __GI___clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:78
+
+Thread 1 (Thread 0x7ffff7e0ba00 (LWP 804284) "strata"):
+#0  __pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+#1  __pthread_kill_internal (threadid=<optimized out>, signo=6) at ./nptl/pthread_kill.c:89
+#2  __GI___pthread_kill (threadid=<optimized out>, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+#3  0x00007fffdaa45b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#4  0x00007fffdaa288ec in __GI_abort () at ./stdlib/abort.c:77
+#5  0x00007fffdaa29979 in __libc_message_impl (vma_name=vma_name@entry=0x7fffdabdb569 "glibc: fatal", fmt=fmt@entry=0x7fffdabdebbe "%s\n") at ../sysdeps/posix/libc_fatal.c:138
+#6  0x00007fffdaab08ac in __libc_message_wrapper (vmaname=0x7fffdabdb569 "glibc: fatal", fmt=0x7fffdabdebbe "%s\n") at ../include/stdio.h:203
+#7  malloc_printerr (str=str@entry=0x7fffdabdc96a "corrupted double-linked list") at ./malloc/malloc.c:5341
+#8  0x00007fffdaab1014 in unlink_chunk (p=p@entry=0x976a690, av=0x7fffdac12ac0 <main_arena>) at ./malloc/malloc.c:1601
+#9  0x00007fffdaab2175 in _int_free_merge_chunk (av=0x7fffdac12ac0 <main_arena>, p=0x976a690, size=<optimized out>) at ./malloc/malloc.c:4440
+#10 0x00007fffdaab23b4 in _int_free_chunk (av=0x7fffdac12ac0 <main_arena>, p=<optimized out>, size=<optimized out>, have_lock=<optimized out>) at ./malloc/malloc.c:4368
+#11 0x00007fffd3474abb in ?? () from /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1
+#12 0x00007fffd3477037 in ?? () from /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1
+#13 0x00007fffd3487add in ?? () from /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1
+#14 0x00007fffdfceb576 in ur_program_handle_t_::ur_release_program_resources(bool) () from /opt/intel/oneapi/compiler/2026.1/lib/libur_adapter_level_zero_v2.so.0
+#15 0x00007fffdfceb232 in ur_program_handle_t_::~ur_program_handle_t_() () from /opt/intel/oneapi/compiler/2026.1/lib/libur_adapter_level_zero_v2.so.0
+#16 0x00007fffdfce7493 in ur::level_zero::urProgramRelease(ur_program_handle_t_*) () from /opt/intel/oneapi/compiler/2026.1/lib/libur_adapter_level_zero_v2.so.0
+#17 0x00007fffda15e9d3 in urProgramRelease () from /opt/intel/oneapi/compiler/2026.1/lib/libur_loader.so.0
+#18 0x00007ffff7b00b1e in sycl::_V1::detail::Managed<ur_program_handle_t_*>::~Managed() () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#19 0x00007ffff7c9cc12 in emhash8::HashMap<std::pair<std::pair<std::vector<unsigned char, std::allocator<unsigned char> >, unsigned long>, std::set<ur_device_handle_t_*, std::less<ur_device_handle_t_*>, std::allocator<ur_device_handle_t_*> > >, std::shared_ptr<sycl::_V1::detail::KernelProgramCache::ProgramBuildResult>, std::hash<std::pair<std::pair<std::vector<unsigned char, std::allocator<unsigned char> >, unsigned long>, std::set<ur_device_handle_t_*, std::less<ur_device_handle_t_*>, std::allocator<ur_device_handle_t_*> > > >, std::equal_to<std::pair<std::pair<std::vector<unsigned char, std::allocator<unsigned char> >, unsigned long>, std::set<ur_device_handle_t_*, std::less<ur_device_handle_t_*>, std::allocator<ur_device_handle_t_*> > > >, std::allocator<std::pair<std::pair<std::pair<std::vector<unsigned char, std::allocator<unsigned char> >, unsigned long>, std::set<ur_device_handle_t_*, std::less<ur_device_handle_t_*>, std::allocator<ur_device_handle_t_*> > >, std::shared_ptr<sycl::_V1::detail::KernelProgramCache::ProgramBuildResult> > >, emhash8::DefaultPolicy>::erase_slot(unsigned int, unsigned int) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#20 0x00007ffff7c9b3b2 in sycl::_V1::detail::KernelProgramCache::removeProgramByKey(std::pair<std::pair<std::vector<unsigned char, std::allocator<unsigned char> >, unsigned long>, std::set<ur_device_handle_t_*, std::less<ur_device_handle_t_*>, std::allocator<ur_device_handle_t_*> > > const&, sycl::_V1::detail::KernelProgramCache::ProgramCache&) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#21 0x00007ffff7c7c8f1 in sycl::_V1::detail::KernelProgramCache::removeAllRelatedEntries(unsigned int) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#22 0x00007ffff7c7b58e in sycl::_V1::detail::ProgramManager::removeImages(sycl_device_binaries_struct*) () from /opt/intel/oneapi/compiler/2026.1/lib/libsycl.so.9
+#23 0x000000000040ec60 in sycl.descriptor_unreg ()
+#24 0x00007ffff7fc20d2 in _dl_call_fini (closure_map=closure_map@entry=0x7ffff7ffe2e0) at ./elf/dl-call_fini.c:43
+#25 0x00007ffff7fc66f0 in _dl_fini () at ./elf/dl-fini.c:120
+#26 0x00007fffdaa485e1 in __run_exit_handlers (status=1, listp=0x7fffdac12680 <__exit_funcs>, run_list_atexit=run_list_atexit@entry=true, run_dtors=run_dtors@entry=true) at ./stdlib/exit.c:118
+#27 0x00007fffdaa486be in __GI_exit (status=<optimized out>) at ./stdlib/exit.c:148
+#28 0x00007fffdaa2a608 in __libc_start_call_main (main=main@entry=0x40f010 <main>, argc=argc@entry=33, argv=argv@entry=0x7fffffffc728) at ../sysdeps/nptl/libc_start_call_main.h:83
+#29 0x00007fffdaa2a718 in __libc_start_main_impl (main=0x40f010 <main>, argc=33, argv=0x7fffffffc728, init=<optimized out>, fini=<optimized out>, rtld_fini=<optimized out>, stack_end=0x7fffffffc718) at ../csu/libc-start.c:360
+#30 0x000000000040ef45 in _start ()
+
+=== INFO THREADS ===
+  Id   Target Id                                   Frame 
+* 1    Thread 0x7ffff7e0ba00 (LWP 804284) "strata" __pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+  2    Thread 0x7fffb73ff6c0 (LWP 804361) "strata" __syscall_cancel_arch () at ../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S:56
+  104  Thread 0x7ff21a3bf6c0 (LWP 804597) "strata" __syscall_cancel_arch () at ../sysdeps/unix/sysv/linux/x86_64/syscall_cancel.S:56
+  105  Thread 0x7ff219bbe6c0 (LWP 804598) "strata" __futex_abstimed_wait_common (futex_word=0x7ff219bb2324, expected=0, clockid=0, abstime=0x0, private=0, cancel=false) at ./nptl/futex-internal.c:103
+Kill the program being debugged? (y or n) [answered Y; input not from terminal]
+[Inferior 1 (process 804284) killed]

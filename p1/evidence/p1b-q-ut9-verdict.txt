@@ -1,0 +1,29 @@
+== the instrument's own verdict ==
+-- trace dir --
+total 8
+drwxrwxr-x  2 michael michael 4096 Oct  2 22:31 .
+drwxrwxr-x 15 michael michael 4096 Oct  2 22:31 ..
+-- S3's stall signature (a stall report with no finished request) --
+0
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata verify: captured the 1-token window (upload no error, sync no error)
+verify release: enter (thread 8387740503906517859, budget 5000 ms)
+verify release: flag publication 0.082 ms; drain budget 5000 ms
+verify release: the GPU did NOT finish; drain 5000.815 ms, release 5000.920 ms
+verify release: host flag words 4294967295 4294967295 4294967295; window state:
+-- the request's numbers --
+T lines: 0
+-- the last 12 lines of the engine's stderr --
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata serve: 5702 MiB of VRAM free with everything loaded
+qsa_block_scores: no TF32 tc path on this backend (the device refuses tf32 joint_matrix); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3) -> warp kernel
+qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+strata verify: captured the 1-token window (upload no error, sync no error)
+verify release: enter (thread 8387740503906517859, budget 5000 ms)
+verify release: flag publication 0.082 ms; drain budget 5000 ms
+verify release: the GPU did NOT finish; drain 5000.815 ms, release 5000.920 ms
+verify release: host flag words 4294967295 4294967295 4294967295; window state:
+  verify window: 1 tokens at position 3831, host at layer step 1; the GPU rang 1; flags: served 4294967295, plan (A) 4294967295, copies (B) 4294967295; tail beacons 0 0 0 0 0 0 0 0
+verify teardown: this verifier's window was released (#267): the driver teardown (graphs, streams, device buffers) is SKIPPED - a queue release on a queue whose traced work never finished spins in queueFinish
+verify teardown: the window on cs_ was released (#267); it did NOT finish and is NOT waited for - the process is ending (5000.690 ms of a 5000 ms budget)

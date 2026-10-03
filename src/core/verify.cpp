@@ -370,14 +370,43 @@ Verifier::~Verifier() {
     // release's drain did not end it in 30 s), and a process that is ending cannot wait for the GPU.  So the
     // blocking sync stays on the clean path - a healthy window's stream is idle by then, and this is the
     // measured-cheaper spelling - and a window that was released gets the bounded ONE-EVENT wait instead.
+    // ---- P1b (card t_58d5592c): WHEN THE GPU CANNOT BE DRAINED, THE ENGINE ENDS WITHOUT TOUCHING THE DRIVER AGAIN.
+    // Bounding the sync above is not enough on its own: the next call that touches the wedged queue is the queue's
+    // own release, and THAT spins in queueFinish too.  Measured, gdb as the engine's parent under
+    // `unitrace --device-timing` (p1b-m-gdb7-out.log), once the sync had been bounded:
+    //
+    //   #0 libze_intel_gpu.so.1
+    //   #1 libze_tracing_layer.so.1
+    //   #2 v2::ur_queue_immediate_in_order_t::queueFinish()
+    //   #3 v2::ur_queue_immediate_in_order_t::~ur_queue_immediate_in_order_t()
+    //   #5 ur::level_zero::urQueueRelease
+    //   #6 urQueueRelease
+    //   #7 sycl::_V1::detail::queue_impl::~queue_impl()
+    //   #8 strata::core::Verifier::~Verifier()          <- cudaStreamDestroy(cs_)
+    //   #9 main
+    //
+    // i.e. `cudaStreamDestroy` -> `~queue_impl` -> `urQueueRelease` -> the UR queue's own destructor calls
+    // queueFinish() unconditionally.  So: if the window's stream is observed complete, the normal teardown runs
+    // (the queue is idle, everything below it is a plain release); if it is NOT complete, nothing in this process
+    // can ever finish that work, and every remaining driver call is a potential queueFinish spin - the engine ends
+    // at once, with the maps and the host allocations already the kernel's problem, instead of parking here.
+    const bool released_teardown = released_.load();
     if (cs_) {
-        if (!released_.load()) {
+        if (!released_teardown) {
             cudaStreamSynchronize(cs_);
         } else {
             double w = 0.0;
             const bool done = wait_stream_bounded(cs_, teardown_wait_ms(), &w);
-            std::fprintf(stderr, "verify teardown: the window on cs_ was released (#267); %s (%.3f ms of a %d ms budget)\n",
-                         done ? "it finished" : "it did NOT finish and is NOT waited for - the process is ending",
+            if (!done) {
+                std::fprintf(stderr,
+                             "verify teardown: the window on cs_ was released (#267) and has NOT finished in %.3f ms; "
+                             "the GPU work cannot be ended from here and the driver teardown is skipped - the engine "
+                             "ends now (a queue release on a queue whose work never finished spins in queueFinish)\n",
+                             w);
+                std::fflush(stderr);
+                std::_Exit(250);   // no atexit handlers, no driver call: the L0 driver drops everything with us
+            }
+            std::fprintf(stderr, "verify teardown: the window on cs_ was released (#267); it finished (%.3f ms of a %d ms budget)\n",
                          w, teardown_wait_ms());
             std::fflush(stderr);
         }
@@ -386,16 +415,7 @@ Verifier::~Verifier() {
         if (e) cudaGraphExecDestroy(e);
     if (commit_exec_) cudaGraphExecDestroy(commit_exec_);
     if (cs_) cudaStreamDestroy(cs_);
-    if (copy_) {
-        // P1b: the copy stream's teardown is bounded for the same reason as cs_ above (the release publishes on it).
-        if (released_.load()) {
-            double w = 0.0;
-            (void) wait_stream_bounded(copy_, teardown_wait_ms(), &w);
-        } else {
-            cudaStreamSynchronize(copy_);
-        }
-        cudaStreamDestroy(copy_);
-    }
+    if (copy_) { cudaStreamSynchronize(copy_); cudaStreamDestroy(copy_); }
     if (commit_done_) cudaEventDestroy(commit_done_);
     if (arena_) cudaFree(arena_);
     if (lad_) cudaFree(lad_);

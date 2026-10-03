@@ -1,0 +1,14 @@
+P1b engine arm p1b-j-clean4k   2026-10-02T22:11:52-06:00
+binary: /home/michael/strata-xpu/strata/build-sycl/strata   (2026-10-02 21:44:35.219001953 -0600 34934704 bytes)
+repo: f21ba10 P1b (t_58d5592c): the release's drain and the verifier's teardown are both bounded, and the drain is truthful
+env: STRATA_TEST_VERIFY_STALL=0 STRATA_RELEASE_DRAIN_MS=unset STRATA_TEARDOWN_WAIT_MS=unset SECOND_ASK=0
+arm: max-new=150 max-context=4096 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B of ids)
+engine exited 0
+== exit 0, wall 57s ==
+-- generated T lines: 150 --
+ad985c23cad68dcf1c462da621fc66e4  /home/michael/strata-xpu/p1/runs/p1b-j-clean4k/tokens.txt
+PP 2560 3832 10052 254.7
+PP 3072 3832 12146 252.9
+PP 3584 3832 14231 251.8
+PP 3831 3832 15638 245.0
+DONE 150 3832 15845.3 7011.8 stop 102 139 0 90240 90240 0 0 0.0
