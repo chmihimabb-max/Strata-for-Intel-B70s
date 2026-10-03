@@ -1,0 +1,10 @@
+{
+  "model": "qwen3.8-flash-next-iq3s",
+  "messages": [
+    {"role": "user", "content": "Explain in about 200 words what a mixture-of-experts layer does inside a transformer language model, and why routing only a few experts per token saves compute."}
+  ],
+  "stream": false,
+  "reasoning_effort": "medium",
+  "temperature": 0,
+  "max_tokens": 320
+}

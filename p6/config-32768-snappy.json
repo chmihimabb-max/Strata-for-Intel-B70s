@@ -1,0 +1,52 @@
+{
+ "_note": "P6 (card t_5dfc11a3) OPTIONAL interactive variant of the config of record (strata-sycl-iq3s.json): --max-context 32768, --kv-resident 0 (all KV in VRAM, streaming off), --prefill auto - i.e. exactly the M6c 'm6c-32k-auto' row (m6c/TABLE.md): 344.8 tok/s prefill, 21.71 tok/s decode, peak VRAM 29,438.2+31,970.2 MiB, peak RSS 48.31 GiB.  Same model, same drafter, same GPUs; only the context and the KV chunking differ.  The resident server does NOT use this file - start it with p6_start.sh (config of record) unless you want the snappy arm: python -m serve.server --engine strata --config p6/config-32768-snappy.json --port 8099 --api-monitor",
+ "exe": "build-sycl/strata",
+ "cwd": "/home/michael/strata-xpu/strata",
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--max-context",
+  "32768",
+  "--kv-resident",
+  "0",
+  "--no-capture",
+  "--stats"
+ ],
+ "env": {
+  "STRATA_DECODE_TIMING": "1"
+ },
+ "backend": "sycl",
+ "gpu": [
+  0,
+  1
+ ],
+ "layer_split": "auto",
+ "lib_dirs": [
+  "/opt/intel/oneapi/compiler/2026.1/lib",
+  "/opt/intel/oneapi/mkl/2026.1/lib",
+  "/opt/intel/oneapi/tbb/2023.1/lib/intel64/gcc4.8"
+ ],
+ "tokenizer": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer",
+ "model_name": "qwen3.8-flash-next-iq3s",
+ "log": "/home/michael/strata-xpu/logs/i1-iq3s-engine.log",
+ "port": 8099
+}

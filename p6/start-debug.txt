@@ -1,0 +1,13 @@
++ set -u
++ R=/home/michael/strata-xpu
++ SRC=/home/michael/strata-xpu/strata
++ PORT=8099
++ LOG=/home/michael/strata-xpu/logs/p6-server.log
++ ENGLOG=/home/michael/strata-xpu/logs/i1-iq3s-engine.log
++ PIDFILE=/home/michael/strata-xpu/p6/server.pid
++ cd /home/michael/strata-xpu/strata
++ ss -ltn
++ grep -q ':8099 '
++ pgrep -f 'build-sycl/strata --serve'
++ unset ZE_AFFINITY_MASK
++ source /opt/intel/oneapi/setvars.sh

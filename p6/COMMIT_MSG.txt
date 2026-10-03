@@ -1,0 +1,14 @@
+P6 (t_5dfc11a3): the resident server + dashboard on 8099, documented and left running
+
+- Config of record restored to the M6c 256K flags (--max-context 262144, --kv-resident 32768): the file had been
+  left at P7's 4K serve-arm value (--max-context 4096, no --kv-resident). Pre-P6 copy kept byte-identical at
+  p6/config-before-p6.json (md5 2fe9a4b711fbd704abc95958166f74fc). No engine change: the binary is P7's.
+- Servable: /v1/models n_ctx 262144; four requests through /v1/chat/completions (thinking off JSON, thinking on
+  streaming = the web app's shape) answer correctly at 21.1/17.6/24.4/21.3 tok/s, 100.0% decode expert-cache hit
+  rate and 0.00 CPU expert entries, KV tier 95.5-99.6% of block reads from VRAM.
+- The dash renders: the route is /api-monitor, NOT /monitor.html (serve/server.py:1897-1898); the app's Monitor
+  tab is the same data in-page. Speed field measured moving 17.6 -> 24.4 tok/s (p6/monitor-*.png).
+- Resources of what is running: peak VRAM 26808.6 MiB (card0) + 32399.2 MiB (card1, 99.2% full), tree RSS
+  48.57 GiB of which 1.18 GiB anonymous; context 262,144.
+- Lane tooling: p6_start.sh / p6_stop.sh / p6_wait.sh / p6_config_check.py / p6_peaks.py / p6_show.py /
+  p6_make_snappy.py (the optional measured 32K interactive variant) and STATUS-P6.md with every raw output.
