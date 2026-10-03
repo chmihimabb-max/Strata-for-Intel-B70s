@@ -16,8 +16,12 @@ Two engine binaries, and every arm names the one it ran (the rig copies it into 
 
 Rig under `d1/`, arm data outside the repo at `/home/michael/strata-xpu/d1/runs/<tag>/`.  `d1/d1_report.py`
 prints one row per arm out of that arm's own logs; `d1/d1_hist.py` reads a window's histogram;
-`d1/D1-EVIDENCE.txt` is the raw output.  The resident P6 server was stopped before the first arm
-(`p6/p6_stop.sh`; nothing was listening on 8099) and has NOT been restarted.
+`d1/d1_sweep.py` prints the sweep with its fit and `d1/d1_families.py` rolls the histogram up into families;
+`d1/D1-EVIDENCE.txt` is the raw output of every arm, `d1/D1-HISTOGRAMS.txt` every histogram table.  This card's
+commits: **`ce01ff3`** (the graph path as the default + the launch-site histogram), **`edfa9e6`** (the
+histogram's thread-safety and retention fix, after the 128K graph arm crashed it — §3.6), plus the rig and this
+write-up in the same two commits.  The resident P6 server was stopped before the first arm (`p6/p6_stop.sh`;
+nothing was listening on 8099) and has NOT been restarted.
 
 ## 0. Verdict
 
