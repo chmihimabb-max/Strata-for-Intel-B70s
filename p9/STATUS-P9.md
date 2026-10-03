@@ -388,10 +388,11 @@ layer spin loop, where the host is spinning anyway, for +3.0% of the window.
 
 **Not validated**
 
-* **The chrome device modes cannot be made to work here, and this card did not find a way around it.**  Two modes
-  were tried (9 and 1), each with the graph path off and on: the window stalls at layer 1 in all four.  What is
-  *not* ruled out is a tracer build or a unitrace mode that instruments less (the host-only `--chrome-call-logging`
-  path is measured to work, and gives per-API-call times with no kernel names).
+* **The chrome device modes cannot be made to work here, and this card did not find a way around it.**  Mode 9 was
+  run twice by this card (graph path off and on) and P1b ran mode 1 and mode 9 (graph off): the window stalls at
+  layer 1 in all four, with 3 841 submissions or with one graph submission.  What is *not* ruled out is a tracer
+  build, or a unitrace mode that instruments less (the host-only `--chrome-call-logging` path is measured to work,
+  and gives per-API-call times with no kernel names).
 * **The stage table's coverage is 33-39%** of the window (§4).  A better sampler (e.g. one that reads the stage
   words of the current layer instead of only the progress word, or a per-stage ring) would raise it, and the
   shares would then be shares of the whole window rather than of the sampled time.
@@ -406,6 +407,9 @@ layer spin loop, where the host is spinning anyway, for +3.0% of the window.
 * **No variance estimate**: one arm per configuration, as in P1b/P3.  The deltas quoted are 0.7-6.1% of the
   window, and the m6c harness's arms have historically read a few tenths of a percent apart, but the 0.7%
   (`HC_SPLIT`) and the 1.0% (128K `kv-resident 0`) are inside that band.
+* **No VRAM/RSS tiers in this card's arms**: the rig samples neither, because the question is a timing one and
+  the expert caches report themselves (`expert_slots=24576`, `vr_hits` per layer-window in every decode line);
+  P3's tiers at the same config are 48.3-48.4 GiB RSS and 28.6-29.0 + 30.9-31.3 GiB of VRAM.
 * **Nothing is pushed**: the origin (`github.com/Niko1221/Strata`) has no `sycl-xpu` branch.
 
 **The state left behind**
