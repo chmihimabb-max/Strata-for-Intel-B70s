@@ -1,4 +1,4 @@
-# P2 — prefill: the QSA prompt attention is 82% of the prefill's GPU time, and what it costs is the KERNEL'S BLOCK SHAPE, not the FP32 mma emulation
+# P2 — prefill: the QSA prompt attention is 75% of the prefill's GPU time, and what it costs is the KERNEL'S BLOCK SHAPE, not the FP32 mma emulation
 
 Card `t_a1b6fa6c` (P2), repo `/home/michael/strata-xpu/strata`, branch `sycl-xpu`, base `569569c` (P1b), the change
 is `c7f20cb`. Nothing pushed (origin has no `sycl-xpu`). Config of record throughout: `strata-sycl-iq3s.json` —
