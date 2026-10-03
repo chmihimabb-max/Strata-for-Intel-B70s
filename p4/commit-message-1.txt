@@ -1,0 +1,34 @@
+P4 (t_63cc226b): the copy kernel's launch shape is a measured quantity, and the probe that measures it
+
+The port's GPU-assisted I/O is `copy_kernel` (src/kernels/cuda/kv_stream.cu), launched from
+`kv_stream_resolve` into every streamed decode window.  It shipped hard-coded at 96 blocks x 128
+threads - the OPPOSITE of the paper's quota (a few LARGE blocks, so the scheduler confines the I/O
+kernel to few SMs).  P4's task is to measure the mechanism on the paper's axes instead of asserting
+it, so the shape becomes an input:
+
+* `STRATA_KV_COPY_BLOCKS` / `STRATA_KV_COPY_THREADS` override the launch shape once per process
+  (read on first use, so ONE binary gives both arms of an A/B), and `kv_stream_set_copy_shape` sets
+  it programmatically.  Unset keeps 96 x 128, i.e. byte-for-byte the behaviour every measurement
+  before P4 was taken with; `kv_stream_parity` still passes (306 batches, 89.9% hit, bitwise equal).
+* `Runs` gains `src_stride` / `dst_stride` (both equal to `len` for the engine's identity layout), so
+  the SAME kernel can also be driven in the paper's page-first layout - one extra multiply per block
+  is the whole layout transformation.  `kv_stream_copy_probe` exposes the copy on its own (direction
+  and layout selectable) and `kv_block_run_offsets` publishes the packed block's run offsets.
+* The engine's own path is unchanged: `kv_stream_resolve` now reads the shape and launches
+  `copy_kernel<<<shape.blocks, shape.threads>>>`.
+
+p4/kv_io_probe.cu is the measurement harness (linked against the engine's own kernel library, so the
+copy under test is the shipping one): bandwidth vs block count, transfer size 128 B .. 1 MiB, the
+identity vs page-first host layout, the I/O kernel concurrent with the engine's own prompt attention
+and expert GEMV, the DMA and host-memcpy roads, and a correctness check of every layout/direction
+combination.  p4/build_probe.sh builds it (syclify + the engine's CMake flags), p4/p4_arm.sh runs one
+end-to-end arm at a chosen shape.
+
+Measured so far, one B70, 32768 real KV blocks (4224 B each: 2048 code + 2048 code + 64 scale + 64
+scale), raw lines in p4/out-*.txt:
+  H2D  1/2/4/8/16/32/64/96/128 blocks x 1024 threads = 1.05/2.12/4.34/8.92/17.07/21.90/24.65/25.64/26.15 GB/s
+  D2H  the same sweep = 2.72/5.13/9.01/17.17/20.07/21.23/22.55/22.38/22.24 GB/s
+  the shipped 96 x 128 = 25.40 H2D / 22.57 D2H GB/s, i.e. ~96% of the box's 26.5 GB/s contiguous figure
+  transfer size 512 B .. 1 MiB at 32 x 1024 = a FLAT 26.7 H2D / 22.7 D2H GB/s; 128 B holds 25.3 GB/s
+  identity vs page-first host vs page-first both sides, 96 x 128 H2D = 25.59 / 24.17 / 24.17 GB/s
+Evidence and the write-up follow in p4/P4-EVIDENCE.txt and p4/STATUS-P4.md.

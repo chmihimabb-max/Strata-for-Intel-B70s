@@ -95,4 +95,35 @@ KvStreamCounters kv_stream_counters(const KvStreamMap& m);
 /// Bytes of one block (page) of K and V together.
 uint64_t kv_block_bytes(const QsaShapes& s, int fmt);
 
+/// THE COPY KERNEL'S LAUNCH SHAPE - the mechanism's concurrency (P4, card t_63cc226b).
+///
+/// The port has shipped `copy_kernel<<<96, 128>>>` since M5c (hard-coded in `kv_stream_resolve`): 96 small blocks,
+/// which is the opposite of the paper's GPU-assisted-I/O quota (a few LARGE blocks so the scheduler confines the
+/// I/O kernel to few SMs).  The shape is now a measured quantity instead of a constant:
+///   * `STRATA_KV_COPY_BLOCKS` / `STRATA_KV_COPY_THREADS` override it once per process (read on first use, so one
+///     binary gives both arms of an A/B), and
+///   * `kv_stream_set_copy_shape` sets it for a caller that measures without an environment (the P4 probe).
+/// Unset keeps 96 x 128, i.e. the behaviour every number before P4 was measured with.
+struct KvCopyShape {
+    int blocks = 96;
+    int threads = 128;
+};
+KvCopyShape kv_stream_copy_shape();
+void kv_stream_set_copy_shape(int blocks, int threads);
+
+/// The GPU-assisted copy ON ITS OWN - the `need = ctl[2]` blocks named by `miss_block`/`miss_slot`, `dir` 0 =
+/// host copy -> device slot (the engine's fill) and 1 = device slot -> host copy (the D2H mirror of the same
+/// thread-per-chunk kernel).  `packed` selects the LAYOUT: 0 = the engine's identity layout (one array per run,
+/// `len` apart per block), 1 = a page-first host copy (the four runs of a block adjacent in ONE allocation,
+/// `kv_block_bytes()` apart per block, addressed through `host.k_q`), 2 = a page-first device side, 3 = both.
+/// `kv_block_run_offsets` gives the run offsets inside a packed block.  The engine's own path is
+/// `kv_stream_resolve`; this entry point exists so the P4 probe can measure the mechanism's bandwidth, transfer
+/// sizes, layout and interference without a model.  Not captured by the engine.
+void kv_stream_copy_probe(const KvStreamMap& m, const QsaAttnPools& slots, const KvHostPools& host, int fmt,
+                          const QsaShapes& s, int dir, int packed, int blocks, int threads, void* stream);
+
+/// The byte offsets of one block's four runs inside the PACKED host block (k codes, v codes, k scales, v scales)
+/// and the block's total size: `off[a]` is what `host.k_q + off[a]` names for run `a`.
+void kv_block_run_offsets(const QsaShapes& s, int fmt, int64_t off[4], int64_t* block_bytes);
+
 }  // namespace strata::kernels

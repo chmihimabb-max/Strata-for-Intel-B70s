@@ -22,11 +22,17 @@ void check(const char* what) {
 
 constexpr int RT = 1024;   // the resolve block
 
-// The per-block byte runs of the (up to four) pool arrays: block b of array i is bytes [b * len, (b + 1) * len).
+// The per-block byte runs of the (up to four) pool arrays: block b of array i is bytes [b * stride, b * stride + len)
+// from `src[i]` into `dst[i]`.  `stride == len` is the engine's identity layout (one contiguous array per run); the
+// P4 probe's packed host layout keeps the four runs of a block adjacent, so there `src[i]` starts at the run's offset
+// inside the block and `src_stride[i]` is the whole block - the paper's layout transformation, one extra arithmetic
+// op per block.
 struct Runs {
     const uint8_t* src[4];
     uint8_t* dst[4];
     int len[4];
+    int src_stride[4];
+    int dst_stride[4];
     int n;
 };
 
@@ -51,6 +57,7 @@ Runs runs_of(const QsaAttnPools& slots, const KvHostPools& host, int fmt, const 
         r.src[1] = (const uint8_t*) host.v_pool; r.dst[1] = (uint8_t*) slots.v_pool; r.len[1] = bytes;
         r.n = 2;
     }
+    for (int a = 0; a < r.n; ++a) r.src_stride[a] = r.dst_stride[a] = r.len[a];
     return r;
 }
 
@@ -163,8 +170,8 @@ __global__ void copy_kernel(KvStreamMap m, Runs r) {
     for (int k = blockIdx.x; k < need; k += gridDim.x) {
         const long long b = m.miss_block[k], sl = m.miss_slot[k];
         for (int a = 0; a < r.n; ++a) {
-            const uint4* src = reinterpret_cast<const uint4*>(r.src[a] + b * r.len[a]);
-            uint4* dst = reinterpret_cast<uint4*>(r.dst[a] + sl * r.len[a]);
+            const uint4* src = reinterpret_cast<const uint4*>(r.src[a] + (long long) b * r.src_stride[a]);
+            uint4* dst = reinterpret_cast<uint4*>(r.dst[a] + (long long) sl * r.dst_stride[a]);
             for (int i = threadIdx.x; i < r.len[a] / 16; i += blockDim.x) dst[i] = src[i];
         }
     }
@@ -217,9 +224,10 @@ void kv_stream_resolve(const KvStreamMap& m, const QsaAttnPools& slots, const Kv
                              "slot twice\n", (long long) m.n_slots, RT);
         std::exit(1);
     }
+    const KvCopyShape shape = kv_stream_copy_shape();
     resolve_kernel<<<1, RT, 0, (cudaStream_t) stream>>>(m, ids, steps, (int) n_q, (int) cap, (int) s.page_size);
     check("resolve");
-    copy_kernel<<<96, 128, 0, (cudaStream_t) stream>>>(m, runs_of(slots, host, fmt, s));
+    copy_kernel<<<shape.blocks, shape.threads, 0, (cudaStream_t) stream>>>(m, runs_of(slots, host, fmt, s));
     check("copy");
 }
 
@@ -261,6 +269,98 @@ KvStreamCounters kv_stream_counters(const KvStreamMap& m) {
     r.calls = u[2];
     r.overflow = c[3] != 0;
     return r;
+}
+
+// ---- the launch shape (P4) -----------------------------------------------------------------------------------
+//
+// Read ONCE per process: the shape is a property of the run, and re-reading the environment per layer per window
+// would put a getenv in the decode loop.  Unset (or unparseable, or non-positive) keeps the shipping 96 x 128.
+namespace {
+KvCopyShape g_copy_shape;
+bool g_copy_shape_read = false;
+
+int env_positive(const char* name, int dflt) {
+    const char* v = std::getenv(name);
+    if (v == nullptr || *v == '\0') return dflt;
+    const long n = std::strtol(v, nullptr, 10);
+    return n > 0 && n <= 4096 ? (int) n : dflt;
+}
+}  // namespace
+
+KvCopyShape kv_stream_copy_shape() {
+    if (!g_copy_shape_read) {
+        g_copy_shape_read = true;
+        g_copy_shape.blocks = env_positive("STRATA_KV_COPY_BLOCKS", g_copy_shape.blocks);
+        g_copy_shape.threads = env_positive("STRATA_KV_COPY_THREADS", g_copy_shape.threads);
+    }
+    return g_copy_shape;
+}
+
+void kv_stream_set_copy_shape(int blocks, int threads) {
+    if (blocks > 0) g_copy_shape.blocks = blocks;
+    if (threads > 0) g_copy_shape.threads = threads;
+    g_copy_shape_read = true;
+}
+
+void kv_block_run_offsets(const QsaShapes& s, int fmt, int64_t off[4], int64_t* block_bytes) {
+    const int64_t rows = s.n_head_kv * s.page_size;
+    int64_t len[4] = {0, 0, 0, 0};
+    int n = 0;
+    if (fmt == kKvQ4) {
+        len[0] = len[1] = rows * kv_q4_bytes_per_head((int) s.head_dim);
+        n = 2;
+    } else if (fmt == kKvInt8) {
+        len[0] = len[1] = rows * s.head_dim;
+        len[2] = len[3] = rows * (s.head_dim / KV_Q8_GROUP) * 2;
+        n = 4;
+    } else {
+        len[0] = len[1] = rows * s.head_dim * 2;
+        n = 2;
+    }
+    int64_t at = 0;
+    for (int a = 0; a < 4; ++a) {
+        off[a] = a < n ? at : 0;
+        if (a < n) at += len[a];
+    }
+    if (block_bytes != nullptr) *block_bytes = at;
+}
+
+void kv_stream_copy_probe(const KvStreamMap& m, const QsaAttnPools& slots, const KvHostPools& host, int fmt,
+                          const QsaShapes& s, int dir, int packed, int blocks, int threads, void* stream) {
+    // `packed` is a bit set: 1 = the host copy is one page-first allocation (its four runs adjacent per block,
+    // addressed through host.k_q as the base), 2 = the device side likewise (through slots.k_q).  0 is the engine's
+    // identity layout on both sides.
+    Runs r = runs_of(slots, host, fmt, s);
+    if (packed & 3) {
+        int64_t off[4] = {0, 0, 0, 0}, block = 0;
+        kv_block_run_offsets(s, fmt, off, &block);
+        if (packed & 1) {
+            const uint8_t* base = (const uint8_t*) host.k_q;
+            for (int a = 0; a < r.n; ++a) {
+                r.src[a] = base + off[a];
+                r.src_stride[a] = (int) block;
+            }
+        }
+        if (packed & 2) {
+            uint8_t* base = (uint8_t*) slots.k_q;
+            for (int a = 0; a < r.n; ++a) {
+                r.dst[a] = base + off[a];
+                r.dst_stride[a] = (int) block;
+            }
+        }
+    }
+    if (dir != 0) {   // the mirror: read the device side, write the host side (both addressed by stride)
+        for (int a = 0; a < r.n; ++a) {
+            const uint8_t* ts = r.src[a];
+            r.src[a] = r.dst[a];
+            r.dst[a] = (uint8_t*) ts;
+            const int ts2 = r.src_stride[a];
+            r.src_stride[a] = r.dst_stride[a];
+            r.dst_stride[a] = ts2;
+        }
+    }
+    copy_kernel<<<blocks, threads, 0, (cudaStream_t) stream>>>(m, r);
+    check("copy probe");
 }
 
 }  // namespace strata::kernels

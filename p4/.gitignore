@@ -1,0 +1,4 @@
+# P4 probe build products (the sources are the .cu and the .sh; see p4/build_probe.sh)
+gen/
+kv_io_probe
+out-*.txt
