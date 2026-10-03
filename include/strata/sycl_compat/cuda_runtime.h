@@ -49,7 +49,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cctype>       // the launch-site histogram shortens a demangled name (isdigit)
+#include <cxxabi.h>     // ... and that needs __cxa_demangle
 #include <string>
+#include <unordered_map>   // the window dump aggregates its slice per launch site
 #include <vector>
 #include <functional>   // stream capture records each submission as a std::function<void()> (PLAN.md §1.3(b))
 
@@ -521,6 +524,131 @@ inline submit_stats& subs() {
     return s;
 }
 
+// ---- launch-site histogram (D1, card t_d9ffcf38) -------------------------------------------------
+// WHAT IT ANSWERS.  P3 counted a decode window's submissions (2 504 kernels + 1 306 copies at 4K) but not
+// WHICH kernels; P9 then measured that a chrome device trace cannot see a verify window at all (the tracer
+// breaks the per-layer flag handshake and the window stalls at layer 1).  So the census has to come from
+// inside the shim, where every launch passes (D2), and the price of each name from the device timestamps the
+// queues already carry (`enable_profiling` is on by default - queue_properties above).
+//
+// THE LABEL IS THE LAUNCH SITE, not a driver kernel name, and that is deliberate: the port launches UNNAMED
+// lambdas (see the kernel_name note above), and an unnamed lambda's type name is mangled with its ENCLOSING
+// host function plus a per-site index, e.g.
+//   dep::qsa_block_scores(float const*, int)#2
+// which identifies the wrapper function and the site inside it - i.e. the kernel that site launches, 1:1.
+// `__cxa_demangle` is called once per site, at the site's first launch; the per-launch cost is one counter.
+//
+// WHAT IT IS NOT: with the graph path on, a window's first occurrence is RECORDED (no device work happens)
+// and every later one is a single replay, so per-kernel device time is only obtainable on the closure path
+// (`STRATA_SYCL_GRAPH=0`): the count census is exact in both, the microseconds are the closure path's.
+// STRATA_LAUNCH_HIST is the switch, and it is OFF by default: nothing below runs (one predictable branch per
+// launch) unless it is set.
+struct launch_site {
+    std::string name;
+    unsigned long long count = 0;   // launches of this site in this process (the census, both graph modes)
+};
+struct launch_hist_state {
+    bool on = false;
+    std::vector<launch_site> sites;
+    struct dentry {
+        int site;
+        sycl::event ev;
+    };
+    std::vector<dentry> pending;          // a real submission's event, kept until the window is dumped
+    std::vector<unsigned long long> slices;   // the window stack: a nested stage's window is a slice inside
+                                              // its parent's, so begin/dump is a push/pop
+};
+inline launch_hist_state& hist() {
+    static launch_hist_state* h = [] {
+        launch_hist_state* s = new launch_hist_state();   // never destroyed: shim calls run in destructors
+        const char* v = std::getenv("STRATA_LAUNCH_HIST");
+        s->on = (v != nullptr && std::atoi(v) != 0);
+        return s;
+    }();
+    return *h;
+}
+inline bool hist_on() { return hist().on; }
+
+inline std::string hist_demangle(const char* m) {
+    int st = 0;
+    char* d = abi::__cxa_demangle(m, nullptr, nullptr, &st);
+    std::string full = (d != nullptr && st == 0) ? std::string(d) : std::string(m);
+    std::free(d);
+    // shorten to "<enclosing function>(<params>)#<site index>": everything from the generated launcher's own
+    // lambda on is noise (it is the same shape at every site).
+    const std::string marker = "::{lambda(auto:1";
+    const size_t p = full.find(marker);
+    if (p == std::string::npos) return full;
+    std::string head = full.substr(0, p);
+    std::string idx;
+    const size_t q = full.find(")#", p);
+    if (q != std::string::npos) {
+        size_t b = q + 2, e = b;
+        while (e < full.size() && std::isdigit((unsigned char) full[e])) ++e;
+        if (e > b) idx = "#" + full.substr(b, e - b);
+    }
+    return head + idx;
+}
+
+/// Register a site by name and return its index (linear scan: the site count is a few hundred at most).
+inline int hist_site_named(const std::string& name) {
+    launch_hist_state& h = hist();
+    for (size_t i = 0; i < h.sites.size(); ++i)
+        if (h.sites[i].name == name) return (int) i;
+    h.sites.push_back(launch_site{name});
+    return (int) h.sites.size() - 1;
+}
+/// One site per launcher-lambda type: the call is the first launch at that site, so the demangle is once.
+inline int hist_site(const char* mangled) { return hist_site_named(hist_demangle(mangled)); }
+/// A non-kernel submission's pseudo-site (a copy, a memset), so a window's rows add up to its submit line.
+inline int hist_site_fixed(const char* name) { return hist_site_named(std::string(name)); }
+/// A real submission: count it and keep its event for the window's dump.
+inline void hist_take(int site, const sycl::event& ev) {
+    launch_hist_state& h = hist();
+    ++h.sites[(size_t) site].count;
+    if (h.pending.size() < 400000) h.pending.push_back(launch_hist_state::dentry{site, ev});
+}
+/// A submission that has no event to price (a closure-recorded node, or a path that does not hand one back).
+inline void hist_count(int site) { ++hist().sites[(size_t) site].count; }
+
+inline void hist_begin() {
+    if (hist_on()) hist().slices.push_back(hist().pending.size());
+}
+/// Close the innermost window: sum its slice per site, write it, and (at the outermost dump) drop the events.
+/// Format, one line per site, tab separated:  H <tag> <count> <us> <site name>
+inline void hist_dump(const std::string& tag) {
+    launch_hist_state& h = hist();
+    if (!h.on || h.slices.empty()) return;
+    const unsigned long long b = h.slices.back();
+    h.slices.pop_back();
+    std::unordered_map<int, std::pair<unsigned long long, unsigned long long>> agg;   // site -> (count, ns)
+    for (unsigned long long i = b; i < h.pending.size(); ++i) {
+        const launch_hist_state::dentry& d = h.pending[i];
+        unsigned long long ns = 0;
+        try {   // device timestamps of an event that is already complete (the window's own tail sync ran)
+            const unsigned long long st = d.ev.get_profiling_info<sycl::info::event_profiling::command_start>();
+            const unsigned long long en = d.ev.get_profiling_info<sycl::info::event_profiling::command_end>();
+            if (en > st) ns = en - st;
+        } catch (...) {
+            ns = 0;   // not priceable (a recorded node, or profiling disabled): the count still stands
+        }
+        std::pair<unsigned long long, unsigned long long>& a = agg[d.site];
+        a.first += 1;
+        a.second += ns;
+    }
+    const char* file = std::getenv("STRATA_LAUNCH_HIST_FILE");
+    FILE* f = (file != nullptr && file[0] != '\0') ? std::fopen(file, "a") : stderr;
+    if (f == nullptr) return;
+    std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), h.pending.size() - b, agg.size());
+    for (const std::pair<const int, std::pair<unsigned long long, unsigned long long>>& kv : agg) {
+        const launch_site& s = h.sites[(size_t) kv.first];
+        std::fprintf(f, "H\t%s\t%llu\t%.2f\t%s\n", tag.c_str(), kv.second.first,
+                     (double) kv.second.second / 1000.0, s.name.c_str());
+    }
+    if (f != stderr) std::fclose(f);
+    if (h.slices.empty()) h.pending.clear();   // the outermost window closed: the events can go
+}
+
 // ---- stream capture and graphs: the handle, and the two implementations -----------------------------
 // The graph handle owns the recorded node list; the exec handle owns a copy of it, so
 // cudaGraphExecDestroy cannot invalidate a graph that is still referenced.
@@ -564,24 +692,32 @@ inline rec_state& rec() {
     static rec_state s;
     return s;
 }
-/// Runtime switch, read once.  Off unless STRATA_SYCL_GRAPH=1, and off (with one line on stderr) on a device
-/// that does not report sycl::aspect::ext_oneapi_graph.
+/// Runtime switch, read once.  ON by default (D1, card t_d9ffcf38: P3 measured -5.2/-4.1/-2.6% of the window at
+/// 4K/32K/128K with identical greedy ids and the submission count 3 841.5 -> 184, so the port ships the path that
+/// costs less); `STRATA_SYCL_GRAPH=0` is the off-switch, and P9's/P3's closure-path numbers stay reproducible
+/// with it.  Off as well (with one line on stderr) on a device that does not report
+/// sycl::aspect::ext_oneapi_graph.
 inline bool graph_mode() {
     static const bool on = [] {
         const char* v = std::getenv("STRATA_SYCL_GRAPH");
-        if (v == nullptr || std::atoi(v) == 0) return false;
+        if (v != nullptr && std::atoi(v) == 0) {
+            std::fprintf(stderr, "strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used "
+                                 "(a window costs one submission per kernel)\n");
+            return false;
+        }
         try {
             if (!default_queue().get_device().has(sycl::aspect::ext_oneapi_graph)) {
                 std::fprintf(stderr,
-                             "strata/sycl: STRATA_SYCL_GRAPH=1 but this device does not report "
-                             "sycl::aspect::ext_oneapi_graph; the launch-closure replay is used instead\n");
+                             "strata/sycl: this device does not report sycl::aspect::ext_oneapi_graph; "
+                             "the launch-closure replay is used instead\n");
                 return false;
             }
         } catch (...) {
             return false;
         }
-        std::fprintf(stderr, "strata/sycl: STRATA_SYCL_GRAPH=1 - a window's capture records a SYCL command_graph "
-                             "and cudaGraphLaunch submits it in ONE submission\n");
+        std::fprintf(stderr, "strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it "
+                             "off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits "
+                             "it in ONE submission\n");
         return true;
     }();
     return on;
@@ -624,6 +760,14 @@ inline void launch(const launch_config& c, cudaStream_t stream, Fn fn) {
         }
     }
     ++subs().kernel;
+    // D1 (card t_d9ffcf38): the launch-site census.  ONE static per template instantiation = one entry per
+    // launch site, named once from the launcher lambda's own mangled type (see the histogram note above); the
+    // per-launch cost when the switch is off is this one predictable branch and nothing else.
+    const bool hist = hist_on();
+    const int site = hist ? [] {
+        static const int s = hist_site(typeid(Fn).name());   // per instantiation: demangled once, at site 0
+        return s;
+    }() : -1;
     sycl::queue& q = *queue_for(reinterpret_cast<void*>(stream));
     const unsigned gx = c.grid.x ? c.grid.x : 1u, gy = c.grid.y ? c.grid.y : 1u, gz = c.grid.z ? c.grid.z : 1u;
     const unsigned bx = c.block.x ? c.block.x : 1u, by = c.block.y ? c.block.y : 1u, bz = c.block.z ? c.block.z : 1u;
@@ -632,18 +776,20 @@ inline void launch(const launch_config& c, cudaStream_t stream, Fn fn) {
     const sycl::range<1> global{groups * threads};
     const sycl::range<1> local{threads};
     if (c.smem != 0) {
-        q.submit([=](sycl::handler& h) {
+        sycl::event ev = q.submit([=](sycl::handler& h) {
             sycl::local_accessor<uint8_t, 1> dyn{sycl::range<1>(c.smem), h};
             h.parallel_for(sycl::nd_range<1>{global, local}, [=](sycl::nd_item<1> item) {
                 fn(item, const_cast<uint8_t*>(
                              dyn.get_multi_ptr<sycl::access::decorated::no>().get()));
             });
         });
+        if (hist) hist_take(site, ev);
     } else {
-        q.submit([=](sycl::handler& h) {
+        sycl::event ev = q.submit([=](sycl::handler& h) {
             h.parallel_for(sycl::nd_range<1>{global, local},
                            [=](sycl::nd_item<1> item) { fn(item, static_cast<uint8_t*>(nullptr)); });
         });
+        if (hist) hist_take(site, ev);
     }
 }
 
@@ -703,7 +849,9 @@ inline cudaError_t cudaMemsetAsync(void* p, int value, size_t bytes, cudaStream_
         return cudaSuccess;
     }
     if (graph_detail::graph_recording()) ++graph_detail::rec().nodes;
-    queue_for(reinterpret_cast<void*>(s))->memset(p, value, bytes);
+    static const int hs = hist_on() ? hist_site_fixed("<memset>") : -1;
+    sycl::event ev = queue_for(reinterpret_cast<void*>(s))->memset(p, value, bytes);
+    if (hs >= 0) hist_take(hs, ev);
     ++subs().memset_;
     return cudaSuccess;
 }
@@ -714,23 +862,29 @@ inline cudaError_t cudaMemsetAsync(void* p, int value, size_t bytes, cudaStream_
 inline cudaError_t memcpy_impl(void* dst, const void* src, size_t bytes, sycl::queue* q, bool wait) {
     if (bytes == 0) return cudaSuccess;
     ++subs().memcpy_;
+    static const int hs = hist_on() ? hist_site_fixed("<memcpy>") : -1;   // D1: the window's copies are 34% of its submissions
     try {
         const bool du = is_usm_pointer(dst), su = is_usm_pointer(src);
         if (du && su) {
             sycl::event e = q->memcpy(dst, src, bytes);
+            if (hs >= 0) hist_take(hs, e);
             if (wait) e.wait();
             return cudaSuccess;
         }
         if (du && !su) {   // plain host -> device
             void* tmp = sycl::malloc_host(bytes, *q);
             std::memcpy(tmp, src, bytes);
-            q->memcpy(dst, tmp, bytes).wait();   // the staging buffer dies here, so this one is synchronous
+            sycl::event e = q->memcpy(dst, tmp, bytes);   // the staging buffer dies here, so this one is synchronous
+            if (hs >= 0) hist_take(hs, e);
+            e.wait();
             sycl::free(tmp, *q);
             return cudaSuccess;
         }
         if (!du && su) {   // device -> plain host
             void* tmp = sycl::malloc_host(bytes, *q);
-            q->memcpy(tmp, src, bytes).wait();
+            sycl::event e = q->memcpy(tmp, src, bytes);
+            if (hs >= 0) hist_take(hs, e);
+            e.wait();
             std::memcpy(dst, tmp, bytes);
             sycl::free(tmp, *q);
             return cudaSuccess;

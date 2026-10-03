@@ -1,0 +1,25 @@
+D1 (t_d9ffcf38): the graph path is the default, and a launch-site histogram for the decode window
+
+Task 1 of the card.  P3 built the SYCL command_graph replay and measured it at -5.2/-4.1/-2.6% of the window
+(4K/32K/128K) with identical greedy ids, but left it behind the opt-in STRATA_SYCL_GRAPH=1 because a refusal
+throws instead of falling back.  This makes it the default, with STRATA_SYCL_GRAPH=0 as the off-switch (and the
+device check kept: a device without sycl::aspect::ext_oneapi_graph falls back to the closure list with a line
+on stderr - that path is now the loud one, not the silent one).
+
+Task 3 of the card needed an instrument that does not exist yet.  P3 counted a window's submissions but not
+WHICH kernels, and P9 measured that a chrome device trace cannot see a verify window at all (the tracer breaks
+the per-layer flag handshake, the window stalls at layer 1).  So the census is taken inside the shim, where
+every launch passes (D2), and each launch site is named from its own launcher lambda's mangled type via
+__cxa_demangle - the generated code's `[=](sycl::nd_item<1> it, uint8_t* dyn){ KERNEL(args); }` names the host
+wrapper and the site index inside it, and no kernel has to be renamed (the port launches unnamed lambdas on
+purpose).  With STRATA_LAUNCH_HIST=1 the shim keeps one counter per site plus the submission's own event, and
+verify.cpp opens/closes a slice per stage window (a stack: stage 1's window nests inside stage 0's on this
+split).  The event's device timestamps are read at the dump, after the window's tail sync, so the table carries
+microseconds as well as counts - on the closure path, where each kernel is a real submission (a recorded node
+has no device timestamp until the graph executes; that limit is measured and stated in d1/STATUS-D1.md).
+
+The histogram is OFF by default: with STRATA_LAUNCH_HIST unset the launcher pays one predictable branch per
+launch and nothing else.
+
+Rig and analysis under d1/ (d1_run_arm.sh, d1_chain.sh, d1_spec.sh, d1_variants.sh, d1_hist_chain.sh,
+d1_report.py, d1_hist.py); the arm data lives outside the repo at /home/michael/strata-xpu/d1/runs.

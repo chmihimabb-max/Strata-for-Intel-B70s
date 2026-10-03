@@ -1414,6 +1414,26 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
     const ModelGeometry& g = *g_;
     SessionState& ss = *ss_;
     if (pos0 + T > ss.qsa_states[ss.qsa_primary()].max_cells) { err = "verify: the window runs past the context"; return false; }
+    // D1 (card t_d9ffcf38): the launch-site histogram's window boundaries.  A "window" here is one stage's run()
+    // and on a split stage 1's run() nests inside stage 0's, so the shim keeps a stack: hist_begin() pushes a
+    // slice, hist_dump() pops it.  IT OPENS BEFORE capture(T) ON PURPOSE: with the graph path on, the window's
+    // first occurrence at a given T is RECORDED - its launches never run on the device, and they are exactly the
+    // census this instrument is for (measured on the first form, which opened after capture(): the recorded
+    // window showed 72 copies and ZERO kernels).  Dumping 8 windows per request covers the first recording of
+    // every T the policy picks (T=1..4); STRATA_LAUNCH_HIST_WINDOWS=N changes that.
+    static const bool hist_on_ = strata::sycl_compat::hist_on();
+    static const int hist_cap = [] {
+        const char* v = std::getenv("STRATA_LAUNCH_HIST_WINDOWS");
+        return v != nullptr ? std::atoi(v) : 8;
+    }();
+    static int64_t hist_last_pos = -1;
+    static int hist_win = 0;
+    if (hist_on_ && pos0 != hist_last_pos) {
+        hist_last_pos = pos0;
+        ++hist_win;      // a new window (both stages of one window share pos0)
+    }
+    const bool hist_this = hist_on_ && hist_win <= hist_cap;
+    if (hist_this) strata::sycl_compat::hist_begin();
     if (!capture(T, err) || !capture_commit(err)) return false;
     VDBG("captured; staging\n");
     const Clock::time_point t0 = Clock::now();
@@ -1642,6 +1662,17 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
                      (long long) (le_ - 1), (long long) nlayer, d.submitted(), d.kernel, d.memset_, d.memcpy_,
                      d.barrier, d.event, d.host_fn, d.graph_launch, d.recorded,
                      nlayer > 0 ? (double) d.submitted() / (double) nlayer : 0.0, ms_wait);
+    }
+    // D1 (card t_d9ffcf38): close this stage's histogram slice and write it (STRATA_LAUNCH_HIST_FILE, or stderr).
+    // It is dumped here, after the window's own tail sync, because the per-kernel microseconds come from the
+    // events' device timestamps and those are only readable once the submission has completed.
+    if (hist_this) {
+        char htag[320];
+        const int64_t nlay_h = (le_ >= lb_ + g.n_layers) ? g.n_layers : (le_ - lb_);
+        std::snprintf(htag, sizeof htag, "win=%d %s T=%d pos0=%lld layers %lld..%lld n=%lld wall=%.2fms", hist_win,
+                      (next_ != nullptr || lb_ != 0) ? "stage" : "single", T, (long long) pos0, (long long) lb_,
+                      (long long) (le_ - 1), (long long) nlay_h, ms_since(t0));
+        strata::sycl_compat::hist_dump(htag);
     }
     if (prof_on_) {       // the window's stage timeline (P9: host-sampled - no copy back, and no G == 1 gate)
         // P9 removed the cudaMemcpy that used to bring the device stamps here: the buffer is MAPPED and the

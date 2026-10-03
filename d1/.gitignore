@@ -1,0 +1,6 @@
+# D1 (card t_d9ffcf38): the two engine binaries the arms measure (the pre-change one and the one this card
+# builds) are build products of ~35 MB each, and the runs they produced live outside the repo at
+# /home/michael/strata-xpu/d1/runs -- only the rig, the analysis and the write-up are committed.
+strata-before
+strata-after
+runs/
