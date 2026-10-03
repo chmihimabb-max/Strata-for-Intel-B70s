@@ -1,0 +1,22 @@
+m6c: the 256K harness - timestamped serve driver, depth-curve/needle prompts, RAM+SSD sampler
+
+The card's target is IQ3_S at --max-context 262144 on both B70s with KV streaming on, so this lands the
+instruments before any number:
+
+- m6c_prompts.py: builds the depth curve (32,256 / 64,512 / 129,024 / 259,943 prompt tokens - the last is
+  upstream's 262K row length) and the needle rows (the answer at 50.0% depth, question + assistant turn
+  last) from this repository's own text as one 1,676,752-token corpus, tokenised with the pack's own
+  tokenizer. Nonce-prefixed like M6/M6b so nothing can be served from a prefix cache.
+- m6c_drive.py: runs the engine under a timestamped tee. The engine's `T <id>` and `RESUME 0` lines carry
+  no time, so TTFT is timed from `RESUME 0` to the first `T ` here rather than inferred from DONE.
+- m6c_sample.py: 1 Hz samples of the engine process TREE with epoch stamps - RSS (RAM tier), read_bytes
+  and major faults (SSD tier), /proc/meminfo Cached/Mlocked. The epoch column is what lines a sample up
+  with a marker in the driver's timeline; t_s alone cannot be aligned.
+- m6c_serve.sh: the run of record (device check, optional page-cache drop, engine args, monitors, the
+  extraction of the split/KV-streaming/stats lines), model paths as in the config of record.
+- m6c_report.py / m6c_decode.py / m6c_checkprompts.py: the numbers, the needle verdict with the raw ids,
+  and an inspectable dump of what each prompt actually contains.
+- m6c_block1.sh / m6c_block2.sh: the run order, one engine at a time.
+
+First 4K needle control (plain continuation form, question as raw text) stopped after one token
+(DONE 1 3968 17384 ... stop), so the needle rows use a real chat turn; that control is re-run that way.
