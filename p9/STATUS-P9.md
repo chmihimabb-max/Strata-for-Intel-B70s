@@ -45,10 +45,14 @@ probe).  Raw output: `p9/P9-EVIDENCE.txt`.
    PUBLISH into a MAPPED buffer and a host sampler thread timestamps each stage code, which also gives the
    window's tail (where the host is parked in the driver) a timeline.
 4. **A second, independent finding, and it is the largest single term on the decode side**: the engine's own
-   breakdown of `verify` never summed to `verify`.  At 4K `verify` is **118.84 ms** of the 132.38 ms window, and
-   the line named only the GPU-reach wait (45.27), the host's per-layer work (0.51) and the staging (1.15) —
-   **71.91 ms (60.5% of verify) was unattributed**.  It is one call: the window's tail `cudaStreamSynchronize(cs_)`
-   after the layer loop, now timed (§2.5) and reported as `tail`.
+   breakdown of `verify` never summed to `verify`, for two reasons, both fixed here.  (a) The counters it printed
+   were ONE stage's (stage 0's, layers 0-22): the rest of the model runs in stage 1's nested `run()`, so at 4K
+   the line named 46.9 ms of a 118.8 ms `verify`.  (b) The window's tail sync was untimed.  Folded and timed, at
+   4K the window of record is **133.59 ms = verify 120.06 (89.9%) + commit/emit 2.03 + draft 11.49**, and verify
+   is **GPU-reach wait 94.81 ms (71.0% of the whole window, 79% of verify)** + the host's per-layer work 1.09 +
+   the window's staging 1.40 + the tail sync 12.97 + 9.79 ms of post-loop host work (the head's sampling and the
+   result copies).  **The card's "GPU-reach wait 43.96 ms (34%)" is one stage's half of it: the true figure is
+   ~70% of the window at all three lengths** (§3).
 
 ## 1. What the chrome trace can and cannot see (measured, three ways)
 
@@ -199,4 +203,217 @@ default; all of it is behind `STRATA_VERIFY_PROFILE=1` (already an opt-in), so t
 
 So after this card the engine can answer "where does a verify window's GPU time go" on a device with no device
 clock, and its own summary line adds up.
+
+## 3. The window's account, and what was missing from it
+
+The decode-timing line's own arithmetic did not close: `verify` brackets the whole window call, but the counters
+it printed were **one stage's** (on a split, stage 0's: layers 0-22), because the rest of the model runs in the
+stage-1 verifier's nested `run()`.  Folded in (`verify.cpp`, the `le_ < g.n_layers` return path), with the
+profiler ON (so the stamp set's +3% is included) and one control arm with it OFF:
+
+```
+# p9-ctl3-4k (no tracer, no profiler: the plain window of record on the binary this card ships)
+strata decode timing: 49 windows, avg T 3.80, 3.00 tokens/window, 133.59 ms/window = verify 120.06
+  (GPU-reach wait 94.81 + per-layer host 1.09 [plan 0.31 actq 0.25 jobs 0.27 CPU 0.00] + stage 1.40
+   + tail 12.97) + commit/emit 2.03 + draft 11.49; ... VRAM hits 37.96, PCIe 0.00
+# p9-p32k / p9-p128k (profiler ON, so ~3% of this is the instrument itself)
+strata decode timing: 87 windows, ... 133.64 ms/window = verify 118.34 (wait 92.24 + host 1.04 + stage 1.33
+  + tail 12.40) + commit/emit 2.06 + draft 13.24
+strata decode timing: 99 windows, ... 128.61 ms/window = verify 114.32 (wait 89.34 + host 0.96 + stage 1.58
+  + tail 11.32) + commit/emit 1.94 + draft 12.35
+```
+
+| length | window ms | verify | of which: GPU-reach wait | host/pool | staging | tail sync | verify minus the named parts | commit/emit | draft |
+|---|---|---|---|---|---|---|---|---|---|
+| 4K (control, no instrument) | 133.59 | 120.06 (89.9%) | **94.81 (71.0% of the window)** | 1.09 | 1.40 | 12.97 | 9.79 | 2.03 | 11.49 |
+| 32K (profiled) | 133.64 | 118.34 | 92.24 (69.0%) | 1.04 | 1.33 | 12.40 | 11.33 | 2.06 | 13.24 |
+| 128K (profiled) | 128.61 | 114.32 | 89.34 (69.5%) | 0.96 | 1.58 | 11.32 | 11.12 | 1.94 | 12.35 |
+
+Two premises have to be corrected against this measurement:
+
+* **the card's "GPU-reach wait 43.96 ms (34%)" is one stage's half of it.**  The whole chain's is 94.81 ms of
+  133.59 ms at 4K, 92.24 of 133.64 at 32K and 89.34 of 128.61 at 128K.  P3's reading ("the window is GPU-bound
+  per layer, and the wait is the GPU") is confirmed in direction and **understated ~2x in size: ~70% of the
+  window is the host waiting for the GPU's layers**, at all three lengths.
+* **the tail sync is not the big term** it looked like from the residual: 11-13 ms.  The ~69 ms this card first
+  computed as unattributed at 4K was stage 1's counters (the nested `run()`), and what remains after the fold is
+  9.8-11.3 ms of post-loop host work (the head's sampling and the result copies).  The engine's own line now
+  adds up to within 8% of `verify`.
+
+
+## 4. The per-stage attribution (the instrument this card repaired)
+
+`p9/p9_stages.py` (and the raw line) for the 4K arm `p9-p4k5` (in-loop sampler; the stamp set costs +3.1% of the
+window, see §6):
+
+```
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 5.66 conv 0.10 ab 0.31 z 3.52 rec 0.45
+  out-proj 2.98 hc-read1+router 3.17 shared+quant 3.35 waitA 0.16 VRAM hits 11.40 waitB 0.11 PCIe grp 0.53
+  waitCPU 0.04 copy+combine 0.18 (gap) 0.03   hc0 norm 1.17   hc0 down 0.99   hc0 up 1.02 |
+  QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.31 kv+idx append 0.12 q+q-idx 2.51 scores+topk 0.36 kv-resolve 0.01
+  attention 0.83 gate 0.02 out-proj 0.90 hc-read1+router 0.98 shared+quant 1.09 waitA 0.04 VRAM hits 3.28
+  waitB 0.03 PCIe grp 0.16 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.29
+  hc0 up 0.30 | total 46.63 ms/window over 49 windows
+```
+
+| stage (the engine's own names) | 4K ms/w | 32K ms/w | 128K ms/w | 4K % of the sampled time |
+|---|---|---|---|---|
+| **VRAM hits — the resident experts' compute (10 experts x 48 layers)** | **14.680** | **14.000** | **12.470** | **31.5%** |
+| q8+qkv/q-idx gemv (the q/k/v + indexer projections) | 5.660 | 5.420 | 5.050 | 12.1% |
+| shared+quant (the shared expert + activation quantize) | 4.440 | 4.090 | 3.700 | 9.5% |
+| hc-read1+router (the second hyper-connection read + the router) | 4.150 | 4.000 | 3.720 | 8.9% |
+| out-proj | 3.880 | 3.700 | 3.470 | 8.3% |
+| z (the GDN z projection) | 3.520 | 3.330 | 3.050 | 7.6% |
+| hc0 norm + down + up (the first hyper-connection read, split) | 3.820 | 3.670 | 3.290 | 8.2% |
+| q+q-idx (the QSA query + indexer projection) | 2.510 | 2.340 | 2.130 | 5.4% |
+| scores+topk (the QSA index selection) | 0.360 | 0.830 | **2.340** | 0.8% |
+| **attention (the QSA decode attention over the int8 KV)** | **0.830** | 0.780 | 0.710 | **1.8%** |
+| kv+idx append | 0.120 | 0.110 | **0.710** | 0.3% |
+| kv-resolve | 0.010 | 0.010 | **0.190** | 0.0% |
+| k/v+norm-rope | 0.310 | 0.300 | 0.280 | 0.7% |
+| PCIe grp, waitA/B/C, copy+combine, conv, ab, rec, gate, (gap) | 1.610 | 1.690 | 1.360 | 3.5% |
+| **total sampled** | **46.63** | **44.78** | **43.24** | 100% |
+
+**The answer to the card's question is in the first row and the attention row:** the verify window's GPU time is
+dominated by the **resident experts' compute (29-32% of the sampled time) and the projections/mixers around them
+(another ~35%: both GEMV groups, the z/out projections, the shared expert and the two hyper-connection reads)**,
+while the **QSA decode attention over the int8 KV is 0.71-0.83 ms — 1.6-1.8%** at all three lengths.  The card's
+list of candidates resolves to: experts ~31%, projections ~21%, hyper-connection reads ~17%, shared expert ~9.5%,
+attention ~1.8%, copies/barriers ~0.5%, commit/emit 2 ms (1.5% of the window, measured separately).
+
+**What DOES grow with depth is the QSA *selection*, not the attention**: `scores+topk` 0.36 -> 0.83 -> 2.34 ms and
+`kv+idx append` 0.12 -> 0.11 -> 0.71 ms and `kv-resolve` 0.01 -> 0.19 ms, i.e. the KV-at-depth cost on this path
+is the **index/score work over the paged KV (3.2 ms at 128K, 7.5% of the sampled time)** while the attention
+kernel itself is flat (0.83 -> 0.71), which is the decode-side mirror of P2's finding that the *prompt* attention
+is capped by `qsa_selection_width` and does not grow with depth.
+
+**Honest coverage limit.**  The stage sum (43-47 ms) is **33-39% of the window and of `verify`**: the sampler sees
+a stage code only if it is the latest one when the host samples, so stages the GPU raced through between two
+samples contribute nothing (the engine's own D8 rule skips them, and this card's fix keeps that behaviour).
+The SHARES above are therefore shares of the *sampled* GPU time, not of the whole window, and a stage that fires
+in bursts is under-represented.  What the table establishes is the order of magnitude of each family — and the
+two extremes (experts 14.7 ms against attention 0.83 ms at 4K) are 18x apart, far outside the sampling artefact.
+The instrument's own cost is measured: the stamp set alone takes the window from 132.71 to 137.03 ms (+3.3%,
+998 stamps at 4.3 us each), and with the in-loop sampler it is +3.0% (§6).
+
+
+## 5. The ablation table (the second, independent reading of the same window)
+
+Every arm is the config of record at its length with ONE switch changed, and every one of them produced
+**byte-identical greedy token ids** (`grep '^T ' | md5sum`), so none of these is a correctness change:
+
+| arm | 4K ms/win | 32K ms/win | 128K ms/win | decode tok/s (4K / 32K / 128K) | token ids (4K / 32K / 128K) |
+|---|---|---|---|---|---|
+| **baseline (of record)** | 132.38 | 129.16 | 124.06 | 22.66 / 22.78 / 20.84 | `ac9f16fc` / `124a3cd3` / `c60e72d3` |
+| `STRATA_SYCL_GRAPH=1` (the window is ONE submission) | **125.55 (-5.2%)** | **123.91 (-4.1%)** | **120.85 (-2.6%)** | 22.96 / 23.75 / 21.40 | identical |
+| `STRATA_DEC_BATCH=0` (the window's rows, token by token) | 140.49 (+6.1%) | 134.94 (+4.5%) | — | 21.35 / 21.81 | identical |
+| `STRATA_HC_SPLIT=0` (the plain hyper-connection read) | 133.26 (+0.7%) | — | — | 22.51 | identical |
+| `--kv-resident 0` (no KV streaming: K/V never resident in VRAM) | n/a (a no-op below 4N cells) | n/a | 122.84 (**-1.0%** decode, **-19.5% prefill**: 299.5 s against 370.0 s) | 21.05 (prefill 426.0 against 346.6 tok/s) | identical |
+
+(the end-to-end tok/s is not exactly the window ratio — the MTP draft policy re-picks T from the measured window
+cost, so the graph arm needed 51 windows for 147 tokens at 4K against the baseline's 49: P3's caveat, unchanged)
+
+
+with the submission counts that explain the first two: the baseline window is **2 504 kernels + 1 306 copies +
+31 barriers** per window (stage 0 1 197 kernels/556 copies, stage 1 1 307/750), `DEC_BATCH=0` adds **+1 188
+kernels** (3 692), and the graph arm hands the driver **1 graph submission** per stage (150 copies remain
+outside it).  So:
+
+* **the batched window path already banks 8.11 ms/window at 4K and 5.78 at 32K** (the un-batched arm's delta),
+  which is the marginal cost of 1 188 kernel launches: **6.8 us (4K) and 4.9 us (32K) per launch** — an
+  independent confirmation of the stamp measurement (4.3 us/stamp) and of P3's 1.4 us host-side append figure
+  being only part of a launch's cost;
+* **the staged hyper-connection read banks 0.88 ms/window** at 4K (the plain read's delta) — it is already the
+  default;
+* **the graph path is worth 6.83/5.25/3.21 ms a window** (-5.2/-4.1/-2.6%) with identical ids, and its win is
+  exactly the host's submission work: the GPU-reach wait does not move (±0.4 ms), while the window's
+  host-visible part (verify minus the wait) drops by 7-8 ms — P3's reading, re-measured on a new binary and at
+  three lengths;
+* **KV streaming (`--kv-resident 32768`, the record's setting) costs 1.22 ms of decode at 128K and 70 s of
+  prefill**, and it is what makes 256K fit at all (P6 measured that it buys almost no expert residency on 2x32
+  GiB: 24 576 slots with it against 24 302 without).
+
+## 6. The instrument's own cost, and the trap in it
+
+Measured on the engine, same binary family, 4K, all with identical token ids:
+
+```
+p9-ctl2-4k  (the shipped binary, profiler OFF)              132.71 ms/window
+p9-p4k4     STRATA_VERIFY_PROFILE=2 (stamps, NO sampler)    137.03 (+4.32, +3.3%)  <- 998 stamps at 4.3 us
+p9-p4k3     STRATA_VERIFY_PROFILE=1 (stamps + sampler THREAD) 244.71 (+112.00, +84%)  <- NOT usable
+p9-p4k5     STRATA_VERIFY_PROFILE=1 (stamps + in-loop sampler) 136.71 (+4.00, +3.0%)  <- shipped
+p9-p4k      the first form: __threadfence_system() per stamp + the thread  246.80
+```
+
+**A sampler THREAD is a trap on this engine**: +107.7 ms of window (79%) — the layer loop is host-bound enough
+that one more spinning thread on a 20-core box whose 19 expert-pool workers are already busy costs more than
+everything the sampler measures.  The first form of this card's own fix had that thread, and the first table it
+produced was garbage for a second, unrelated reason (§2.3's missing `prof_h_` fill: `waitA 7576 ms/window` for a
+132 ms window).  Both are fixed and both are kept in the record as measurements: the sampler now runs inside the
+layer spin loop, where the host is spinning anyway, for +3.0% of the window.
+
+## 7. The shortlist, and what was measured
+
+| candidate | measured | verdict |
+|---|---|---|
+| **the resident experts' compute** (31.5% of the sampled GPU time; 10 experts x 48 layers x 4 rows) | the biggest single item, and it is the same work at 4K/32K/128K | **the lever**, but nothing in this card's scope changes it: a faster expert GEMM (the IQ3 dequant + GEMV shapes) is a kernel project, not a switch.  Its shape is fixed by the model (top-10 of 256 experts per layer) |
+| **the window's per-launch cost** (2 504 kernels + 1 306 copies per window, 6.8 us each) | `DEC_BATCH=0` measured 8.11/5.78 ms a window | already banked by the batched path (`1e4515c`); the remaining launches are the experts' own GEMMs, one per expert |
+| **make the graph path the default** | -5.2/-4.1/-2.6% of the window, ids identical, at three lengths | **measured, not landed**: P3 deliberately left `STRATA_SYCL_GRAPH` opt-in and a refusal throws `cudaErrorStreamCaptureUnsupported` instead of falling back to the closure list, so flipping the default trades a measured 5% for a hard failure on a device that cannot record a graph.  That is a maintainer's call, not a rig's: the numbers are here, the switch is one env var |
+| **KV streaming / page residency** | `--kv-resident 0` at 128K: -1.0% decode, -19.5% prefill, ids identical | **a config lever for this box, with a named cost**: it is what makes 256K fit (P6).  Not landed: the record's setting buys 256K |
+| **the QSA decode attention at depth** | 1.8% of the sampled GPU time at 4K, and the row shrinks with depth | **no lever here** — the attention is not the cost; the card's "QSA decode attention over the int8 KV at depth" hypothesis is refuted by the table |
+| **the copies/barriers** | 1 306 copies + 31 barriers a window; the graph arm's 150 remaining copies at 1.4 us = 0.2% | no lever (P3 reached the same number from the counters) |
+| **the instrument itself** | the chrome device modes cannot see the window (§1); the stage profiler was dead three ways and now works (§2), at +3.0% of the window (§6) | landed, with its own cost measured |
+
+## 8. Not validated, and the state left behind
+
+**Not validated**
+
+* **The chrome device modes cannot be made to work here, and this card did not find a way around it.**  Two modes
+  were tried (9 and 1), each with the graph path off and on: the window stalls at layer 1 in all four.  What is
+  *not* ruled out is a tracer build or a unitrace mode that instruments less (the host-only `--chrome-call-logging`
+  path is measured to work, and gives per-API-call times with no kernel names).
+* **The stage table's coverage is 33-39%** of the window (§4).  A better sampler (e.g. one that reads the stage
+  words of the current layer instead of only the progress word, or a per-stage ring) would raise it, and the
+  shares would then be shares of the whole window rather than of the sampled time.
+* **The stages the sampler misses are not uniformly random**: a stage that fires in bursts (the experts' per-expert
+  GEMM chain is the obvious one) is under-represented, so the 31% is a floor for the expert path, not an estimate.
+* **The stamps' own cost is measured but not subtracted**: the profiled arms are ~3% slower, and the deltas the
+  table reports are deltas of a window that includes that cost.  Every profiled number in this card is labelled.
+* **`STRATA_VERIFY_PROFILE` was not swept by stamp count.**  24 sites per layer is what the port already had; a
+  6-site version would cost ~0.8% and might be the better instrument for a routine run.
+* **The sampler thread's trap was measured at 4K only.**  The +107.7 ms (+79%) figure is one window shape; the
+  in-loop sampler is what shipped, so the trap is a lesson rather than a number with a range.
+* **No variance estimate**: one arm per configuration, as in P1b/P3.  The deltas quoted are 0.7-6.1% of the
+  window, and the m6c harness's arms have historically read a few tenths of a percent apart, but the 0.7%
+  (`HC_SPLIT`) and the 1.0% (128K `kv-resident 0`) are inside that band.
+* **Nothing is pushed**: the origin (`github.com/Niko1221/Strata`) has no `sycl-xpu` branch.
+
+**The state left behind**
+
+* **The resident server (P6/P8) is STOPPED and was left stopped**: `p6_stop.sh` at the start of this card reported
+  `server gone after 2s`, no engine, port 8099 free, both cards free; the p6 pid file it removes
+  (`p6/server.pid`) is deleted in this card's commit.  Every arm in this card ran one engine at a time on both
+  B70s with `ZE_AFFINITY_MASK` unset.
+* `build-sycl/strata` is the binary this card measured (md5 `9eff0675…`); the arms' own md5s are in their logs.
+* The engine changes are opt-in: **`STRATA_VERIFY_PROFILE` is the only switch, and the default path is unchanged**
+  (`p9-ctl3-4k` against `p9-ctl-4k-150b`: 133.59 against 132.38 ms/window, 22.46 against 22.66 tok/s decode,
+  identical token ids — i.e. the fold and the `tail` field cost nothing, and the 0.9% is the two binaries' noise).
+* `/home/michael/strata-xpu/p9/` holds the runs, the traces and the analysis caches; the repo holds `p9/` (the rig,
+  the parsers, the write-up) and `p9/P9-EVIDENCE.txt`.
+
+## 9. Files
+
+| what | path |
+|---|---|
+| the rig, one engine at a time, tracer optional | `p9/p9_run_arm.sh`, `p9/p9_chain.sh`, `p9/p9_chain_prof.sh`, `p9/p9_drive.py` |
+| one row per arm out of the arms' logs | `p9/p9_report.py` |
+| the chrome-timeline parser | `p9/p9_extract.py`, `p9/p9_tsv.py`, `p9/p9_prep.py`, `p9/p9_scan_trace.py`, `p9/p9_scan2.py`, `p9/p9_summary.py`, `p9/p9_timeline.py`, `p9/p9_window.py` |
+| the stage table | `p9/p9_stages.py` |
+| the device-clock probe (and why the fix is a publish) | `p9/p9_clock_probe.cpp` |
+| the engine changes | `src/kernels/sycl/verify_kernels.cpp`, `include/strata/kernels/verify_kernels.hpp`, `include/strata/core/verify.hpp`, `src/core/verify.cpp`, `src/program/generate.cpp` |
+| the arms' raw output | `p9/P9-EVIDENCE.txt` (the report's tables, the decode-timing lines, the stage lines, every arm's DONE line and token-id md5) |
+| the traces | `/home/michael/strata-xpu/p9/runs/<TAG>/strata.<pid>.json` (the two mode-9 arms) |
+| the analysis caches | `/home/michael/strata-xpu/p9/dev/*.tsv`, `*.npz` |
+
+
 

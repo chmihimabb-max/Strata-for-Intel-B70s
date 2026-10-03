@@ -28,7 +28,7 @@ DEC_KEYS = ["windows", "avgT", "tokpw", "msgw", "verify", "wait", "host", "plan"
 SUB = re.compile(r"strata submit: (stage|single) window T=(\d+) pos0=(\d+) layers (\d+)\.\.(\d+) \((\d+)\): "
                  r"submitted (\d+) \(kernel (\d+) memset (\d+) memcpy (\d+) barrier (\d+) event (\d+) "
                  r"hostfn (\d+) graph (\d+)\) \+ recorded (\d+); ([\d.]+) per layer; GPU-reach wait ([\d.]+) ms")
-DONE = re.compile(r"^DONE (\d+) (\d+) ([\d.]+) ([\d.]+) (\S+)")
+DONE = re.compile(r"^DONE (\d+) (\d+) ([\d.]+) ([\d.]+) (\S+)", re.M)
 
 
 def parse(tag):
@@ -60,6 +60,10 @@ def parse(tag):
     dm = DONE.search(out)
     if dm:
         r["done"] = [int(dm.group(1)), int(dm.group(2)), float(dm.group(3)), float(dm.group(4))]
+        if float(dm.group(4)) > 0:
+            r["dec_tok_s"] = int(dm.group(1)) / (float(dm.group(4)) / 1000.0)
+        if float(dm.group(3)) > 0:
+            r["pre_tok_s"] = int(dm.group(2)) / (float(dm.group(3)) / 1000.0)
     ln = re.search(r"ask finished=(\d) after (\d+) ms", log)
     r["answered"] = ln.group(1) == "1" if ln else None
     r["stalled"] = "timed out at layer" in err or "did not finish within 5 s" in err
@@ -72,8 +76,8 @@ def main():
     tags = sys.argv[1:] or sorted(os.path.basename(p) for p in glob.glob(f"{RUN}/p9-*"))
     rows = [parse(t) for t in tags]
     hdr = f"{'arm':<17} {'win':>4} {'ms/win':>7} {'verify':>7} {'wait':>6} {'host':>5} {'stage':>6} {'tail':>6} " \
-          f"{'commit':>6} {'draft':>6} {'vr_hit':>7} {'kern/w':>7} {'copy/w':>7} {'tok':>4} {'pp_s':>6} " \
-          f"{'md5':<9} {'stall':>5}"
+          f"{'commit':>6} {'draft':>6} {'vr_hit':>7} {'kern/w':>7} {'copy/w':>7} {'tok':>4} {'dec t/s':>7} " \
+          f"{'pre t/s':>7} {'pp_s':>6} {'md5':<9} {'stall':>5}"
     print(hdr)
     for r in rows:
         s0 = r.get("sub_stage22")
@@ -83,7 +87,8 @@ def main():
         print(f"{r['tag']:<17} {r.get('windows', 0):>4} {r.get('msgw', 0):>7.2f} {r.get('verify', 0):>7.2f} "
               f"{r.get('wait', 0):>6.2f} {r.get('host', 0):>5.2f} {r.get('stage', 0):>6.2f} {r.get('tail', 0):>6.2f} "
               f"{r.get('commit', 0):>6.2f} {r.get('draft', 0):>6.2f} {r.get('vram_hits', 0):>7.2f} "
-              f"{kern:>7} {copy:>7} {r.get('tokens', 0):>4} {r.get('pp_ms', 0) / 1000:>6.1f} "
+              f"{kern:>7} {copy:>7} {r.get('tokens', 0):>4} {r.get('dec_tok_s', 0):>7.2f} {r.get('pre_tok_s', 0):>7.1f} "
+              f"{r.get('pp_ms', 0) / 1000:>6.1f} "
               f"{r.get('md5', '')[:8]:<9} {str(r.get('stalled')):>5}")
     print()
     for r in rows:

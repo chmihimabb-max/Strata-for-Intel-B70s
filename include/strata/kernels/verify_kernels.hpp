@@ -38,8 +38,16 @@ void gdn_step_norm_multi(float* state, const float* h, int conv_channels, const 
 /// Spin until *flag >= value (a mapped host flag).  The value is fixed at capture, so several rings can be
 /// outstanding at once (the split verify window keeps two).
 void wait_flag_ge(const uint32_t* flag, uint32_t value, void* stream);
-/// the GPU's %globaltimer (ns) into buf[i] (a one-thread kernel: the verify window's stage profiler).
+/// The verify window's stage profiler: publish a stage marker into buf[i] and the stage's own index into the
+/// shared progress word (P9, card t_2403e6f6).  The buffer is MAPPED, and the HOST timestamps each code as it
+/// appears while it spins on the window's ring -- because this device has no readable clock (the oneAPI device
+/// clock aspect is absent, so a `clock<device>()` read throws and this whole path used to die at the first
+/// stamp; the beacon note in verify.cpp carries the same measurement).
 void gpu_stamp(unsigned long long* buf, int i, void* stream);
+/// The one slot of the profiler's buffer that carries "which stage ran last" (the stage index), so the host can
+/// see progress without reading a whole layer's words.  It is above every real stamp slot
+/// (n_layers * kProfPer + 4 = 1588 for this model), and the buffer is allocated at least this big.
+constexpr int kProfProgCode = 4095;
 
 // ---- perf-review E-6: a layer whose routed experts are all in VRAM needs nothing from the host
 /// One group's plan, built on the device when every routed expert of its n*k entries is resident: the host pool's

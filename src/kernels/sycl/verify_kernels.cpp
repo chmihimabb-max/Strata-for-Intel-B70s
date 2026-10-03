@@ -822,21 +822,36 @@ void copy_indexed(float* dst, const float* src, int64_t stride, const int32_t* i
 }
 
 // a GPU timestamp (ns) into buf[i] - the verify window's stage profiler.
-// PLAN.md §2.3 site #3, hand-ported: `mov.u64 %0, %%globaltimer` has no SYCL spelling, and its CUDA guard
-// (`#else` of __HIPCC__, i.e. always true under SYCL) would have compiled PTX into the device image
-// (PLAN.md Risk 7).  The replacement is the SPIR-V device clock the plan names: ReadClockKHR via the oneAPI
-// clock extension.  NOTE, and it is a real difference: %globaltimer on sm_80+ is a 1 ns COARSE counter, while
-// the Level-Zero device clock's resolution is the device's own (probe/clock_probe is NOT in this milestone's
-// evidence) - the timestamps are therefore comparable with each other within a run but not with a CUDA build's.
+// P9 (card t_2403e6f6).  WHAT WAS HERE, AND WHY IT CANNOT WORK ON THIS DEVICE.  The port replaced CUDA's
+// `mov.u64 %0, %%globaltimer` with the oneAPI extension clock (ReadClockKHR), which needs the extension's
+// `ext_oneapi_clock_device` aspect.  This device does not report it, so the first stamp threw
+// `Required aspect ext_oneapi_clock_device is not supported on the device` and the engine died at the first
+// verify window (measured: 4K, both GPUs, exit -6 / terminate, no decode tokens).  oneAPI 2026.1 exposes no
+// other device clock (clock.hpp's work_group/sub_group scopes need the same aspect), so the stamp is now a
+// PUBLISH: gpu_stamp_kernel writes the marker word and the stage's index into the buffer's progress slot, the
+// buffer is MAPPED, and the HOST timestamps each code as it appears while it spins on the window's ring in
+// run().  The timestamps are therefore host-sampled (CLOCK_MONOTONIC, ~1-3 us of sampling granularity) rather
+// than device clocks: the stage DELTAS are the measurement, and their sum is the window's own observable.
+// The buffer is mapped because the host must read it WHILE the window runs; it is zeroed per window.
 namespace { __global__ void gpu_stamp_kernel(uint8_t* _sycl_dyn, ::strata::sycl_compat::launch_shape _sycl_shape, unsigned long long* buf, int i) {
-    unsigned long long t;
-#if defined(__HIPCC__)
-    t = wall_clock64() * 10ull;   // gfx10.3 / gfx11 / gfx12: a constant 100 MHz counter, in ns
-#elif defined(STRATA_USE_SYCL)
-    t = (unsigned long long) sycl::ext::oneapi::experimental::clock<
-            sycl::ext::oneapi::experimental::clock_scope::device>();
+    // P9: this device has no readable clock, so a stamp is a PUBLISH instead of a timestamp -- the marker word
+    // says "stage i ran", the progress word says WHICH stage ran last, and the HOST (which is spinning on the
+    // window's ring anyway) timestamps it.
+    //
+    // The publish is a SYSTEM-SCOPE RELEASE STORE (the SYCL arm below).  The first form used
+    // `__threadfence_system()`; both were measured on the engine and the difference is small (the whole stamp
+    // set costs 137.03 ms against the window's 132.71 ms = +3.3% for 998 stamps = 4.3 us per stamp, and the
+    // fence is ~2 ms of that).  The RELEASE store is kept because it is the cheaper of the two and the reader
+    // is a single host word.
+    *(volatile unsigned long long*) &buf[i] = 1ull;
+#if defined(STRATA_USE_SYCL)
+    sycl::atomic_ref<unsigned long long, sycl::memory_order::relaxed, sycl::memory_scope::system>(
+        *(unsigned long long*) &buf[::strata::kernels::kProfProgCode])
+        .store((unsigned long long) (unsigned) i, sycl::memory_order::release);
+#else
+    __threadfence_system();
+    *(volatile unsigned long long*) &buf[::strata::kernels::kProfProgCode] = (unsigned long long) (unsigned) i;
 #endif
-    buf[i] = t;
 } }
 void gpu_stamp(unsigned long long* buf, int i, void* stream) {
     

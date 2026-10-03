@@ -1,0 +1,309 @@
+==============================================================================================
+P9 (card t_2403e6f6) - raw output.  Collected 2026-10-03T12:59:27-06:00 on michael-AI
+HEAD: 789f1ff P9 (t_2403e6f6): the rig, the chrome-timeline parser, and the device-clock probe
+engine binary: md5 9eff0675059cf7e8145ae7b4bca984a4
+==============================================================================================
+
+## 0. the arm table (p9/p9_report.py: every arm, out of its own logs)
+
+arm                win  ms/win  verify   wait  host  stage   tail commit  draft  vr_hit  kern/w  copy/w  tok dec t/s pre t/s   pp_s md5       stall
+p9-128k-base        99  124.06  109.75  41.89  0.45   1.33   0.00   1.97  12.35   30.71    2528    1306  256   20.84   346.6  370.0 c60e72d3  False
+p9-128k-graph       99  120.85  106.50  43.60  0.44   1.43   0.00   1.86  12.48   30.71       0     150  256   21.40   346.1  370.1 c60e72d3  False
+p9-128k-kv0         99  122.84  108.62  43.66  0.48   1.10   0.00   1.97  12.25   30.71       0       0  256   21.05   426.0  299.5 c60e72d3  False
+p9-32k-base         87  129.16  113.90  43.59  0.49   1.12   0.00   2.03  13.24   34.83    2504    1306  256   22.78   351.2   89.5 124a3cd3  False
+p9-32k-dec0         87  134.94  119.65  44.81  0.72   1.14   0.00   2.06  13.23   34.71    3692    1306  256   21.81   352.2   89.3 124a3cd3  False
+p9-32k-graph        87  123.91  108.64  44.56  0.48   1.18   0.00   1.92  13.35   34.60       0     150  256   23.75   352.1   89.4 124a3cd3  False
+p9-4k-dec0          49  140.49  126.94  47.65  0.78   1.16   0.00   2.06  11.49   37.76    3692    1306  147   21.35   256.5   13.8 ac9f16fc  False
+p9-4k-graph         51  125.55  111.84  45.25  0.48   1.06   0.00   1.90  11.81   35.88       0     150  147   22.96   254.3   13.8 ac9f16fc  False
+p9-4k-hcplain       49  133.26  119.66  45.57  0.52   1.13   0.00   2.05  11.54   37.55    2504    1306  147   22.51   254.7   13.9 ac9f16fc  False
+p9-ctl-4k-150        0    0.00    0.00   0.00  0.00   0.00   0.00   0.00   0.00    0.00       0       0    0    0.00     0.0   13.8 d41d8cd9  False
+p9-ctl-4k-150b      49  132.38  118.84  45.27  0.51   1.15   0.00   2.04  11.50   37.35    2504    1306  147   22.66   256.1   13.8 ac9f16fc  False
+p9-ctl-4k-16         0    0.00    0.00   0.00  0.00   0.00   0.00   0.00   0.00    0.00       0       0    0    0.00     0.0    0.0 d41d8cd9  False
+p9-ctl2-4k          49  132.71  119.15  45.55  0.52   1.16   3.16   2.09  11.47   37.55    2504    1306  147   22.61   253.4   13.8 ac9f16fc  False
+p9-ctl3-4k          49  133.59  120.06  94.81  1.09   1.40  12.97   2.03  11.49   37.96    2504    1306  147   22.46   252.5   13.8 ac9f16fc  False
+p9-p128k            99  128.61  114.32  89.34  0.96   1.58  11.32   1.94  12.35   30.71    3526    1306  256   20.11   346.2  370.0 c60e72d3  False
+p9-p32k             87  133.64  118.34  92.24  1.04   1.33  12.40   2.06  13.24   35.06    3502    1306  256   22.02   351.5   89.3 124a3cd3  False
+p9-p4k              49  246.80  233.02  70.62  0.59   1.12   5.29   2.34  11.44   37.96    3502    1306  147   12.16   255.7   13.8 ac9f16fc  False
+p9-p4k2             49  251.47  237.02  71.09  0.60   1.08   5.32   2.33  12.13   37.96    3502    1306  147   11.93   251.7   13.9 ac9f16fc  False
+p9-p4k3             49  244.71  230.94  70.76  0.54   1.12   5.40   2.33  11.44   37.96    3502    1306  147   12.26   251.6   13.9 ac9f16fc  False
+p9-p4k4             49  137.03  123.49  46.54  0.51   1.19   3.16   2.07  11.47   37.55    3502    1306  147   21.89   251.7   13.9 ac9f16fc  False
+p9-p4k5             49  136.71  123.17  95.80  1.07   1.31  12.90   2.06  11.48   37.55    3502    1306  147   21.94   252.0   13.9 ac9f16fc  False
+p9-ut9-4k-g0         0    0.00    0.00   0.00  0.00   0.00   0.00   0.00   0.00    0.00       0       0    0    0.00     0.0   14.6 d41d8cd9  False
+p9-ut9-4k-g1         0    0.00    0.00   0.00  0.00   0.00   0.00   0.00   0.00    0.00       0       0    0    0.00     0.0   14.7 d41d8cd9  False
+
+== p9-128k-base: answered=True wall=421s tokens=256 md5=c60e72d397e9b1cd44dab9c5ab1187c8 pp=369989.0ms/129024tok
+   stage0 [1776, 1207, 0, 556, 13, 0, 0, 0, 0, 77.2]   stage1 [2084, 1321, 0, 750, 13, 0, 0, 0, 0, 83.4]
+   DONE [256, 129024, 372288.4, 12282.4]
+== p9-128k-graph: answered=True wall=422s tokens=256 md5=c60e72d397e9b1cd44dab9c5ab1187c8 pp=370061.0ms/129024tok
+   stage0 [86, 0, 0, 72, 13, 0, 0, 1, 0, 3.7]   stage1 [93, 0, 0, 78, 14, 0, 0, 1, 0, 3.7]
+   DONE [256, 129024, 372743.0, 11964.1]
+== p9-128k-kv0: answered=True wall=350s tokens=256 md5=c60e72d397e9b1cd44dab9c5ab1187c8 pp=299487.0ms/129024tok
+   DONE [256, 129024, 302872.8, 12160.7]
+== p9-32k-base: answered=True wall=139s tokens=256 md5=124a3cd39b33f7da31e225829625983a pp=89517.0ms/32256tok
+   stage0 [1767, 1197, 0, 556, 14, 0, 0, 0, 0, 76.8]   stage1 [2072, 1307, 0, 750, 15, 0, 0, 0, 0, 82.9]
+   DONE [256, 32256, 91845.6, 11237.3]
+== p9-32k-dec0: answered=True wall=140s tokens=256 md5=124a3cd39b33f7da31e225829625983a pp=89331.0ms/32256tok
+   stage0 [2322, 1746, 0, 556, 20, 0, 0, 0, 0, 101.0]   stage1 [2716, 1946, 0, 750, 20, 0, 0, 0, 0, 108.6]
+   DONE [256, 32256, 91585.6, 11739.4]
+== p9-32k-graph: answered=True wall=138s tokens=256 md5=124a3cd39b33f7da31e225829625983a pp=89359.0ms/32256tok
+   stage0 [88, 0, 0, 72, 15, 0, 0, 1, 0, 3.8]   stage1 [95, 0, 0, 78, 16, 0, 0, 1, 0, 3.8]
+   DONE [256, 32256, 91612.6, 10780.1]
+== p9-4k-dec0: answered=True wall=58s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13771.0ms/3832tok
+   stage0 [2322, 1746, 0, 556, 20, 0, 0, 0, 0, 101.0]   stage1 [2717, 1946, 0, 750, 21, 0, 0, 0, 0, 108.7]
+   DONE [147, 3832, 14940.9, 6884.2]
+== p9-4k-graph: answered=True wall=58s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13846.0ms/3832tok
+   stage0 [88, 0, 0, 72, 15, 0, 0, 1, 0, 3.8]   stage1 [95, 0, 0, 78, 16, 0, 0, 1, 0, 3.8]
+   DONE [147, 3832, 15069.4, 6403.2]
+== p9-4k-hcplain: answered=True wall=58s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13854.0ms/3832tok
+   stage0 [1769, 1197, 0, 556, 16, 0, 0, 0, 0, 76.9]   stage1 [2073, 1307, 0, 750, 16, 0, 0, 0, 0, 82.9]
+   DONE [147, 3832, 15045.0, 6529.7]
+== p9-ctl-4k-150: answered=False wall=52s tokens=0 md5=d41d8cd98f00b204e9800998ecf8427e pp=13765.0ms/3832tok
+== p9-ctl-4k-150b: answered=True wall=58s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13794.0ms/3832tok
+   stage0 [1768, 1197, 0, 556, 15, 0, 0, 0, 0, 76.9]   stage1 [2071, 1307, 0, 750, 14, 0, 0, 0, 0, 82.8]
+   DONE [147, 3832, 14962.1, 6486.7]
+== p9-ctl-4k-16: answered=True wall=36s tokens=0 md5=d41d8cd98f00b204e9800998ecf8427e pp=Nonems/Nonetok
+== p9-ctl2-4k: answered=True wall=59s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13775.0ms/3832tok
+   stage0 [1768, 1197, 0, 556, 15, 0, 0, 0, 0, 76.9]   stage1 [2072, 1307, 0, 750, 15, 0, 0, 0, 0, 82.9]
+   DONE [147, 3832, 15120.1, 6502.9]
+== p9-ctl3-4k: answered=True wall=59s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13786.0ms/3832tok
+   stage0 [1768, 1197, 0, 556, 15, 0, 0, 0, 0, 76.9]   stage1 [2072, 1307, 0, 750, 15, 0, 0, 0, 0, 82.9]
+   DONE [147, 3832, 15178.4, 6545.9]
+== p9-p128k: answered=True wall=423s tokens=256 md5=c60e72d397e9b1cd44dab9c5ab1187c8 pp=369963.0ms/129024tok
+   stage0 [2253, 1682, 0, 556, 15, 0, 0, 0, 0, 98.0]   stage1 [2608, 1844, 0, 750, 14, 0, 0, 0, 0, 104.3]
+   DONE [256, 129024, 372642.6, 12732.9]
+== p9-p32k: answered=True wall=141s tokens=256 md5=124a3cd39b33f7da31e225829625983a pp=89332.0ms/32256tok
+   stage0 [2245, 1672, 0, 556, 17, 0, 0, 0, 0, 97.6]   stage1 [2596, 1830, 0, 750, 16, 0, 0, 0, 0, 103.8]
+   DONE [256, 32256, 91764.3, 11627.0]
+== p9-p4k: answered=True wall=64s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13796.0ms/3832tok
+   stage0 [2232, 1672, 0, 556, 4, 0, 0, 0, 0, 97.0]   stage1 [2584, 1830, 0, 750, 4, 0, 0, 0, 0, 103.4]
+   DONE [147, 3832, 14987.5, 12093.1]
+== p9-p4k2: answered=True wall=65s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13863.0ms/3832tok
+   stage0 [2232, 1672, 0, 556, 4, 0, 0, 0, 0, 97.0]   stage1 [2583, 1830, 0, 750, 3, 0, 0, 0, 0, 103.3]
+   DONE [147, 3832, 15222.1, 12322.2]
+== p9-p4k3: answered=True wall=64s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13853.0ms/3832tok
+   stage0 [2232, 1672, 0, 556, 4, 0, 0, 0, 0, 97.0]   stage1 [2584, 1830, 0, 750, 4, 0, 0, 0, 0, 103.4]
+   DONE [147, 3832, 15231.5, 11990.7]
+== p9-p4k4: answered=True wall=59s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13853.0ms/3832tok
+   stage0 [2245, 1672, 0, 556, 17, 0, 0, 0, 0, 97.6]   stage1 [2597, 1830, 0, 750, 17, 0, 0, 0, 0, 103.9]
+   DONE [147, 3832, 15223.7, 6714.5]
+== p9-p4k5: answered=True wall=59s tokens=147 md5=ac9f16fceed82e5681e42bd197835c51 pp=13852.0ms/3832tok
+   stage0 [2246, 1672, 0, 556, 18, 0, 0, 0, 0, 97.7]   stage1 [2597, 1830, 0, 750, 17, 0, 0, 0, 0, 103.9]
+   DONE [147, 3832, 15207.8, 6698.8]
+== p9-ut9-4k-g0: answered=True wall=93s tokens=0 md5=d41d8cd98f00b204e9800998ecf8427e pp=14627.0ms/3832tok
+== p9-ut9-4k-g1: answered=True wall=94s tokens=0 md5=d41d8cd98f00b204e9800998ecf8427e pp=14702.0ms/3832tok
+
+## 1. the per-stage attribution (p9/p9_stages.py: the engine's own GPU stage table)
+
+== p9-p4k5: total 46.63 ms/window over 49 windows; the listed stages sum to 46.60 ms/window = 99.9% of the sum the engine printed
+stage                   GDN ms/w  QSA ms/w  sum ms/w  % of sum
+q8+qkv/q-idx gemv          5.660     0.000     5.660     12.1%
+conv                       0.100     0.000     0.100      0.2%
+ab                         0.310     0.000     0.310      0.7%
+z                          3.520     0.000     3.520      7.6%
+rec                        0.450     0.000     0.450      1.0%
+q8+kv-idx                  0.000     0.080     0.080      0.2%
+k/v+norm-rope              0.000     0.310     0.310      0.7%
+kv+idx append              0.000     0.120     0.120      0.3%
+q+q-idx                    0.000     2.510     2.510      5.4%
+scores+topk                0.000     0.360     0.360      0.8%
+kv-resolve                 0.000     0.010     0.010      0.0%
+attention                  0.000     0.830     0.830      1.8%
+gate                       0.000     0.020     0.020      0.0%
+out-proj                   2.980     0.900     3.880      8.3%
+hc-read1+router            3.170     0.980     4.150      8.9%
+shared+quant               3.350     1.090     4.440      9.5%
+waitA                      0.160     0.040     0.200      0.4%
+VRAM hits                 11.400     3.280    14.680     31.5%
+waitB                      0.110     0.030     0.140      0.3%
+PCIe grp                   0.530     0.160     0.690      1.5%
+waitCPU                    0.040     0.010     0.050      0.1%
+copy+combine               0.180     0.050     0.230      0.5%
+(gap)                      0.030     0.010     0.040      0.1%
+hc0 norm                   1.170     0.050     1.220      2.6%
+hc0 down                   0.990     0.290     1.280      2.7%
+hc0 up                     1.020     0.300     1.320      2.8%
+
+== p9-p32k: total 44.78 ms/window over 87 windows; the listed stages sum to 44.80 ms/window = 100.0% of the sum the engine printed
+stage                   GDN ms/w  QSA ms/w  sum ms/w  % of sum
+q8+qkv/q-idx gemv          5.420     0.000     5.420     12.1%
+conv                       0.100     0.000     0.100      0.2%
+ab                         0.290     0.000     0.290      0.6%
+z                          3.330     0.000     3.330      7.4%
+rec                        0.440     0.000     0.440      1.0%
+q8+kv-idx                  0.000     0.080     0.080      0.2%
+k/v+norm-rope              0.000     0.300     0.300      0.7%
+kv+idx append              0.000     0.110     0.110      0.2%
+q+q-idx                    0.000     2.340     2.340      5.2%
+scores+topk                0.000     0.830     0.830      1.9%
+kv-resolve                 0.000     0.010     0.010      0.0%
+attention                  0.000     0.780     0.780      1.7%
+gate                       0.000     0.020     0.020      0.0%
+out-proj                   2.840     0.860     3.700      8.3%
+hc-read1+router            3.060     0.940     4.000      8.9%
+shared+quant               3.110     0.980     4.090      9.1%
+waitA                      0.140     0.040     0.180      0.4%
+VRAM hits                 10.850     3.150    14.000     31.2%
+waitB                      0.110     0.030     0.140      0.3%
+PCIe grp                   0.500     0.150     0.650      1.5%
+waitCPU                    0.040     0.010     0.050      0.1%
+copy+combine               0.180     0.050     0.230      0.5%
+(gap)                      0.030     0.010     0.040      0.1%
+hc0 norm                   1.100     0.050     1.150      2.6%
+hc0 down                   0.960     0.280     1.240      2.8%
+hc0 up                     1.000     0.280     1.280      2.9%
+
+== p9-p128k: total 43.24 ms/window over 99 windows; the listed stages sum to 43.23 ms/window = 100.0% of the sum the engine printed
+stage                   GDN ms/w  QSA ms/w  sum ms/w  % of sum
+q8+qkv/q-idx gemv          5.050     0.000     5.050     11.7%
+conv                       0.100     0.000     0.100      0.2%
+ab                         0.280     0.000     0.280      0.6%
+z                          3.050     0.000     3.050      7.1%
+rec                        0.400     0.000     0.400      0.9%
+q8+kv-idx                  0.000     0.080     0.080      0.2%
+k/v+norm-rope              0.000     0.280     0.280      0.6%
+kv+idx append              0.000     0.710     0.710      1.6%
+q+q-idx                    0.000     2.130     2.130      4.9%
+scores+topk                0.000     2.340     2.340      5.4%
+kv-resolve                 0.000     0.190     0.190      0.4%
+attention                  0.000     0.710     0.710      1.6%
+gate                       0.000     0.020     0.020      0.0%
+out-proj                   2.660     0.810     3.470      8.0%
+hc-read1+router            2.840     0.880     3.720      8.6%
+shared+quant               2.810     0.890     3.700      8.6%
+waitA                      0.150     0.050     0.200      0.5%
+VRAM hits                  9.640     2.830    12.470     28.8%
+waitB                      0.110     0.030     0.140      0.3%
+PCIe grp                   0.450     0.140     0.590      1.4%
+waitCPU                    0.040     0.010     0.050      0.1%
+copy+combine               0.170     0.050     0.220      0.5%
+(gap)                      0.030     0.010     0.040      0.1%
+hc0 norm                   0.960     0.050     1.010      2.3%
+hc0 down                   0.900     0.270     1.170      2.7%
+hc0 up                     0.860     0.250     1.110      2.6%
+
+
+## 2. the decode-timing lines, verbatim (one per arm)
+
+p9-128k-base: strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 124.06 ms/window = verify 109.75 (GPU-reach wait 41.89 + per-layer host 0.45 [plan 0.29 actq 0.21 jobs 0.22 CPU 0.00] + stage 1.33) + commit/emit 1.97 + draft 12.35; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+p9-128k-graph: strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 120.85 ms/window = verify 106.50 (GPU-reach wait 43.60 + per-layer host 0.44 [plan 0.29 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.43) + commit/emit 1.86 + draft 12.48; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+p9-128k-kv0: strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 122.84 ms/window = verify 108.62 (GPU-reach wait 43.66 + per-layer host 0.48 [plan 0.29 actq 0.21 jobs 0.22 CPU 0.00] + stage 1.10) + commit/emit 1.97 + draft 12.25; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+p9-32k-base: strata decode timing: 87 windows, avg T 3.48, 2.94 tokens/window, 129.16 ms/window = verify 113.90 (GPU-reach wait 43.59 + per-layer host 0.49 [plan 0.30 actq 0.24 jobs 0.25 CPU 0.00] + stage 1.12) + commit/emit 2.03 + draft 13.24; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.83, PCIe 0.00
+p9-32k-dec0: strata decode timing: 87 windows, avg T 3.47, 2.94 tokens/window, 134.94 ms/window = verify 119.65 (GPU-reach wait 44.81 + per-layer host 0.72 [plan 0.30 actq 0.23 jobs 0.72 CPU 0.00] + stage 1.14) + commit/emit 2.06 + draft 13.23; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.71, PCIe 0.00
+p9-32k-graph: strata decode timing: 87 windows, avg T 3.46, 2.94 tokens/window, 123.91 ms/window = verify 108.64 (GPU-reach wait 44.56 + per-layer host 0.48 [plan 0.30 actq 0.23 jobs 0.22 CPU 0.00] + stage 1.18) + commit/emit 1.92 + draft 13.35; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.60, PCIe 0.00
+p9-4k-dec0: strata decode timing: 49 windows, avg T 3.78, 3.00 tokens/window, 140.49 ms/window = verify 126.94 (GPU-reach wait 47.65 + per-layer host 0.78 [plan 0.31 actq 0.25 jobs 0.78 CPU 0.00] + stage 1.16) + commit/emit 2.06 + draft 11.49; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.76, PCIe 0.00
+p9-4k-graph: strata decode timing: 51 windows, avg T 3.59, 2.88 tokens/window, 125.55 ms/window = verify 111.84 (GPU-reach wait 45.25 + per-layer host 0.48 [plan 0.30 actq 0.24 jobs 0.23 CPU 0.00] + stage 1.06) + commit/emit 1.90 + draft 11.81; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.88, PCIe 0.00
+p9-4k-hcplain: strata decode timing: 49 windows, avg T 3.76, 3.00 tokens/window, 133.26 ms/window = verify 119.66 (GPU-reach wait 45.57 + per-layer host 0.52 [plan 0.31 actq 0.25 jobs 0.27 CPU 0.00] + stage 1.13) + commit/emit 2.05 + draft 11.54; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.55, PCIe 0.00
+p9-ctl2-4k: strata decode timing: 49 windows, avg T 3.76, 3.00 tokens/window, 132.71 ms/window = verify 119.15 (GPU-reach wait 45.55 + per-layer host 0.52 [plan 0.31 actq 0.25 jobs 0.28 CPU 0.00] + stage 1.16 + tail 3.16) + commit/emit 2.09 + draft 11.47; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.55, PCIe 0.00
+p9-ctl3-4k: strata decode timing: 49 windows, avg T 3.80, 3.00 tokens/window, 133.59 ms/window = verify 120.06 (GPU-reach wait 94.81 + per-layer host 1.09 [plan 0.31 actq 0.25 jobs 0.27 CPU 0.00] + stage 1.40 + tail 12.97) + commit/emit 2.03 + draft 11.49; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.96, PCIe 0.00
+p9-ctl-4k-150b: strata decode timing: 49 windows, avg T 3.73, 3.00 tokens/window, 132.38 ms/window = verify 118.84 (GPU-reach wait 45.27 + per-layer host 0.51 [plan 0.31 actq 0.25 jobs 0.26 CPU 0.00] + stage 1.15) + commit/emit 2.04 + draft 11.50; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.35, PCIe 0.00
+p9-p128k: strata decode timing: 99 windows, avg T 3.07, 2.59 tokens/window, 128.61 ms/window = verify 114.32 (GPU-reach wait 89.34 + per-layer host 0.96 [plan 0.29 actq 0.21 jobs 0.22 CPU 0.00] + stage 1.58 + tail 11.32) + commit/emit 1.94 + draft 12.35; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.71, PCIe 0.00
+p9-p32k: strata decode timing: 87 windows, avg T 3.51, 2.94 tokens/window, 133.64 ms/window = verify 118.34 (GPU-reach wait 92.24 + per-layer host 1.04 [plan 0.30 actq 0.24 jobs 0.25 CPU 0.00] + stage 1.33 + tail 12.40) + commit/emit 2.06 + draft 13.24; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.06, PCIe 0.00
+p9-p4k: strata decode timing: 49 windows, avg T 3.80, 3.00 tokens/window, 246.80 ms/window = verify 233.02 (GPU-reach wait 70.62 + per-layer host 0.59 [plan 0.44 actq 0.31 jobs 0.27 CPU 0.00] + stage 1.12 + tail 5.29) + commit/emit 2.34 + draft 11.44; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.96, PCIe 0.00
+p9-p4k2: strata decode timing: 49 windows, avg T 3.80, 3.00 tokens/window, 251.47 ms/window = verify 237.02 (GPU-reach wait 71.09 + per-layer host 0.60 [plan 0.51 actq 0.25 jobs 0.29 CPU 0.00] + stage 1.08 + tail 5.32) + commit/emit 2.33 + draft 12.13; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.96, PCIe 0.00
+p9-p4k3: strata decode timing: 49 windows, avg T 3.80, 3.00 tokens/window, 244.71 ms/window = verify 230.94 (GPU-reach wait 70.76 + per-layer host 0.54 [plan 0.45 actq 0.25 jobs 0.30 CPU 0.00] + stage 1.12 + tail 5.40) + commit/emit 2.33 + draft 11.44; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.96, PCIe 0.00
+p9-p4k4: strata decode timing: 49 windows, avg T 3.76, 3.00 tokens/window, 137.03 ms/window = verify 123.49 (GPU-reach wait 46.54 + per-layer host 0.51 [plan 0.31 actq 0.25 jobs 0.27 CPU 0.00] + stage 1.19 + tail 3.16) + commit/emit 2.07 + draft 11.47; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.55, PCIe 0.00
+p9-p4k5: strata decode timing: 49 windows, avg T 3.76, 3.00 tokens/window, 136.71 ms/window = verify 123.17 (GPU-reach wait 95.80 + per-layer host 1.07 [plan 0.31 actq 0.25 jobs 0.26 CPU 0.00] + stage 1.31 + tail 12.90) + commit/emit 2.06 + draft 11.48; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.55, PCIe 0.00
+
+## 3. the stage lines, verbatim (profiled arms only)
+
+p9-p4k:
+  strata decode GPU stages (ms/window): GDN layers: hc-read0 885181160.61 q8+qkv/q-idx gemv 4.08 conv 0.10 ab 226006558.56 z 18834074.11 rec 11300404.62 out-proj 623.46 hc-read1+router 86634609.27 shared+quant 5.63 waitA 26376205.81 VRAM hits 1.71 waitB 87.90 PCIe grp 0.10 waitCPU 0.01 copy+combine 0.04 (gap) 0.02   hc0 norm 0.49   hc0 down 0.44   hc0 up 0.33 | QSA layers: hc-read0 26368148.44 q8+kv-idx 116768373.85 k/v+norm-rope 11300176.73 kv+idx append 0.08 q+q-idx 1.62 scores+topk 182.15 kv-resolve 0.00 attention 0.39 gate 0.01 out-proj 0.47 hc-read1+router 3766722.05 shared+quant 0.50 waitA 6062.93 VRAM hits 0.37 waitB 2501.36 PCIe grp 0.04 waitCPU 0.00 copy+combine 0.02 (gap) 0.00   hc0 norm 0.06   hc0 down 0.26   hc0 up 0.20 | total 1412545908.85 ms/window over 49 windows
+p9-p4k2:
+  strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 2.07 conv 1.73 ab 2.31 z 1.72 rec 3.31 out-proj 1.56 hc-read1+router 1.19 shared+quant 1.60 waitA 7576.47 VRAM hits 1.97 waitB 0.03 PCIe grp 0.16 waitCPU 2745.58 copy+combine 0.06 (gap) 0.01   hc0 norm 0.35   hc0 down 0.18   hc0 up 0.13 | QSA layers: q8+kv-idx 0.04 k/v+norm-rope 0.13 kv+idx append 0.04 q+q-idx 0.68 scores+topk 0.19 kv-resolve 0.01 attention 0.31 gate 0.01 out-proj 0.41 hc-read1+router 0.34 shared+quant 0.32 waitA 8665.78 VRAM hits 0.37 waitB 0.01 PCIe grp 0.03 waitCPU 0.00 copy+combine 0.01 (gap) 0.00   hc0 norm 0.03   hc0 down 0.11   hc0 up 0.07 | total 19009.33 ms/window over 49 windows
+p9-p4k3:
+  strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 1.60 conv 0.06 ab 0.09 z 1.17 rec 0.29 out-proj 1.40 hc-read1+router 1.55 shared+quant 2.84 waitA 1.20 VRAM hits 1.12 waitB 0.01 PCIe grp 0.07 waitCPU 0.07 copy+combine 0.03 (gap) 0.00   hc0 norm 0.45   hc0 down 0.12   hc0 up 0.12 | QSA layers: q8+kv-idx 0.02 k/v+norm-rope 0.11 kv+idx append 0.04 q+q-idx 1.44 scores+topk 0.26 kv-resolve 0.01 attention 0.71 gate 0.02 out-proj 0.78 hc-read1+router 0.77 shared+quant 1.06 waitA 0.03 VRAM hits 0.07 waitB 0.00 PCIe grp 0.01 waitCPU 0.00 copy+combine 0.00 (gap) 0.00   hc0 norm 0.01   hc0 down 0.05   hc0 up 0.05 | total 17.63 ms/window over 49 windows
+p9-p4k4:
+  strata decode GPU stages (ms/window): GDN layers: | QSA layers: | total 0.00 ms/window over 49 windows
+p9-p4k5:
+  strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 5.66 conv 0.10 ab 0.31 z 3.52 rec 0.45 out-proj 2.98 hc-read1+router 3.17 shared+quant 3.35 waitA 0.16 VRAM hits 11.40 waitB 0.11 PCIe grp 0.53 waitCPU 0.04 copy+combine 0.18 (gap) 0.03   hc0 norm 1.17   hc0 down 0.99   hc0 up 1.02 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.31 kv+idx append 0.12 q+q-idx 2.51 scores+topk 0.36 kv-resolve 0.01 attention 0.83 gate 0.02 out-proj 0.90 hc-read1+router 0.98 shared+quant 1.09 waitA 0.04 VRAM hits 3.28 waitB 0.03 PCIe grp 0.16 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.29   hc0 up 0.30 | total 46.63 ms/window over 49 windows
+p9-p32k:
+  strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 5.42 conv 0.10 ab 0.29 z 3.33 rec 0.44 out-proj 2.84 hc-read1+router 3.06 shared+quant 3.11 waitA 0.14 VRAM hits 10.85 waitB 0.11 PCIe grp 0.50 waitCPU 0.04 copy+combine 0.18 (gap) 0.03   hc0 norm 1.10   hc0 down 0.96   hc0 up 1.00 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.30 kv+idx append 0.11 q+q-idx 2.34 scores+topk 0.83 kv-resolve 0.01 attention 0.78 gate 0.02 out-proj 0.86 hc-read1+router 0.94 shared+quant 0.98 waitA 0.04 VRAM hits 3.15 waitB 0.03 PCIe grp 0.15 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.28   hc0 up 0.28 | total 44.78 ms/window over 87 windows
+p9-p128k:
+  strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 5.05 conv 0.10 ab 0.28 z 3.05 rec 0.40 out-proj 2.66 hc-read1+router 2.84 shared+quant 2.81 waitA 0.15 VRAM hits 9.64 waitB 0.11 PCIe grp 0.45 waitCPU 0.04 copy+combine 0.17 (gap) 0.03   hc0 norm 0.96   hc0 down 0.90   hc0 up 0.86 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.28 kv+idx append 0.71 q+q-idx 2.13 scores+topk 2.34 kv-resolve 0.19 attention 0.71 gate 0.02 out-proj 0.81 hc-read1+router 0.88 shared+quant 0.89 waitA 0.05 VRAM hits 2.83 waitB 0.03 PCIe grp 0.14 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.27   hc0 up 0.25 | total 43.24 ms/window over 99 windows
+
+## 4. the stalls, verbatim (the chrome-mode arms: the tracer's effect on the window)
+
+-- p9-ut9-4k-g0
+PP 3831 3832 14627 261.9
+REUSED 0
+ERR verify: timed out at layer 1; its GPU waits were released but the GPU did not finish within 5 s (#267)
+   T lines: 0
+   trace: 261151738 B  /home/michael/strata-xpu/p9/runs/p9-ut9-4k-g0/strata.1047887.json
+-- p9-ut9-4k-g1
+PP 3831 3832 14702 260.6
+REUSED 0
+ERR verify: timed out at layer 1; its GPU waits were released but the GPU did not finish within 5 s (#267)
+   T lines: 0
+   trace: 250385887 B  /home/michael/strata-xpu/p9/runs/p9-ut9-4k-g1/strata.1049324.json
+-- P1b's own two arms (p1/logs), re-read for the same question
+   p1b-x-ut9:   T lines: 
+   p1b-z-ut1:   T lines: 
+
+## 5. the device-clock probe (both cards)
+
+p9/p9_evidence.sh: line 62: /home/michael/strata-xpu/p9/p9_clock_probe: No such file or directory
+
+## 6. the engine's own profiler, before this card (the aspect crash)
+
+ERR bad request: token list was empty
+strata serve: 2532 MiB of VRAM free with everything loaded
+== p9_drive fed: GEN 16 
+== p9_drive fed: QUIT
+
+## 7. the trace census (mode 9, graph off): card 0's device time by kernel, and what follows the prefill
+
+/home/michael/strata-xpu/p9/dev/p9-ut9-4k-g0.c0.npz: 52,043 events, busy 5.1 ms, span 16.410 s (from 0.000 s into the cache)
+dur us: min 0.208 p50 14.375 p90 60.312 p99 308.914 max 685609.4
+
+    total ms         n    avg us  tag
+    3419.130         5 683826.083  anon::launch<1>(float const*, QsaAttnPools const&, int const*, int const*, long, QsaShap
+     523.204    10,168    51.456  iq_dequant_gu_f16(int, void const*, void const*, long, long, unsigned short*, void*)::{l
+     325.253    10,168    31.988  iq_dequant_f16(int, void const*, long, unsigned short*, void*)::{lambda(auto:1, auto:2, 
+     145.640        36  4045.544  prefill::gdn_recurrence(float*, float const*, float const*, float const*, float const*, 
+      75.190        74  1016.082  gemm_f16f16f32_nocopy_tn_64x40_4x8[SIMD16 {32; 1; 1} {64; 8; 1}]
+      38.602        44   877.310  prefill::gr_write_norm_rs(float*, float const*, float const*, long, float const*, float,
+      35.178        46   764.744  prefill::gr_mix_r(float const*, float const*, float const*, float const*, float*, unsign
+      32.614       143   228.069  anon::launch<anon::H16>(int, void const*, long, long, long, anon::H16*, void*)::{lambda(
+      31.945        75   425.937  qsa_block_scores(float const*, float const*, float const*, int const*, long, long, QsaSh
+      29.243     4,340     6.738  gemm_f16f16f32_nocopy_tn_16x16_4x2x4[SIMD16 {20; 1; 1} {64; 2; 4}]
+distinct tags: 86   sum 5071.4 ms
+/home/michael/strata-xpu/p9/dev/p9-ut9-4k-g0.c0.npz: 52,043 events, 86 tags, span 16.410 s, busy 5.1 ms
+first event 1791049635.356 (epoch s)   last 1791049651.765
+
+== 'big' events (> 5.0 ms): 24 ==
+   last one at 5.999 s, dur 5.49 ms: zeCommandListAppendMemoryCopy(D2H)[156917760]
+   n=    18  prefill::gdn_recurrence(float*, float const*, float const*, float const*, float const*, fl
+   n=     5  anon::launch<1>(float const*, QsaAttnPools const&, int const*, int const*, long, QsaShapes
+   n=     1  zeCommandListAppendMemoryCopy(D2H)[156917760]
+
+==== PREFILL (up to and including the last big event): 52,039 events, busy 5.1 ms, wall 5.999 s, p50 14.4 us, max 685.61 ms
+
+==== after (decode + teardown): 4 events, busy 0.0 ms, wall 0.002 s, p50 6.8 us, max 0.01 ms
+
+== the first 5 events after the boundary ==
+   t+ 10409.163 ms       12.24 us  zeCommandListAppendMemoryCopy(H2D)[98304]
+   t+ 10410.788 ms        7.81 us  zeCommandListAppendMemoryCopy(H2D)[4]
+   t+ 10410.815 ms        5.88 us  zeCommandListAppendMemoryCopy(H2D)[4]
+   t+ 10410.840 ms        4.95 us  zeCommandListAppendMemoryCopy(H2D)[4]
+
+## 8. every arm's DONE line and token-id md5 (the correctness record)
+
+p9-128k-base: DONE 256 129024 372288.4 12282.4 length 159 205 0 145920 145920 0 0 0.0   md5(T lines)=c60e72d397e9b1cd44dab9c5ab1187c8
+p9-128k-graph: DONE 256 129024 372743.0 11964.1 length 159 205 0 145920 145920 0 0 0.0   md5(T lines)=c60e72d397e9b1cd44dab9c5ab1187c8
+p9-128k-kv0: DONE 256 129024 302872.8 12160.7 length 159 205 0 145920 145920 0 0 0.0   md5(T lines)=c60e72d397e9b1cd44dab9c5ab1187c8
+p9-32k-base: DONE 256 32256 91845.6 11237.3 length 172 216 0 145440 145440 0 0 0.0   md5(T lines)=124a3cd39b33f7da31e225829625983a
+p9-32k-dec0: DONE 256 32256 91585.6 11739.4 length 172 215 0 144960 144960 0 0 0.0   md5(T lines)=124a3cd39b33f7da31e225829625983a
+p9-32k-graph: DONE 256 32256 91612.6 10780.1 length 172 214 0 144480 144480 0 0 0.0   md5(T lines)=124a3cd39b33f7da31e225829625983a
+p9-4k-dec0: DONE 147 3832 14940.9 6884.2 stop 98 136 0 88800 88800 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51
+p9-4k-graph: DONE 147 3832 15069.4 6403.2 stop 96 132 0 87840 87840 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51
+p9-4k-hcplain: DONE 147 3832 15045.0 6529.7 stop 98 135 0 88320 88320 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51
+p9-ctl2-4k: DONE 147 3832 15120.1 6502.9 stop 98 135 0 88320 88320 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51
+p9-ctl3-4k: DONE 147 3832 15178.4 6545.9 stop 98 137 0 89280 89280 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51
+p9-ctl-4k-150b: DONE 147 3832 14962.1 6486.7 stop 98 134 0 87840 87840 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51
+p9-p128k: DONE 256 129024 372642.6 12732.9 length 159 205 0 145920 145920 0 0 0.0   md5(T lines)=c60e72d397e9b1cd44dab9c5ab1187c8
+p9-p32k: DONE 256 32256 91764.3 11627.0 length 172 218 0 146400 146400 0 0 0.0   md5(T lines)=124a3cd39b33f7da31e225829625983a
+p9-p4k: DONE 147 3832 14987.5 12093.1 stop 98 137 0 89280 89280 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51
+p9-p4k2: DONE 147 3832 15222.1 12322.2 stop 98 137 0 89280 89280 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51
+p9-p4k3: DONE 147 3832 15231.5 11990.7 stop 98 137 0 89280 89280 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51
+p9-p4k4: DONE 147 3832 15223.7 6714.5 stop 98 135 0 88320 88320 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51
+p9-p4k5: DONE 147 3832 15207.8 6698.8 stop 98 135 0 88320 88320 0 0 0.0   md5(T lines)=ac9f16fceed82e5681e42bd197835c51

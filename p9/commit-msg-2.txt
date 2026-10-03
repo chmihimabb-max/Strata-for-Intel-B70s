@@ -1,0 +1,41 @@
+P9 (t_2403e6f6): the verify window's stage profiler works on this device, and its own account closes
+
+WHY.  The card asked for a per-kernel attribution of the decode window's verify (P3: 83% of the window).  The
+chrome device modes cannot give it: measured here, with the graph path off AND on, the tracer stalls the FIRST
+verify window at layer 1 (`ERR verify: timed out at layer 1; ... the GPU did not finish within 5 s (#267)`, 0
+decode tokens) so the timeline contains the load and the prefill and none of the window's kernels - the window is
+a host<->device flag ping-pong (a 4-byte H2D publication per layer, a device ring the host spins on, kernels
+spinning on the host's flags), and device instrumentation breaks that handshake.  What DID work before this
+commit for the same question was the engine's own stage profiler, and on this device it was dead three ways:
+
+  (a) its stamp kernel read a device clock (sycl::ext::oneapi::experimental::clock<clock_scope::device>), whose
+      `ext_oneapi_clock_device` aspect THIS DEVICE DOES NOT REPORT (p9/p9_clock_probe.cpp measures it: `no` on
+      both B70s while `ext_oneapi_graph` is YES), so the first stamp threw
+      `Required aspect ext_oneapi_clock_device is not supported on the device` and the engine died at its first
+      window with no decode tokens.  oneAPI 2026.1 offers no other device clock, and the OpenCL clock() builtin is
+      not reachable from SYCL device code.
+  (b) its buffer was DEVICE memory with a one-shot D2H copy at the end - which cannot work without a device clock.
+  (c) the accumulation sat behind `if (prof_on_ && G == 1)`, and on the config of record (a split with T >= 2,
+      so G == 2) that is never true: even with a working clock it printed nothing.
+
+WHAT.  `gpu_stamp` is a PUBLISH now, not a timestamp: the 1-thread kernel writes the marker word and, as a
+SYSTEM-SCOPE RELEASE STORE, the stage's own index into the buffer's progress slot (kProfProgCode); the buffer is
+MAPPED (mapped()); a sampler INSIDE the layer spin loop - where the host is already spinning on the window's ring -
+timestamps every stage code it sees into prof_h_; the buffer and prof_h_ are both reset per window; the G == 1
+gate is gone; and the tail `cudaStreamSynchronize` and the other stage's counters are timed and folded in.
+
+MEASURED, same binary family, 4K, all with byte-identical greedy token ids:
+  * the stamp set costs 137.03 ms/window against the window's 132.71 = +3.3% for 998 stamps (4.3 us each);
+  * a sampler THREAD costs +107.7 ms (+79%) on this engine - the layer loop is host-bound enough that one more
+    spinning thread costs more than everything it measures.  It was measured, rejected and removed; the kept form
+    is the in-loop sampler at +3.0%;
+  * the attribution it produces: the resident experts' compute is 14.68/14.00/12.47 ms a window at 4K/32K/128K
+    (29-32% of the sampled GPU time), the projections/mixers around them another ~35%, and the QSA decode
+    attention over the int8 KV 0.83/0.78/0.71 ms (1.6-1.8%): what grows with depth is the SELECTION
+    (scores+topk 0.36 -> 2.34 ms), not the attention;
+  * the engine's own line now adds up: at 4K the window is 133.59 = verify 120.06 (GPU-reach wait 94.81 - i.e.
+    71% of the whole window, not the 34% a single stage's counter suggested - plus host 1.09, staging 1.40, tail
+    12.97) + commit/emit 2.03 + draft 11.49.
+
+The default path is unchanged: `STRATA_VERIFY_PROFILE` is the only switch, and the control arm on the new binary
+reads 133.59 against the record's 132.38 ms/window with the same token ids.

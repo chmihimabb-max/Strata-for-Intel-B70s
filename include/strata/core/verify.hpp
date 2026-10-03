@@ -154,7 +154,7 @@ public:
     void set_pcie_mode(int mode) { sink_.pcie_mode = mode; }
     /// the pool never plans a PCIe share (--pcie-frac 0): the window skips that path.  Before the first run.
 
-    double ms_wait = 0, ms_pool = 0, ms_host = 0, ms_commit = 0;
+    double ms_wait = 0, ms_pool = 0, ms_host = 0, ms_commit = 0, ms_tail = 0;
     int64_t windows = 0;
     /// STRATA_VERIFY_PROFILE=1 - GPU stage times of the windows since the last call (ms per
     /// window), as one line; empty when off.
@@ -187,7 +187,12 @@ private:
     static constexpr int kProfPer = 33;              // stamps per layer (32 left the hc-read second
                                       // half's up-stamp at slot 32 = the next layer's slot 0: D8)
     bool prof_on_ = false;
-    unsigned long long* prof_ = nullptr;              // device: n_layers * kProfPer + 4 stamps
+    bool prof_sample_ = false;                        // P9: STRATA_VERIFY_PROFILE=2 = stamps but no sampler thread
+    unsigned long long* prof_ = nullptr;              // MAPPED: the stamp buffer (>= kProfProgCode+1 slots)
+    unsigned long long* h_prof_ = nullptr;            // the host's own view of prof_ (P9: sampled live)
+    unsigned long long* prof_prog_ = nullptr;         // &h_prof_[kProfProgCode]: "which stage ran last"
+    size_t prof_slots_ = 0;                           // slots allocated (>= n_layers*kProfPer + 4)
+    unsigned long long prof_seen_ = 0;                // the last stage code the sampler timestamped
     std::vector<unsigned long long> prof_h_;
     double prof_sum_[2][kProfPer] = {};   // [GDN / QSA layers][stage]
     int64_t prof_windows_ = 0;
@@ -246,7 +251,6 @@ private:
     // that dumps diag() and releases the GPU waits instead of blocking until the driver resets the context.
     bool tail_debug_ = false;
     long long tail_wait_ms_ = 60000;
-    double ms_tail = 0.0;
     float* h_ymiss_ = nullptr;   float* m_ymiss_ = nullptr;     // T * k * n_embd
 
     // device

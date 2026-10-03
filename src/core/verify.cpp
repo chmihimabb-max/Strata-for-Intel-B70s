@@ -265,6 +265,17 @@ const int64_t g_test_stall = [] {
 }();
 }  // namespace
 
+/// P9 (card t_2403e6f6): joins the stage sampler on EVERY exit from a verify window, including the window's
+/// many early returns - a stray thread that outlives its window would poll a buffer the next window is about to
+/// re-zero.  Costs nothing when the sampler was never started (an unjoinable thread).
+struct SamplerStop {
+    std::atomic<bool>* stop;
+    std::thread* th;
+    ~SamplerStop() {
+        if (th->joinable()) { stop->store(true, std::memory_order_relaxed); th->join(); }
+    }
+};
+
 /// Publish a flag the KERNELS are waiting on: the store goes to the host's own word (the diag line and the
 /// engine's own reads use it) and then, as a 4-byte copy on the copy stream, into the DEVICE word the spin
 /// kernels read.  See flag_mapped's note for why a mapped store alone is not enough on this backend.
@@ -615,10 +626,25 @@ bool Verifier::init(const WeightTable& wt, const ModelGeometry& g, SessionState&
         cudaMemset(ladb_, 0, ladb_floats * sizeof(float));
     }
     prof_on_ = std::getenv("STRATA_VERIFY_PROFILE") != nullptr;
+    // P9: STRATA_VERIFY_PROFILE=2 records the stage stamps but does NOT start the sampler thread: that arm is how
+    // the two halves of the instrument's own cost were separated (see the status record).
+    {
+        const char* pv = std::getenv("STRATA_VERIFY_PROFILE");
+        prof_sample_ = prof_on_ && !(pv[0] == '2' && pv[1] == '\0');
+    }
     if (prof_on_) {
         const size_t np = (size_t) g.n_layers * kProfPer + 4;
-        if (cudaMalloc((void**) &prof_, np * 8) != cudaSuccess) { prof_on_ = false; prof_ = nullptr; cudaGetLastError(); }
-        else { cudaMemset(prof_, 0, np * 8); prof_h_.assign(np, 0); }
+        // P9: MAPPED, because the host samples the stage markers while the window runs (the device clock this
+        // profiler wants does not exist on this device - see gpu_stamp's note).  The buffer carries one extra
+        // slot above the stamps (kProfProgCode) for "which stage ran last".
+        prof_slots_ = np > (size_t) strata::kernels::kProfProgCode + 1 ? np
+                                                                      : (size_t) strata::kernels::kProfProgCode + 1;
+        if (!mapped(prof_slots_ * sizeof(unsigned long long), (void**) &h_prof_, (void**) &prof_)) {
+            prof_on_ = false; prof_ = nullptr; h_prof_ = nullptr; prof_prog_ = nullptr;
+        } else {
+            prof_h_.assign(np, 0);
+            prof_prog_ = h_prof_ + strata::kernels::kProfProgCode;
+        }
     }
     Bump real;
     real.base = (uint8_t*) arena_;
@@ -1449,6 +1475,28 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
     for (int t = 0; t < T; ++t) last_tokens_[t] = tokens[t];
     ms_host += ms_since(t0);
     VDBG("staged; launching\n");
+    if (prof_on_) {          // P9: the stage markers are per window, and the host memset is enough
+        std::memset(h_prof_, 0, prof_slots_ * sizeof(unsigned long long));
+        // ... and so is the HOST-SIDE accumulator the sampler writes into: without this fill each (layer, stage)
+        // slot keeps the FIRST window's timestamp for the whole request, and the per-window accumulation then
+        // adds deltas that span several windows (measured: a "waitA 7576 ms/window" for a 132 ms window).
+        std::fill(prof_h_.begin(), prof_h_.end(), (unsigned long long) 0);
+        prof_seen_ = 0;
+    }
+    // P9: the stage SAMPLER, in the layer spin loop.  The stamps are 1-thread kernels that publish their own
+    // index into the mapped progress word (gpu_stamp_kernel); the host is ALREADY spinning here waiting for the
+    // layer's ring, so reading that one mapped word every 32 pauses adds no host work at all and turns "the GPU
+    // rang" into a per-stage timeline.
+    //
+    // IT IS NOT A THREAD.  Measured: a dedicated sampler thread on this engine takes the window from 137.03 ms
+    // (stamps alone) to 244.71 ms - +107.7 ms, +79% - because the window's layer loop is host-bound enough that
+    // one more spinning thread (this box is 20 cores with 19 expert-pool workers + the host thread) costs more
+    // than everything the sampler measures.  The thread also bought nothing: the window's tail sync is only
+    // 3.16 ms of the 132.71 ms window (P9's `tail` field), so essentially the whole GPU timeline is inside this
+    // loop.
+    std::atomic<bool> prof_stop{false};   // kept for the profiling interface's shape; no thread is started
+    std::thread prof_th;
+    SamplerStop prof_guard{&prof_stop, &prof_th};
     const cudaError_t le = cudaGraphLaunch(exec_[T], cs_);
     if (le != cudaSuccess) { err = std::string("verify: launch: ") + cudaGetErrorString(le); return false; }
     (void) cudaStreamQuery(cs_);
@@ -1470,7 +1518,16 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
         progress_at("verify window: waiting for the GPU to reach layer", l);
         while (*seq < want) {
             _mm_pause();
-            if ((++spins & 1023u) != 0) continue;
+            if (prof_sample_ && (++spins & 31u) == 0) {
+                const unsigned long long v = *(volatile unsigned long long*) prof_prog_;
+                if (v != 0 && v != prof_seen_) {
+                    prof_seen_ = v;
+                    if ((size_t) v < prof_h_.size() && prof_h_[(size_t) v] == 0)
+                        prof_h_[(size_t) v] = (unsigned long long) std::chrono::duration_cast<
+                            std::chrono::nanoseconds>(Clock::now().time_since_epoch()).count();
+                }
+            }
+            if ((spins & 1023u) != 0) continue;
             const auto now = Clock::now();
             if (now - last_flush > std::chrono::microseconds(2000)) {
                 last_flush = now;
@@ -1563,7 +1620,13 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
             }
         }
     } else {
+        // P9: the tail sync is timed now.  It is the window's LARGEST single term and the engine's own breakdown
+        // did not name it: at 4K the window's `verify` is 118.84 ms of which the GPU-reach wait is 45.27, the
+        // host's per-layer work 0.51 and the staging 1.15 - the remaining ~72 ms was this call, i.e. everything
+        // the GPU still had to do after the host's last layer ring, including the head and the sampling.
+        const Clock::time_point tt_tail = Clock::now();
         const cudaError_t se = cudaStreamSynchronize(cs_);
+        ms_tail += ms_since(tt_tail);
         if (se != cudaSuccess) { err = std::string("verify: ") + cudaGetErrorString(se); return false; }
         progress_at("verify window: waiting for the expert copies", (int64_t) T);
         cudaStreamSynchronize(copy_);   // no host function of this window may raise flag B in the next one
@@ -1580,8 +1643,11 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
                      d.barrier, d.event, d.host_fn, d.graph_launch, d.recorded,
                      nlayer > 0 ? (double) d.submitted() / (double) nlayer : 0.0, ms_wait);
     }
-    if (prof_on_ && G == 1) {       // the window's GPU stage stamps
-        cudaMemcpy(prof_h_.data(), prof_, prof_h_.size() * 8, cudaMemcpyDeviceToHost);
+    if (prof_on_) {       // the window's stage timeline (P9: host-sampled - no copy back, and no G == 1 gate)
+        // P9 removed the cudaMemcpy that used to bring the device stamps here: the buffer is MAPPED and the
+        // sampler in the layer loop has already timestamped every code it saw, in prof_h_.  It also lifted the
+        // old `G == 1` condition, which silently disabled the profile on a split window with T >= 2 - i.e. on
+        // the whole config of record.
         const int64_t L = g.n_layers;
         auto at = [&](int64_t l, int i) { return prof_h_[(size_t) (l * kProfPer + i)]; };
         // D8: the derived columns below read stamps the hc-read kernels write themselves or the next
@@ -1597,6 +1663,11 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
             for (int i = 1; i <= 24; ++i) {
                 const unsigned long long x = at(l, i);
                 if (x == 0 || x < prev) continue;
+                // P9: nothing has been timestamped yet in this window, so this stamp has no predecessor to be
+                // measured against.  Before this guard the first delta was `x - 0` = the sampler's own absolute
+                // CLOCK_MONOTONIC value, and the table printed ~1e9 ms per window instead of ms.  The D8 note
+                // above is the same class of bug (a missing stamp must contribute NOTHING, not a wrapped value).
+                if (prev == 0) { prev = x; continue; }
                 prof_sum_[kind][i] += (double) (x - prev);
                 prev = x;
             }
@@ -1618,7 +1689,18 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
     // the drafts were. Exact: a rejected row's draw is discarded, and no kept decision depends on a reused draw.
     if (le_ < g.n_layers) {   // a layer split's earlier stage: the hand-off is written (synced above)
         ++windows;
-        return next_ == nullptr || next_->run(T, tokens, pos0, pool, next_user_, out, err);
+        if (next_ == nullptr) return true;
+        // P9: the decode-timing line reads THIS verifier's counters, and on a split the rest of the model runs in
+        // next_->run() - so without folding the stage's counters in, the printed `verify` (which brackets this
+        // whole call, nested run included) did not add up: at 4K the line named 46.9 ms of 118.8 ms.  Fold the
+        // other stage's DELTAS in, so the printed parts are the chain's.
+        const double w0 = next_->ms_wait, p0 = next_->ms_pool, h0 = next_->ms_host, t0 = next_->ms_tail;
+        const bool ok = next_->run(T, tokens, pos0, pool, next_user_, out, err);
+        ms_wait += next_->ms_wait - w0;
+        ms_pool += next_->ms_pool - p0;
+        ms_host += next_->ms_host - h0;
+        ms_tail += next_->ms_tail - t0;
+        return ok;
     }
     const bool sampled = !sampling_.greedy && sampling_.temperature > 0.0f;
     if (head_sampling_ && (sampled || hist_d_ != nullptr)) {
