@@ -1,0 +1,11 @@
+{
+ "gen_line": "s5/prompts/gen-ctx4096.txt",
+ "prompt_tokens": 4148,
+ "prompt_text_md5": "6dfc6f62b7ee02fdb6cb65e4c5793b0d",
+ "max_new": 64,
+ "template": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer/chat_template.jinja",
+ "rendered_tail": "he does not hold that the expert profile ranks hottest are copied into RAM at\nstart (locked; page-locked when the driver allows the whole budget), and the rest<|im_end|>\n<|im_start|>assistant\n<think>\n",
+ "rendered_head": "<|im_start|>system\nReasoning effort is set to xhigh. Please think carefully through the task, validate key assumptions, consider plausible alternatives, and prioritize correctness, consistency, and cl",
+ "kwargs": {},
+ "tokdir": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer"
+}
