@@ -1,0 +1,45 @@
+D3 arm d3-histc-131072   2026-10-03T19:58:49-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 6d81040 D3 (t_87aa2963): the last blocks (E-6 device plan, the top-k dispatch pair), the notes, and the evidence collector
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+-- device check BEFORE the run --
+   no engine of ours
+   no server of ours
+                     USER        PID ACCESS COMMAND
+/dev/dri/renderD128: michael    4359 F.... gnome-shell
+                     michael    4867 F...m Xwayland
+                     michael    5200 F...m ibus-x11
+                     michael    5201 F...m mutter-x11-fram
+                     michael   12379 F...m ptyxis
+                     michael   12722 F...m firefox
+                     michael   14495 F...m nautilus
+                     michael   37892 F...m gnome-text-edit
+                     michael   38552 F...m missioncenter
+/dev/dri/renderD129: michael   12379 F.... ptyxis
+                     michael   14495 F.... nautilus
+                     michael   37892 F.... gnome-text-edit
+                     michael   38552 F.... missioncenter
+12.47 12.06 11.68 2/1677 1301628
+ 
+:: initializing oneAPI environment ...
+   d3_run_arm.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+== the exact command ==
+cd /home/michael/strata-xpu/strata/d3/runs/d3-histc-131072 && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.7 --max-context 262144 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --layer-split auto --kv-resident 32768   (stdin from /home/michael/strata-xpu/strata/d3/runs/d3-histc-131072/stdin.fifo)
+ask: 559537 B, ids 129024
+== drive pid 1301920; waiting for 'everything loaded' ==
+== loaded=1 after 31s (2026-10-03T19:59:22-06:00) ==
+== ask fed at 2026-10-03T19:59:22-06:00 (epoch_ms 1791079162197) ==

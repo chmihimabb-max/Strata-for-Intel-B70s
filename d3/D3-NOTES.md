@@ -49,16 +49,29 @@ selection is TWO launches per QSA layer per window:
 
   Measured (arm CTX = register top-k), exact device microseconds from the launch-site histogram, T=4 window,
   closure path, P9 stamps ON:  see d3/D3-CENSUS-ARMCTX.txt.
-    4K : scores 0.210 ms, topk 0.684 ms, attention 2.031 ms, window 132.07 ms
-    32K: scores 1.466 ms, topk 0.750 ms, attention 2.000 ms, window 131.82 ms
-  i.e. the DEPTH-GROWING part of the selection is the SCORES (x7.0 for x8.4 blocks), NOT the top-k (x1.1) and not
-  the attention (flat, as P9 found).  The card's "scores+topk is what grows with depth" is confirmed for the
-  scores and refuted for the top-k in this range.
+    4K : scores 0.210 ms, topk 0.684 ms, attention 2.031 ms, window 132.07 ms   (wait_flag 14.690, stamp 1.703)
+    32K: scores 1.466 ms, topk 0.750 ms, attention 2.000 ms, window 131.82 ms   (wait_flag 15.423, stamp 1.685)
+    128K: scores 5.361 ms, topk 1.403 ms, attention 1.944 ms, window 140.25 ms  (wait_flag 16.867, stamp 2.001)
+  i.e. the DEPTH-GROWING part of the selection is the SCORES (x25.5 for x33.6 blocks 4K->128K), NOT the top-k
+  (x2.1) and not the attention (flat, as P9 found).  The card's "scores+topk is what grows with depth" is
+  confirmed as a whole (0.89 -> 2.22 -> 6.76 ms = 0.68% -> 1.68% -> 4.82% of the window) and refuted for the
+  top-k's share of it.
+
+  THE DISPATCH IS VISIBLE IN THE CENSUS SYMBOL - measured, not inferred: the record's config (--maxctx 262144)
+  counts `qsa_block_topk_ref` 12 launches (the memory kernel's own launcher, qsa_select.cu:736-746), and the
+  arm-CTX config counts `qsa_block_topk` 12 launches (the launcher that took the register kernel).  At 4K:
+      arm CTX 4096   : reg  0.684 ms   scores 0.210   attn 2.031   wait_flag 14.690   window 132.07   wall 128.69
+      record 262144  : ref  0.485 ms   scores 0.205   attn 1.961   wait_flag 18.462   window 136.33   wall 130.53
+  i.e. the MEMORY kernel is 29% CHEAPER here, so "the record takes the slow one" is refuted at 4K - and the two
+  arms also differ in --max-context (the record's own KV allocation is 64x bigger), which is why chain4 E1 runs
+  the clean pair (maxctx 4096, STRATA_TOPK_OLD=1 vs the default) and E2 the max-context effect alone.
 
   The scores kernel is LATENCY-bound, not read-bound: at 32K it reads 8064 blocks x 512 B = 4.13 MB per QSA layer,
   x 12 layers = 49.5 MB per window in 1.466 ms = 33.7 GB/s (the B70's own class is ~450 GB/s); at 4K the same
   arithmetic gives 28 GB/s.  Its per-(block,query) chain is 4 serially dependent head dot-products, each with a
-  5-step shuffle reduction (cu:631-639).
+  5-step shuffle reduction (cu:631-639).  The top-k is BARRIER-bound: 1024 threads x ~23 block-wide barriers per
+  launch, so ~57 us per (layer, window) at 4K and ~117 us at 128K, nearly depth-independent.
+
 
 === TASK 3: THE PER-LAYER HANDSHAKE, AS BUILT ============================================================
 
