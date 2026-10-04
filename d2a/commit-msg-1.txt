@@ -1,0 +1,46 @@
+D2a (t_8306429a): the generic multi-column MMVQ layout is not racy - its spread is a cold program cache
+
+The card D2 released: three identical runs of `STRATA_MMVQ_MULTI_GENERIC=1` gave three token streams and
+120.68-191.79 ms/window against the shipped layout's 125-126 and one stream in all eight of its arms.  This
+card finds why, or bounds it.  Nothing is shipped: no engine source, no config, no default changed - the
+engine binary is still D2's e841fd061fec873c2f24e785973a2ebe.
+
+1. NOT A RACE.  New kernel-level harness `src/kernels/mmvq_multi_spread.cpp` (add_executable, no add_test - it
+   is a measurement): the config's own shapes (n_in 2560, n_out 10240/6144, Q6_K/Q5_K/Q4_K/IQ4_XS/IQ4_NL),
+   T = 4 and T = 6, 16 reps per (type, T, layout) on ONE quantization, every rep's whole output hashed.
+   `reps same = yes` in all 24 rows of three runs (both caches fresh / SYCL cache fresh / warm): 384 timed and
+   384 hash launches per run, no run-to-run difference in value.  `multi_exact on` is bitwise equal to
+   single-column calls (mmvq_multi_parity, unchanged, 148480 outputs, 0 differ); off, 63708 differ, all at
+   T > 4, none at T <= 4.  At T = 6 the layouts differ on 15441-42078 of 36864-61440 words by at most
+   1.2e-4-6.1e-4 = 5.8e-7-7.2e-7 of the output RMS: last-bit, not wrong.
+
+2. THE 60% SPREAD IS THE BUILD.  The residual inside `verify` that no counter owns (verify - wait - host -
+   stage - tail) is 67.29 / 21.27 / 2.42 ms per window in D2's three runs = 3095 / 1085 / 160 ms of each run,
+   and those runs wrote 25 / 5 / 0 new SYCL program files while their own ask was in flight (0.src mtimes
+   inside the ask; the programs are named from their mangled symbols in d2a/programs.txt).  The 25 are exactly
+   the (quant type x column count) specializations that run's own window sequence needed: the five dense types
+   at NCOLS 2,3,4 (NW=4) and 6 (NW=2) plus the MTP drafter's Q8_0 at 2,3,4,6,8; the second run's 5 are the same
+   five types at the one new NCOLS = 5 its sequence contained; the third needed none.  At kernel level, with
+   SYCL_CACHE_DIR and the Intel NEO/IGC cache both fresh, a specialization's FIRST launch costs 63.8-519.7 ms
+   host wall (65.2-521.1 ms by the stream's own events) for 20 specializations / 3384 ms, against 0.2-1.2 ms
+   warm.  A fresh SYCL_CACHE_DIR alone is not a cold compiler.  Eight fresh repeats of the lever with those
+   programs on disk: 121.19-123.98 ms/window (2.3% spread), residual 2.56-3.89 ms, 0 new programs.
+
+3. THE IDS FOLLOW THE WINDOW SEQUENCE, NOT THE COST.  Eight warm runs of the one lever produced three distinct
+   window-size sequences and exactly three distinct token streams, 1:1 (4 runs d3aea6c8 -> 3b0519ca..., 3 runs
+   b52f6426 -> be7a9062..., 1 run 7f849df4 -> 70182abf..., D2's own third stream).  With `--suffix-draft 0`,
+   which takes the DraftPolicy out of the loop, the same lever ran 8/8 identical: one window sequence
+   (eb4beddf), the shipped layout's canonical stream 66bf952d445e330c974c49e4f220b4b1, 147 tokens, 120.09-120.89
+   ms/window - and that sequence has no window wider than 4 tokens, so the generic layout's only numeric
+   difference never fires.  Every generic run (cold or warm) takes a 2-token lookup window at window 5 where
+   the shipped control takes the 4-token MTP window; that move alone changes no number (T <= 4 coincides), and
+   the streams then part at token 78/88, after a later T=5 window.  So the cost is not the cause of the ids and
+   the ids are not the cause of the cost: both follow the window sequence, and the reason a changed sequence can
+   move the ids at all is native_mmvq.cu:1050 (`NW = NCOLS <= 4 ? 4 : 2`), together with the window-size choice
+   being fed measured round times (include/strata/spec/draft_policy.hpp:36, src/program/generate.cpp:5494-5496),
+   whose own header says the output is unchanged - true only for a layout that is bitwise equal at every T.
+
+Rig and evidence under d2a/ (d2a_chain.sh, analyze.py, arm_cache.py, program_names.sh, tseq.py,
+windowtable.py, divergence.py, stream_vs_window.py, run_spread.sh, run_spread_cold.sh, build_spread.sh,
+d2a_evidence.sh -> D2A-EVIDENCE.txt, STATUS-D2A.md), 17 engine arms' own logs under d2/runs/d2a-*.
+Machine left clean: no engine, no server, both cards free; the switch stays default-off and unused.

@@ -1,0 +1,30 @@
+device: Intel(R) Graphics [0xe223] (SM 12.0)
+reps 16; SYCL_CACHE_DIR=/tmp/d2a-cold2-cache
+
+case                 T   layout first wall first evt      min      med      max  reps same d(g-e)     max|d| max|d|/rms
+Q6_K 2560x10240      4    exact     63.84ms   65.237ms   0.947   1.217   1.223      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      4  generic     81.35ms   81.754ms   0.308   0.310   0.348      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      6    exact     70.94ms   71.673ms   0.459   0.461   0.478      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      6  generic    107.35ms  107.851ms   0.442   0.444   0.476      yes    42078  4.883e-04  5.8e-07
+Q6_K 2560x6144       4    exact      0.01ms    0.232ms   0.194   0.196   0.224      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       4  generic      0.01ms    0.204ms   0.199   0.200   0.204      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       6    exact      0.01ms    0.253ms   0.244   0.245   0.252      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       6  generic      0.01ms    0.238ms   0.232   0.234   0.238      yes    25304  6.104e-04  7.1e-07
+Q5_K 2560x6144       4    exact     78.98ms   79.193ms   0.176   0.177   0.186      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       4  generic    116.62ms  116.856ms   0.210   0.213   0.240      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       6    exact     94.37ms   94.756ms   0.328   0.329   0.347      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       6  generic    146.93ms  147.462ms   0.337   0.341   0.349      yes    23345  2.441e-04  5.9e-07
+Q4_K 2560x6144       4    exact     75.85ms   76.191ms   0.289   0.291   0.310      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       4  generic    112.99ms  113.424ms   0.358   0.365   0.380      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       6    exact     91.88ms   92.149ms   0.239   0.241   0.264      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       6  generic    143.27ms  143.680ms   0.270   0.272   0.290      yes    23358  1.221e-04  5.9e-07
+IQ4_XS 2560x6144     4    exact    394.51ms  395.056ms   0.380   0.386   0.397      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     4  generic    203.39ms  203.833ms   0.400   0.410   0.436      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     6    exact    519.72ms  521.123ms   0.962   1.141   1.155      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     6  generic    252.75ms  253.089ms   0.279   0.282   0.307      yes    15441  4.883e-04  6.4e-07
+IQ4_NL 2560x10240    4    exact    114.12ms  114.910ms   0.739   0.742   0.758      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    4  generic    233.20ms  234.503ms   1.109   1.235   1.250      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    6    exact    145.66ms  146.545ms   0.853   0.857   0.861      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    6  generic    336.46ms  337.542ms   1.049   1.059   1.065      yes    39635  3.052e-05  7.2e-07
+
+legend: first wall/evt = the specialization's FIRST launch (cold SYCL cache: it carries the program build); min/med/max = the 16 launches after it, event-measured; reps same = every rep's output hash equal; d(g-e) = output words the generic layout and the exact layout disagree on bit for bit; max|d| = the largest of those differences in absolute terms, and as a fraction of the exact layout's output RMS.

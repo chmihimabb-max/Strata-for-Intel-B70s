@@ -1,0 +1,314 @@
+############ D2a evidence -- the generic multi-column MMVQ layout, 2026-10-03T21:40:13-06:00
+###### repo: ae37afc D3 (t_87aa2963): the final evidence pass and the verdict wording
+###### engine binary: e841fd061fec873c2f24e785973a2ebe  (D2's e841fd061fec873c2f24e785973a2ebe = unchanged)
+
+###### 1. THE MECHANISM: SYCL programs built while each arm decoded
+### per arm: new programs (0.src entries) written between its ask and its finish, with the arm's own
+### window time it cannot name (verify - wait - host - stage - tail)
+
+=== D2 originals
+tag                     win   ms/win  verify    wait   tail   RESID   res*w tokens T>4 newprog Tseq    ids md5
+d2-rebase-4096           51   125.93  112.26   93.90  12.45    3.53     180    147   2       0 73dfa82d 66bf952d445e330c974c49e4f220b4b1
+d2-mg-4096               46   191.79  177.54   95.94  11.98   67.29    3095    137   2      25 0e3115f0 10160c38b7e991c84ec6f4cc01e26a55
+d2-mg-4096-warm          51   140.39  126.60   91.30  11.61   21.27    1085    148   2       5 d3aea6c8 3b0519ca8196ffff312463ae4a09c0c1
+d2-mg-4096-warm2         66   120.68  106.95   90.56  11.62    2.42     160    185   2       0 7f849df4 70182abfd4b4f78c02d823dc4f227f80
+  -> 4 runs: ms/window 120.68-191.79 (spread 58.9%), residual 2.42-67.29 ms, 4 distinct ids md5, 4 distinct window sequences, new programs 30
+
+=== session control
+tag                     win   ms/win  verify    wait   tail   RESID   res*w tokens T>4 newprog Tseq    ids md5
+d2a-rebase-4096          51   125.36  111.70   93.56  12.44    3.47     177    147   2       0 73dfa82d 66bf952d445e330c974c49e4f220b4b1
+
+=== A: the lever, 8 repeats
+tag                     win   ms/win  verify    wait   tail   RESID   res*w tokens T>4 newprog Tseq    ids md5
+d2a-mg-4096-r1           51   122.28  108.44   90.54  11.60    3.89     198    148   2       0 d3aea6c8 3b0519ca8196ffff312463ae4a09c0c1
+d2a-mg-4096-r2           52   123.41  109.61   92.59  11.84    2.91     151    150   3       0 b52f6426 be7a906263db783e1dc5ab7932b2a282
+d2a-mg-4096-r3           51   121.80  108.04   90.55  11.60    3.60     184    148   2       0 d3aea6c8 3b0519ca8196ffff312463ae4a09c0c1
+d2a-mg-4096-r4           51   121.66  107.90   90.65  11.62    3.29     168    148   2       0 d3aea6c8 3b0519ca8196ffff312463ae4a09c0c1
+d2a-mg-4096-r5           52   123.65  109.73   92.40  11.84    3.17     165    150   3       0 b52f6426 be7a906263db783e1dc5ab7932b2a282
+d2a-mg-4096-r6           52   123.98  110.10   92.52  11.85    3.33     173    150   3       0 b52f6426 be7a906263db783e1dc5ab7932b2a282
+d2a-mg-4096-r7           66   121.19  107.39   90.81  11.66    2.56     169    185   2       0 7f849df4 70182abfd4b4f78c02d823dc4f227f80
+d2a-mg-4096-r8           51   122.22  108.41   90.75  11.61    3.68     188    148   2       0 d3aea6c8 3b0519ca8196ffff312463ae4a09c0c1
+  -> 8 runs: ms/window 121.19-123.98 (spread 2.3%), residual 2.56-3.89 ms, 3 distinct ids md5, 3 distinct window sequences, new programs 0
+
+=== B: the lever + --suffix-draft 0, 8 repeats
+tag                     win   ms/win  verify    wait   tail   RESID   res*w tokens T>4 newprog Tseq    ids md5
+d2a-mg0-4096-r1          51   120.17  106.40   90.27  11.65    2.18     111    147   0       0 eb4beddf 66bf952d445e330c974c49e4f220b4b1
+d2a-mg0-4096-r2          51   120.09  106.32   90.24  11.66    2.07     106    147   0       0 eb4beddf 66bf952d445e330c974c49e4f220b4b1
+d2a-mg0-4096-r3          51   120.45  106.62   90.25  11.65    2.36     120    147   0       0 eb4beddf 66bf952d445e330c974c49e4f220b4b1
+d2a-mg0-4096-r4          51   120.43  106.56   90.39  11.65    2.26     115    147   0       0 eb4beddf 66bf952d445e330c974c49e4f220b4b1
+d2a-mg0-4096-r5          51   120.09  106.26   90.20  11.66    2.13     109    147   0       0 eb4beddf 66bf952d445e330c974c49e4f220b4b1
+d2a-mg0-4096-r6          51   120.30  106.43   90.24  11.65    2.25     115    147   0       0 eb4beddf 66bf952d445e330c974c49e4f220b4b1
+d2a-mg0-4096-r7          51   120.89  107.03   90.47  11.67    2.51     128    147   0       0 eb4beddf 66bf952d445e330c974c49e4f220b4b1
+d2a-mg0-4096-r8          51   120.36  106.53   90.35  11.68    2.16     110    147   0       0 eb4beddf 66bf952d445e330c974c49e4f220b4b1
+  -> 8 runs: ms/window 120.09-120.89 (spread 0.7%), residual 2.07-2.51 ms, 1 distinct ids md5, 1 distinct window sequences, new programs 0
+
+### the programs by name and timestamp (mangled type name from each entry's 0.src)
+== the programs written while d2-mg-4096 decoded (19:24:03-19:24:11)
+19:24:03    11241 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:03    11241 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi8ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:04    11437 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:04    11401 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:06    13749 native_mmvq_multi_kernelINS1_9Q6KTraitsELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:06    17305 native_mmvq_multi_kernelINS1_9Q4KTraitsELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:06    17165 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:06    15869 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:06    18089 native_mmvq_multi_kernelINS1_9Q5KTraitsELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    13773 native_mmvq_multi_kernelINS1_9Q6KTraitsELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    17365 native_mmvq_multi_kernelINS1_9Q4KTraitsELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    17225 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    15881 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    18149 native_mmvq_multi_kernelINS1_9Q5KTraitsELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    11449 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:08    13785 native_mmvq_multi_kernelINS1_9Q6KTraitsELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:08    17341 native_mmvq_multi_kernelINS1_9Q4KTraitsELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:08    17201 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:08    15905 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:09    18125 native_mmvq_multi_kernelINS1_9Q5KTraitsELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:10    13589 native_mmvq_multi_kernelINS1_9Q6KTraitsELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:10    17145 native_mmvq_multi_kernelINS1_9Q4KTraitsELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:10    17005 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:10    15693 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:10    17929 native_mmvq_multi_kernelINS1_9Q5KTraitsELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+== the programs written while d2-mg-4096-warm decoded (19:30:55-19:31:00)
+19:30:55    13569 native_mmvq_multi_kernelINS1_9Q6KTraitsELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:30:55    17125 native_mmvq_multi_kernelINS1_9Q4KTraitsELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:30:55    16985 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:30:56    15673 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:30:56    17909 native_mmvq_multi_kernelINS1_9Q5KTraitsELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+== distinct specialization names, all entries
+    191 
+      4 native_gu_multi_kernel
+      4 native_gu_kernel
+      3 native_small_mmvq_kernel
+      2 native_down_multi_kernel
+      2 native_down_kernel
+      1 native_quantize_q8_1_kernel
+      1 native_q6_k_mmvq_kernel
+      1 native_q5_k_mmvq_kernel
+      1 native_q4_k_mmvq_kernel
+      1 native_mmvq_multi_kernelINS1_9Q6KTraitsELi8ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+      1 native_mmvq_multi_kernelINS1_9Q6KTraitsELi7ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+      1 native_mmvq_multi_kernelINS1_9Q6KTraitsELi6ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+      1 native_mmvq_multi_kernelINS1_9Q6KTraitsELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+      1 native_mmvq_multi_kernelINS1_9Q6KTraitsELi5ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+      1 native_mmvq_multi_kernelINS1_9Q6KTraitsELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+      1 native_mmvq_multi_kernelINS1_9Q6KTraitsELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+      1 native_mmvq_multi_kernelINS1_9Q6KTraitsELi4ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+      1 native_mmvq_multi_kernelINS1_9Q6KTraitsELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+      1 native_mmvq_multi_kernelINS1_9Q6KTraitsELi3ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+
+###### 2. THE KERNEL LEVEL: both layouts, the config's own shapes, 16 reps each, one input set
+### 2a. BOTH caches fresh (SYCL_CACHE_DIR and NEO_CACHE_DIR): every specialization's first launch carries
+### its own program build - this is the engine's condition on its first run of the layout
+device: Intel(R) Graphics [0xe223] (SM 12.0)
+reps 16; SYCL_CACHE_DIR=/tmp/d2a-cold2-cache
+
+case                 T   layout first wall first evt      min      med      max  reps same d(g-e)     max|d| max|d|/rms
+Q6_K 2560x10240      4    exact     63.84ms   65.237ms   0.947   1.217   1.223      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      4  generic     81.35ms   81.754ms   0.308   0.310   0.348      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      6    exact     70.94ms   71.673ms   0.459   0.461   0.478      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      6  generic    107.35ms  107.851ms   0.442   0.444   0.476      yes    42078  4.883e-04  5.8e-07
+Q6_K 2560x6144       4    exact      0.01ms    0.232ms   0.194   0.196   0.224      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       4  generic      0.01ms    0.204ms   0.199   0.200   0.204      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       6    exact      0.01ms    0.253ms   0.244   0.245   0.252      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       6  generic      0.01ms    0.238ms   0.232   0.234   0.238      yes    25304  6.104e-04  7.1e-07
+Q5_K 2560x6144       4    exact     78.98ms   79.193ms   0.176   0.177   0.186      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       4  generic    116.62ms  116.856ms   0.210   0.213   0.240      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       6    exact     94.37ms   94.756ms   0.328   0.329   0.347      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       6  generic    146.93ms  147.462ms   0.337   0.341   0.349      yes    23345  2.441e-04  5.9e-07
+Q4_K 2560x6144       4    exact     75.85ms   76.191ms   0.289   0.291   0.310      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       4  generic    112.99ms  113.424ms   0.358   0.365   0.380      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       6    exact     91.88ms   92.149ms   0.239   0.241   0.264      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       6  generic    143.27ms  143.680ms   0.270   0.272   0.290      yes    23358  1.221e-04  5.9e-07
+IQ4_XS 2560x6144     4    exact    394.51ms  395.056ms   0.380   0.386   0.397      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     4  generic    203.39ms  203.833ms   0.400   0.410   0.436      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     6    exact    519.72ms  521.123ms   0.962   1.141   1.155      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     6  generic    252.75ms  253.089ms   0.279   0.282   0.307      yes    15441  4.883e-04  6.4e-07
+IQ4_NL 2560x10240    4    exact    114.12ms  114.910ms   0.739   0.742   0.758      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    4  generic    233.20ms  234.503ms   1.109   1.235   1.250      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    6    exact    145.66ms  146.545ms   0.853   0.857   0.861      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    6  generic    336.46ms  337.542ms   1.049   1.059   1.065      yes    39635  3.052e-05  7.2e-07
+
+legend: first wall/evt = the specialization's FIRST launch (cold SYCL cache: it carries the program build); min/med/max = the 16 launches after it, event-measured; reps same = every rep's output hash equal; d(g-e) = output words the generic layout and the exact layout disagree on bit for bit; max|d| = the largest of those differences in absolute terms, and as a fraction of the exact layout's output RMS.
+### 2b. a fresh SYCL cache with the Intel NEO/IGC compiler cache (~/.cache/neo_compiler_cache) left in
+### place: the native binaries are still there, so the first launches are cheap - a fresh SYCL_CACHE_DIR
+### alone is NOT a cold compiler
+device: Intel(R) Graphics [0xe223] (SM 12.0)
+reps 16; SYCL_CACHE_DIR=/tmp/d2a-cache
+
+case                 T   layout first wall first evt      min      med      max  reps same d(g-e)     max|d| max|d|/rms
+Q6_K 2560x10240      4    exact      0.92ms    2.536ms   0.609   1.477   1.553      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      4  generic      0.99ms    1.600ms   0.308   0.310   0.609      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      6    exact      0.68ms    1.069ms   0.387   0.388   0.391      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      6  generic      1.12ms    1.499ms   0.369   0.372   0.380      yes    42078  4.883e-04  5.8e-07
+Q6_K 2560x6144       4    exact      0.01ms    0.207ms   0.194   0.195   0.197      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       4  generic      0.00ms    0.204ms   0.197   0.200   0.201      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       6    exact      0.01ms    0.255ms   0.243   0.245   0.253      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       6  generic      0.00ms    0.237ms   0.232   0.234   0.239      yes    25304  6.104e-04  7.1e-07
+Q5_K 2560x6144       4    exact      0.80ms    0.963ms   0.159   0.159   0.163      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       4  generic      1.27ms    1.445ms   0.168   0.170   0.175      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       6    exact      0.63ms    0.870ms   0.239   0.240   0.244      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       6  generic      0.86ms    1.047ms   0.193   0.195   0.197      yes    23345  2.441e-04  5.9e-07
+Q4_K 2560x6144       4    exact      0.84ms    1.000ms   0.159   0.160   0.163      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       4  generic      0.73ms    0.893ms   0.168   0.169   0.171      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       6    exact      0.77ms    1.009ms   0.239   0.240   0.243      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       6  generic      1.02ms    1.219ms   0.198   0.200   0.207      yes    23358  1.221e-04  5.9e-07
+IQ4_XS 2560x6144     4    exact      1.18ms    1.414ms   0.219   0.221   0.227      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     4  generic      1.05ms    1.234ms   0.181   0.184   0.186      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     6    exact      0.76ms    1.087ms   0.326   0.330   0.336      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     6  generic      1.06ms    1.262ms   0.207   0.209   0.212      yes    15441  4.883e-04  6.4e-07
+IQ4_NL 2560x10240    4    exact      1.13ms    1.671ms   0.541   0.543   0.548      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    4  generic      1.04ms    1.617ms   0.573   0.576   0.581      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    6    exact      0.94ms    1.768ms   0.819   0.826   0.835      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    6  generic      1.15ms    1.906ms   0.752   0.758   0.765      yes    39635  3.052e-05  7.2e-07
+
+legend: first wall/evt = the specialization's FIRST launch (cold SYCL cache: it carries the program build); min/med/max = the 16 launches after it, event-measured; reps same = every rep's output hash equal; d(g-e) = output words the generic layout and the exact layout disagree on bit for bit; max|d| = the largest of those differences in absolute terms, and as a fraction of the exact layout's output RMS.
+### 2c. the same cache warm (steady state)
+device: Intel(R) Graphics [0xe223] (SM 12.0)
+reps 16; SYCL_CACHE_DIR=/tmp/d2a-cache
+
+case                 T   layout first wall first evt      min      med      max  reps same d(g-e)     max|d| max|d|/rms
+Q6_K 2560x10240      4    exact      0.51ms    1.124ms   0.549   0.563   0.614      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      4  generic      0.82ms    1.365ms   0.307   0.310   0.554      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      6    exact      0.42ms    0.812ms   0.387   0.388   0.391      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x10240      6  generic      1.22ms    1.599ms   0.370   0.372   0.377      yes    42078  4.883e-04  5.8e-07
+Q6_K 2560x6144       4    exact      0.01ms    0.205ms   0.194   0.195   0.197      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       4  generic      0.01ms    0.207ms   0.198   0.200   0.202      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       6    exact      0.01ms    0.255ms   0.243   0.244   0.251      yes        0  0.000e+00  0.0e+00
+Q6_K 2560x6144       6  generic      0.00ms    0.241ms   0.230   0.234   0.237      yes    25304  6.104e-04  7.1e-07
+Q5_K 2560x6144       4    exact      0.96ms    1.119ms   0.159   0.159   0.164      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       4  generic      1.14ms    1.309ms   0.168   0.170   0.174      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       6    exact      0.58ms    0.819ms   0.239   0.241   0.243      yes        0  0.000e+00  0.0e+00
+Q5_K 2560x6144       6  generic      0.71ms    0.900ms   0.193   0.195   0.198      yes    23345  2.441e-04  5.9e-07
+Q4_K 2560x6144       4    exact      0.60ms    0.760ms   0.159   0.161   0.163      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       4  generic      0.46ms    0.630ms   0.167   0.168   0.172      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       6    exact      0.64ms    0.878ms   0.239   0.240   0.242      yes        0  0.000e+00  0.0e+00
+Q4_K 2560x6144       6  generic      0.94ms    1.143ms   0.198   0.200   0.205      yes    23358  1.221e-04  5.9e-07
+IQ4_XS 2560x6144     4    exact      1.05ms    1.285ms   0.219   0.222   0.226      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     4  generic      0.88ms    1.058ms   0.182   0.184   0.186      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     6    exact      0.67ms    0.994ms   0.325   0.327   0.331      yes        0  0.000e+00  0.0e+00
+IQ4_XS 2560x6144     6  generic      0.86ms    1.064ms   0.208   0.209   0.212      yes    15441  4.883e-04  6.4e-07
+IQ4_NL 2560x10240    4    exact      0.49ms    1.030ms   0.541   0.543   0.546      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    4  generic      0.88ms    1.455ms   0.573   0.577   0.579      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    6    exact      0.58ms    1.402ms   0.822   0.828   0.832      yes        0  0.000e+00  0.0e+00
+IQ4_NL 2560x10240    6  generic      1.01ms    1.770ms   0.751   0.757   0.769      yes    39635  3.052e-05  7.2e-07
+
+legend: first wall/evt = the specialization's FIRST launch (cold SYCL cache: it carries the program build); min/med/max = the 16 launches after it, event-measured; reps same = every rep's output hash equal; d(g-e) = output words the generic layout and the exact layout disagree on bit for bit; max|d| = the largest of those differences in absolute terms, and as a fraction of the exact layout's output RMS.
+### the runner: 8822b26 W4A16 W2: the Q4_0 expert kernel family on SYCL, its parity and its measured cost
+
+###### 3. WHERE THE STREAMS PART
+### the shipped layout's stream as the reference, token by token
+reference d2-rebase-4096: 147 tokens
+d2-mg-4096             137 tokens, first difference at index 78 (ref 449 vs 264); first window starting past it: #26 at token 79, T=4
+    its window sizes T[0:20] = [1, 4, 4, 1, 4, 2, 4, 4, 4, 4, 3, 4, 4, 4, 4, 4, 6, 4, 4, 4]
+d2-mg-4096-warm        148 tokens, first difference at index 91 (ref 8385 vs 4089); first window starting past it: #32 at token 92, T=4
+    its window sizes T[0:20] = [1, 4, 4, 1, 4, 2, 4, 4, 4, 4, 3, 4, 4, 4, 4, 4, 6, 4, 4, 4]
+d2-mg-4096-warm2       185 tokens, first difference at index 78 (ref 449 vs 264); first window starting past it: #26 at token 79, T=4
+    its window sizes T[0:20] = [1, 4, 4, 1, 4, 2, 4, 4, 4, 4, 3, 4, 4, 4, 4, 4, 6, 4, 4, 5]
+
+### the window tables (index, first generated token it covers, T) side by side
+win   -rebase-4096     d2-mg-4096   mg-4096-warm   g-4096-warm2
+  0            0+1            0+1            0+1            0+1
+  1            1+4            1+4            1+4            1+4
+  2            5+4            5+4            5+4            5+4
+  3            7+1            7+1            7+1            7+1
+  4            8+4            8+4            8+4            8+4
+  5            9+4            9+2            9+2            9+2
+  6           13+4           11+4           11+4           11+4
+  7           17+4           15+4           15+4           15+4
+  8           19+4           19+4           19+4           19+4
+  9           23+4           23+4           23+4           23+4
+ 10           27+3           27+3           27+3           27+3
+ 11           29+4           29+4           29+4           29+4
+ 12           30+4           30+4           30+4           30+4
+ 13           31+4           31+4           31+4           31+4
+ 14           35+4           35+4           35+4           35+4
+ 15           39+4           39+4           39+4           39+4
+ 16           40+6           40+6           40+6           40+6
+ 17           46+4           46+4           46+4           46+4
+ 18           50+5           50+4           50+4           50+4
+ 19           55+4           54+4           54+4           54+5
+ 20           59+4           58+4           58+4           59+4
+ 21           63+4           62+4           62+4           63+4
+ 22           67+4           66+4           66+5           67+4
+ 23           71+4           70+4           71+4           71+4
+ 24           73+4           73+4           73+4           73+4
+ 25           77+2           77+2           77+2           77+2
+ 26           79+1           79+4           79+1           79+4
+ 27           80+4           83+4           80+4           83+4
+ 28           83+4           84+4           83+4           84+4
+ 29           86+1           88+4           86+1           88+4
+ 30           87+2           89+4           87+2           89+1
+ 31           89+4           93+4           89+4           90+4
+ 32           92+4           94+3           92+4           94+4
+ 33           93+2           97+3           96+1           98+1
+
+d2-rebase-4096         T>4 windows: [(16, 6), (18, 5)]
+d2-mg-4096             T>4 windows: [(16, 6), (45, 6)]
+d2-mg-4096-warm        T>4 windows: [(16, 6), (22, 5)]
+d2-mg-4096-warm2       T>4 windows: [(16, 6), (19, 5)]
+
+### 3b. eight warm runs of ONE lever: which window sequence gives which stream
+window sequence -> token stream (all runs with the same pair grouped)
+  Tseq d3aea6c8 -> ids 3b0519ca: 4 runs  ['d2a-mg-4096-r1', 'd2a-mg-4096-r3', 'd2a-mg-4096-r4', 'd2a-mg-4096-r8']
+  Tseq b52f6426 -> ids be7a9062: 3 runs  ['d2a-mg-4096-r2', 'd2a-mg-4096-r5', 'd2a-mg-4096-r6']
+  Tseq 7f849df4 -> ids 70182abf: 1 runs  ['d2a-mg-4096-r7']
+
+d2a-mg-4096-r1 vs d2a-mg-4096-r2: first window-size difference at window 21 (4 vs 5)
+    .. first token difference at index 78 (449 vs 264); the window covering that token: #25 T=2
+    .. their first T>4 windows: [(16, 6), (22, 5)] vs [(16, 6), (21, 5), (51, 6)]
+d2a-mg-4096-r1 vs d2a-mg-4096-r7: first window-size difference at window 19 (4 vs 5)
+    .. first token difference at index 78 (449 vs 264); the window covering that token: #25 T=2
+    .. their first T>4 windows: [(16, 6), (22, 5)] vs [(16, 6), (19, 5)]
+d2a-mg-4096-r2 vs d2a-mg-4096-r7: first window-size difference at window 19 (4 vs 5)
+    .. first token difference at index 88 (3296 vs 2128); the window covering that token: #29 T=4
+    .. their first T>4 windows: [(16, 6), (21, 5), (51, 6)] vs [(16, 6), (19, 5)]
+
+###### 4. THE LAYOUT CONTRACT (unchanged): mmvq_multi_parity
+Q6_K           2       1024          0              0          0  layouts coincide here (NW = 4)
+Q6_K           3       1536          0              0          0  layouts coincide here (NW = 4)
+Q6_K           4       2048          0              0          0  layouts coincide here (NW = 4)
+Q6_K           5       2560       1737           1737          0  control sees it
+Q6_K           6       3072       2030           2030          0  control sees it
+Q6_K           8       4096       2705           2705          0  control sees it
+IQ4_XS         1        512          0              0          0  layouts coincide here (NW = 4)
+IQ4_XS         2       1024          0              0          0  layouts coincide here (NW = 4)
+IQ4_XS         3       1536          0              0          0  layouts coincide here (NW = 4)
+IQ4_XS         4       2048          0              0          0  layouts coincide here (NW = 4)
+IQ4_XS         5       2560       1598           1598          0  control sees it
+IQ4_XS         6       3072       1924           1924          0  control sees it
+IQ4_XS         8       4096       2515           2515          0  control sees it
+Q5_K wide      1       2048          0              0          0  layouts coincide here (NW = 4)
+Q5_K wide      2       4096          0              0          0  layouts coincide here (NW = 4)
+Q5_K wide      3       6144          0              0          0  layouts coincide here (NW = 4)
+Q5_K wide      4       8192          0              0          0  layouts coincide here (NW = 4)
+Q5_K wide      5      10240       7003           7003          0  control sees it
+Q5_K wide      6      12288       8020           8020          0  control sees it
+Q5_K wide      8      16384      11255          11255          0  control sees it
+
+multi_exact on:   148480 outputs compared, 0 differ bitwise, 0 non-finite
+multi_exact off:  148480 outputs compared, 63708 differ bitwise (63708 on finite outputs, 63708 at T > 4)
+
+mmvq_multi_parity: ok. With multi_exact on every column is bitwise equal to a single-column call; with it off the control finds differences at T > 4 in every case, so the comparison has power.
+
+###### 5. THE RIG'S OWN CHECK: nothing but the harness/CMake was added (the engine binary is D2's)
+ M CMakeLists.txt
+?? d2/runs/d2a-mg-4096-r1/
+?? d2/runs/d2a-mg-4096-r2/
+?? d2/runs/d2a-mg-4096-r3/
+?? d2/runs/d2a-mg-4096-r4/
+?? d2/runs/d2a-mg-4096-r5/
+?? d2/runs/d2a-mg-4096-r6/
+?? d2/runs/d2a-mg-4096-r7/
+?? d2/runs/d2a-mg-4096-r8/
+?? d2/runs/d2a-mg0-4096-r1/
+?? d2/runs/d2a-mg0-4096-r2/
+?? d2/runs/d2a-mg0-4096-r3/
+?? d2/runs/d2a-mg0-4096-r4/
+?? d2/runs/d2a-mg0-4096-r5/
+?? d2/runs/d2a-mg0-4096-r6/
+?? d2/runs/d2a-mg0-4096-r7/
+?? d2/runs/d2a-mg0-4096-r8/
+?? d2/runs/d2a-rebase-4096/
+?? d2a/
+?? i3/

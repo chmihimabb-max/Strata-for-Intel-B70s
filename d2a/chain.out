@@ -1,0 +1,3 @@
+=== D1 arm d2a-mg0-4096-r8 done: rc=0 wall=59s log=/home/michael/strata-xpu/strata/d2/runs/d2a-mg0-4096-r8/log.txt
+== d2a-mg0-4096-r8: finished 2026-10-03T21:36:26-06:00
+###### d2a chain B (the lever + --suffix-draft 0, 8x) done 2026-10-03T21:36:31-06:00

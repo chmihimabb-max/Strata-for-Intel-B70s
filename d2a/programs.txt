@@ -1,0 +1,291 @@
+17:59:39    10693 
+17:59:39    11409 
+17:59:39    12477 
+17:59:39    10657 
+17:59:39    14361 
+17:59:39    15957 
+17:59:39    12841 
+18:01:19   128053 
+18:01:19     2757 
+18:01:19     9521 
+18:01:19     3573 
+18:01:19     6929 
+18:01:19     6957 
+18:01:19     6921 
+18:01:20     5605 
+18:01:20     6257 
+18:01:20     3641 
+18:01:20     6161 
+18:01:20    10285 
+18:01:20     6897 
+18:01:20    11097 
+18:01:20    10153 
+18:01:20     7189 
+18:01:20     3313 
+18:01:20     6341 
+18:01:20     2713 
+18:01:20     3137 
+18:01:20   128913 
+18:01:20   128273 
+18:01:20     3349 
+18:01:20     4341 
+18:01:20     3645 
+18:01:20     3525 
+18:01:20     6725 
+18:01:20     6725 
+18:01:20     8397 
+18:01:20     3145 
+18:01:20     6725 
+18:01:20     6025 
+18:01:20     3493 
+18:01:20     7181 
+18:01:20     8241 
+18:01:20     6717 
+18:01:20    14261 
+18:01:20     2937 
+18:01:20     9633 
+18:01:20    12525 
+18:01:20     3465 
+18:01:20     7377 
+18:01:20    15473 
+18:01:21    38917 
+18:01:21     3501 
+18:01:23     4305 
+18:01:23     6709 
+18:01:23     6433 native_quantize_q8_1_kernel
+18:01:23    10985 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi6ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:01:23    10949 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi8ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:01:23     3329 
+18:01:23     6793 
+18:01:23     7665 
+18:01:23    13321 
+18:01:24    10833 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi2ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:01:37    10965 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi5ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:01:37    10965 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi4ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:01:37     2113 
+18:01:37     2669 
+18:01:37     3017 
+18:01:37    12109 native_q6_k_mmvq_kernel
+18:01:37     8609 
+18:01:37     9873 
+18:01:37    14473 native_q4_k_mmvq_kernel
+18:01:37    12889 
+18:01:37     6985 
+18:01:37    10069 
+18:01:37     5145 
+18:01:37     3001 
+18:01:37    15061 native_iq4_xs_mmvq_kernel
+18:01:37     2785 
+18:01:37    14605 native_small_mmvq_kernel
+18:01:37     1353 
+18:01:37     2909 
+18:01:37     5917 
+18:01:37     1261 
+18:01:37    21325 native_gu_multi_kernel
+18:01:37     3105 
+18:01:37     5965 
+18:01:37    17445 native_down_multi_kernel
+18:01:37     3121 
+18:01:37     2077 
+18:01:37     5645 
+18:01:37     3529 
+18:01:37     4265 
+18:01:37     5121 
+18:01:37     6833 
+18:01:37     8409 
+18:01:37     2705 
+18:01:37     4249 
+18:01:37     2825 
+18:01:37    14937 native_q5_k_mmvq_kernel
+18:01:37    42021 native_gu_multi_kernel
+18:01:37    15821 native_down_multi_kernel
+18:01:37    12353 
+18:01:37     9645 
+18:01:37    18665 
+18:01:37     6197 
+18:01:37     3277 
+18:01:37    27905 native_gu_multi_kernel
+18:01:37    10565 native_small_mmvq_kernel
+18:01:37    18689 native_gu_multi_kernel
+18:01:37     2745 
+18:01:37     6985 
+18:01:37     3701 
+18:01:37    13513 
+18:01:37     3861 
+18:01:37     3109 
+18:04:06     9545 native_small_mmvq_kernel
+18:04:06     5985 
+18:04:06     7681 
+18:04:06     7345 
+18:04:06    22965 
+18:04:06     2757 
+18:04:06    21521 
+18:04:06     2825 
+18:04:06     1397 
+18:04:06     2653 
+18:04:06     6489 
+18:04:06    13421 native_mmvq_multi_kernelINS1_9Q6KTraitsELi4ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:06     9289 
+18:04:06    16965 native_mmvq_multi_kernelINS1_9Q4KTraitsELi4ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:06    10077 
+18:04:06    17193 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi4ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:06    15893 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi4ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:06     1937 
+18:04:06     4281 
+18:04:06    17765 native_mmvq_multi_kernelINS1_9Q5KTraitsELi4ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:06    11425 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi4ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:08    13477 native_mmvq_multi_kernelINS1_9Q6KTraitsELi6ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:08    16985 native_mmvq_multi_kernelINS1_9Q4KTraitsELi6ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:08     9305 
+18:04:08    17213 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi6ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:08    15913 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi6ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:08    17785 native_mmvq_multi_kernelINS1_9Q5KTraitsELi6ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:04:08    11445 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi6ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:05    13457 native_mmvq_multi_kernelINS1_9Q6KTraitsELi3ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:05    16929 native_mmvq_multi_kernelINS1_9Q4KTraitsELi3ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:05    17193 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi3ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:05    15893 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi3ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:05    17729 native_mmvq_multi_kernelINS1_9Q5KTraitsELi3ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:05    11425 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi3ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:05    10965 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi3ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:07    13337 native_mmvq_multi_kernelINS1_9Q6KTraitsELi2ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:07    16845 native_mmvq_multi_kernelINS1_9Q4KTraitsELi2ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:07    17181 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi2ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:07    15869 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi2ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:07    17645 native_mmvq_multi_kernelINS1_9Q5KTraitsELi2ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:07    11401 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi2ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+18:09:25     3473 
+18:09:26     2569 
+18:14:38    14749 
+18:14:38     4117 
+18:14:39     4757 
+19:00:16    11185 
+20:21:21    13457 native_mmvq_multi_kernelINS1_9Q6KTraitsELi5ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+20:21:21    16965 native_mmvq_multi_kernelINS1_9Q4KTraitsELi5ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+20:21:21    17193 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi5ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+20:21:21    15893 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi5ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+20:21:21    17765 native_mmvq_multi_kernelINS1_9Q5KTraitsELi5ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+20:21:21    11425 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi5ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+20:36:53     1165 
+23:48:18    40633 
+01:10:22    10693 
+01:10:22    11409 
+01:10:22    12477 
+01:10:22    10657 
+01:10:23    14361 
+01:10:23    15957 
+01:10:23    12841 
+01:10:24     6957 
+01:10:24     6921 
+01:10:24     7189 
+01:10:24     6341 
+01:10:24     6725 
+01:10:24     6725 
+01:10:24     8397 
+01:10:24     6725 
+01:10:24     6025 
+01:10:24     7181 
+01:10:24     9633 
+01:10:25    12525 
+01:10:25     3465 
+01:10:25     7377 
+01:10:25    15473 
+01:10:27    40633 
+01:10:55     4305 
+01:14:55     6709 
+01:14:55     3329 
+01:14:55     6793 
+01:16:39     3017 
+01:16:39     8609 
+01:16:39     9873 
+01:16:39    12889 
+01:16:39     2077 
+01:16:39     4265 
+01:16:39     5121 
+01:16:39     6833 
+01:16:39     8409 
+01:16:39    12353 
+01:16:39     9645 
+01:16:39    14749 
+01:16:39     4325 
+01:16:39    18665 
+01:16:39     6197 
+01:16:39     2745 
+01:16:39     3701 
+01:16:39    13513 
+01:16:39     3861 
+01:16:39     3109 
+01:16:39     5985 
+01:16:39     4757 
+01:16:39     6489 
+01:16:39     4281 
+08:59:03    38693 
+08:59:05    13589 
+08:59:22    18605 
+09:57:13     3229 
+09:57:29     2081 
+10:06:21     2773 
+10:25:42    11185 
+11:06:54    18961 
+11:06:54    19637 
+12:32:31     1329 
+12:35:56     1325 
+12:35:56     8609 
+12:35:56    12893 
+12:35:56     6489 
+13:40:40     5325 
+16:03:37    10985 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi7ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:03:41    13441 native_mmvq_multi_kernelINS1_9Q6KTraitsELi8ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:03:41    16949 native_mmvq_multi_kernelINS1_9Q4KTraitsELi8ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:03:42    17177 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi8ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:03:42    15913 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi8ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:03:42    17749 native_mmvq_multi_kernelINS1_9Q5KTraitsELi8ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:03:43    11445 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi8ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:04:51    13477 native_mmvq_multi_kernelINS1_9Q6KTraitsELi7ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:04:51    16985 native_mmvq_multi_kernelINS1_9Q4KTraitsELi7ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:04:52    17213 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi7ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:04:53    15913 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi7ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:04:53    17785 native_mmvq_multi_kernelINS1_9Q5KTraitsELi7ELi4ELi1EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+16:04:53    11445 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi7ELi4ELi4EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:11:46     3637 
+19:18:58    19793 native_gu_kernel
+19:18:58    15133 native_down_kernel
+19:18:58    40781 native_gu_kernel
+19:18:59    13657 native_down_kernel
+19:18:59    25861 native_gu_kernel
+19:18:59    15953 native_gu_kernel
+19:24:03    11241 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:03    11241 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi8ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:04    11437 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:04    11401 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:06    13749 native_mmvq_multi_kernelINS1_9Q6KTraitsELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:06    17305 native_mmvq_multi_kernelINS1_9Q4KTraitsELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:06    17165 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:06    15869 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:06    18089 native_mmvq_multi_kernelINS1_9Q5KTraitsELi4ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    13773 native_mmvq_multi_kernelINS1_9Q6KTraitsELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    17365 native_mmvq_multi_kernelINS1_9Q4KTraitsELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    17225 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    15881 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    18149 native_mmvq_multi_kernelINS1_9Q5KTraitsELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:07    11449 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi2ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:08    13785 native_mmvq_multi_kernelINS1_9Q6KTraitsELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:08    17341 native_mmvq_multi_kernelINS1_9Q4KTraitsELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:08    17201 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:08    15905 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:09    18125 native_mmvq_multi_kernelINS1_9Q5KTraitsELi3ELi4ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:10    13589 native_mmvq_multi_kernelINS1_9Q6KTraitsELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:10    17145 native_mmvq_multi_kernelINS1_9Q4KTraitsELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:10    17005 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:10    15693 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:24:10    17929 native_mmvq_multi_kernelINS1_9Q5KTraitsELi6ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:26:29    11221 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_8Q80BlockELi8EEELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:30:55    13569 native_mmvq_multi_kernelINS1_9Q6KTraitsELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:30:55    17125 native_mmvq_multi_kernelINS1_9Q4KTraitsELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:30:55    16985 native_mmvq_multi_kernelINS1_11IQ4XSTraitsELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:30:56    15673 native_mmvq_multi_kernelINS1_11SmallTraitsINS1_10IQ4NLBlockELi4EEELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+19:30:56    17909 native_mmvq_multi_kernelINS1_9Q5KTraitsELi5ELi2ELi2EEEvPhNS_11sycl_compat12launch_shapeEPKNT_5BlockEPKNS1_8Q81BlockEPfii
+20:16:40     5445 
+20:16:40     1517 
+20:16:40     2425 
+20:16:40     3549 

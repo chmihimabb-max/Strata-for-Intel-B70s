@@ -601,6 +601,12 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP OR STRATA_ENABLE_SYCL)
     target_include_directories(mmvq_multi_parity PRIVATE ${_strata_gpu_include_directories})
     target_link_libraries(mmvq_multi_parity PRIVATE strata_kernels ${_strata_gpu_runtime_target})
     add_test(NAME mmvq_multi_parity COMMAND mmvq_multi_parity)
+    # D2a (card t_8306429a): the same two layouts at the config of record's own shapes, launched many times on
+    # ONE set of inputs - value determinism rep by rep (bitwise), the kernel's own event-timed spread, the
+    # first launch that carries a cold SYCL program build, and the generic-vs-exact difference count per T
+    add_executable(mmvq_multi_spread src/kernels/mmvq_multi_spread.cpp)
+    target_include_directories(mmvq_multi_spread PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(mmvq_multi_spread PRIVATE strata_kernels ${_strata_gpu_runtime_target})
   endif()
   # the IQ kernels that decode a weight part once for every column/entry, bitwise vs the per-column ones
   # (GPU, synthetic, no model; --bench adds old/new timings)
@@ -852,6 +858,13 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP OR STRATA_ENABLE_SYCL)
       add_test(NAME ${_t} COMMAND ${_t})
       set_tests_properties(${_t} PROPERTIES TIMEOUT 300)
     endforeach()
+
+    # D2a (card t_8306429a): the spread/determinism harness - a measurement, not a pass/fail test, so no
+    # add_test: it prints the first launch (cold SYCL program build), the per-rep spread and whether every
+    # rep's output is bitwise identical, for both multi-column layouts at the config of record's own shapes.
+    add_executable(mmvq_multi_spread src/kernels/mmvq_multi_spread.cpp)
+    target_include_directories(mmvq_multi_spread PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(mmvq_multi_spread PRIVATE strata_kernels ${_strata_gpu_runtime_target})
 
     # the three sampled paths of the same fixtures: the default kernel, the one-block kernel and the
     # 0.1.20 kernel (PLAN.md §2 #6).  The environment variables are the engine's own switches.
