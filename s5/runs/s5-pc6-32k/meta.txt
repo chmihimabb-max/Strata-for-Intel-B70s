@@ -1,0 +1,39 @@
+=== S5 DRIVER arm s5-pc6-32k   2026-10-04T00:19:39-06:00
+HEAD        : 33491de S5 (t_aae723be): the id-level reproduction and the mechanism arms - the checkpoint save is inert, the read's segmentation is not
+engine      : 2026-10-03 23:52:23.037436726 -0600 50820208 bytes  md5 3dbea776ac8bf94414c199bdae05877c
+GEN line    : /home/michael/strata-xpu/strata/s5/prompts/gen-ctx32768.txt  (139931 B, 32277 ids)
+extra       : <none>   env: <none>
+onecard     : <none>  ZE_AFFINITY_MASK=<unset>
+engine argv : /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats --layer-split auto
+argv sha256 : 44a70016c5f349d84578239b9ecbc3e7a105bec320bbe21811d4eb3f9f577049
+-- device check BEFORE --
+   no engine
+   no server
+----------------------------------------------
+TOTAL on card0                           879.5 MiB
+TOTAL on card1                             0.0 MiB
+1.84 1.52 1.30 1/1694 1523944
+               total        used        free      shared  buff/cache   available
+Mem:             123           7          50           0          66         115
+== running (timeout 2400s) 2026-10-04T00:19:39-06:00 ==
+rc=0  wall=192629ms  2026-10-04T00:22:52-06:00
+T lines     : 256   ids md5: 05996f80eeba03763a2110ad2f4badc9
+unique ids  : 142
+-- the engine's own prompt/checkpoint line --
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148581 ms (217.2 tok/s), 256 generated in 11483 ms (22.3 tok/s), drafts accepted 143 of 166, 2 checkpoints
+-- errors --
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 6-token window (upload no error, sync no error)
+strata verify: captured the 6-token window (upload no error, sync no error)
+-- what is left --
+   no engine
+----------------------------------------------
+TOTAL on card0                           883.5 MiB
+TOTAL on card1                             0.0 MiB

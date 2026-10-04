@@ -1,0 +1,97 @@
+=== S4 arm s5-serve-4k  2026-10-04T00:22:52-06:00
+HEAD        : 33491de S5 (t_aae723be): the id-level reproduction and the mechanism arms - the checkpoint save is inert, the read's segmentation is not
+engine      : 2026-10-03 23:52:23.037436726 -0600 50820208 bytes  md5 3dbea776ac8bf94414c199bdae05877c
+requests    : 4096:64
+extra args  : <none>
+-- config --
+[cfg] /home/michael/strata-xpu/strata/s4/runs/s5-serve-4k/cfg.json
+[cfg] config of record args : --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats
+[cfg] this arm's args       : --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats
+[cfg] --extra added         : <none> (verbatim config of record)
+[cfg] server gpu field      : [0, 1] -> ZE_AFFINITY_MASK=0,1
+[cfg] engine argv           : --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats --layer-split auto
+[cfg] engine argv sha256    : a2cfc6cae6403cb38b831a54db117e518a2e64dde6b8d6826359766977d06ad1
+[cfg] engine log            : /home/michael/strata-xpu/logs/s4-s5-serve-4k-engine.log
+-- device check BEFORE --
+   no engine
+   no server
+----------------------------------------------
+TOTAL on card0                           883.5 MiB
+TOTAL on card1                             0.0 MiB
+2.52 1.93 1.50 2/1689 1524475
+               total        used        free      shared  buff/cache   available
+Mem:             123           7          50           0          66         116
+ 
+:: initializing oneAPI environment ...
+   s4_serve_arm.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+== starting the server 2026-10-04T00:22:52-06:00 ==
+server pid 1524764; server log /home/michael/strata-xpu/logs/s4-s5-serve-4k-server.log; engine log /home/michael/strata-xpu/logs/s4-s5-serve-4k-engine.log
+== ready=1 after 30s (2026-10-04T00:23:25-06:00); engine log /home/michael/strata-xpu/logs/s4-s5-serve-4k-engine.log ==
+{"out": "/home/michael/strata-xpu/strata/s4/runs/s5-serve-4k/prompt-ctx4096.txt", "target": 4096, "mode": "exact", "chars": 12237, "tokens": 4096}
+-- request ctx=4096 max_new=64 fired 2026-10-04T00:23:25-06:00 --
+{"tag": "s5-serve-4k-ctx4096", "label": "s4", "port": 8099, "wall_s": 22.207, "started": 1791095005.9508622, "ended": 1791095028.157936, "error": null, "usage": {"prompt_tokens": 4148, "completion_tokens": 64, "total_tokens": 4212, "prompt_tokens_details": {"cached_tokens": 0}}, "finish_reason": "length", "timings": {"cache_n": 0, "prompt_n": 4148, "prompt_ms": 18798.2, "prompt_per_token_ms": 4.532, "prompt_per_second": 220.7, "predicted_n": 64, "predicted_ms": 3393.6, "predicted_per_token_ms": 53.025, "predicted_per_second": 18.9, "draft_n": 26, "draft_n_accepted": 20}, "answer_chars": 0, "answer_head": ""}
+== requests done: last ok ctx=4096 (2026-10-04T00:23:48-06:00) ==
+== RESULT: last ok ctx=4096 ==
+== the request(s), client side ==
+--- ctx=4096 ---
+{
+ "tag": "s5-serve-4k-ctx4096",
+ "label": "s4",
+ "port": 8099,
+ "wall_s": 22.207,
+ "started": 1791095005.9508622,
+ "ended": 1791095028.157936,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 4148,
+  "completion_tokens": 64,
+  "total_tokens": 4212,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 4148,
+--- answer (first 300 chars) ---
+usage    : {"prompt_tokens": 4148, "completion_tokens": 64, "total_tokens": 4212, "prompt_tokens_details": {"cached_tokens": 0}}
+timings  : {"cache_n": 0, "prompt_n": 4148, "prompt_ms": 18798.2, "prompt_per_token_ms": 4.532, "prompt_per_second": 220.7, "predicted_n": 64, "predicted_ms": 3393.6, "predicted_per_token_ms": 53.025, "predicted_per_second": 18.9, "draft_n": 26, "draft_n_accepted": 20}
+finish   : length
+answer   : 
+== the engine's own lines per request ==
+--- ctx=4096 (17 lines) ---
+strata decode timing: 44 windows, avg T 1.59, 1.45 tokens/window, 77.13 ms/window = verify 68.60 (GPU-reach wait 58.16 + per-layer host 0.67 [plan 0.25 actq 0.11 jobs 0.10 CPU 0.00] + stage 1.20 + tail 7.29) + commit/emit 1.78 + draft 6.75; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 15.91, PCIe 0.00
+strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18798 ms (220.7 tok/s), 64 generated in 3394 ms (18.9 tok/s), drafts accepted 20 of 26, 1 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (33600 hits / 33600 lookups)
+strata serve: expert tiers: GPU 33600 hits this request; since the start RAM 0 blobs, files 0 blobs 52384.2 MB read (the GGUF in place)
+strata serve: KV streaming: 97.53% of 189995 block reads hit VRAM, 18.9 MiB read from RAM
+== the server's own lines per request ==
+--- ctx=4096 ---
+[strata] reading the prompt: 512 of 4,148 tokens, 3 s so far
+[strata] reading the prompt: 1,024 of 4,148 tokens, 5 s so far
+[strata] reading the prompt: 1,536 of 4,148 tokens, 7 s so far
+[strata] reading the prompt: 2,048 of 4,148 tokens, 9 s so far
+[strata] reading the prompt: 2,560 of 4,148 tokens, 11 s so far
+[strata] reading the prompt: 3,072 of 4,148 tokens, 13 s so far
+[strata] reading the prompt: 3,584 of 4,148 tokens, 15 s so far
+[strata] reading the prompt: 4,096 of 4,148 tokens, 18 s so far
+[strata] reading the prompt: 4,147 of 4,148 tokens, 19 s so far
+== what is left ==
+   no engine
+   no server
+   port 8099 free
+----------------------------------------------
+TOTAL on card0                           881.4 MiB
+TOTAL on card1                             0.0 MiB

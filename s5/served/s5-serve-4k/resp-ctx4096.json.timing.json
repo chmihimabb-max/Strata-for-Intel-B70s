@@ -1,0 +1,33 @@
+{
+ "tag": "s5-serve-4k-ctx4096",
+ "label": "s4",
+ "port": 8099,
+ "wall_s": 22.207,
+ "started": 1791095005.9508622,
+ "ended": 1791095028.157936,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 4148,
+  "completion_tokens": 64,
+  "total_tokens": 4212,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 4148,
+  "prompt_ms": 18798.2,
+  "prompt_per_token_ms": 4.532,
+  "prompt_per_second": 220.7,
+  "predicted_n": 64,
+  "predicted_ms": 3393.6,
+  "predicted_per_token_ms": 53.025,
+  "predicted_per_second": 18.9,
+  "draft_n": 26,
+  "draft_n_accepted": 20
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}

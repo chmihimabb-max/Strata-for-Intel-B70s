@@ -1,0 +1,33 @@
+{
+ "tag": "s5-serve-32k-ctx32768",
+ "label": "s4",
+ "port": 8099,
+ "wall_s": 151.458,
+ "started": 1791095066.940555,
+ "ended": 1791095218.398266,
+ "error": null,
+ "usage": {
+  "prompt_tokens": 32277,
+  "completion_tokens": 64,
+  "total_tokens": 32341,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "finish_reason": "length",
+ "timings": {
+  "cache_n": 0,
+  "prompt_n": 32277,
+  "prompt_ms": 148711.6,
+  "prompt_per_token_ms": 4.607,
+  "prompt_per_second": 217.0,
+  "predicted_n": 64,
+  "predicted_ms": 2679.7,
+  "predicted_per_token_ms": 41.87,
+  "predicted_per_second": 23.9,
+  "draft_n": 45,
+  "draft_n_accepted": 44
+ },
+ "answer_chars": 0,
+ "answer_head": ""
+}

@@ -1,0 +1,17 @@
+qsa_block_scores: no TF32 tc path on this backend (the device refuses tf32 joint_matrix); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3) -> warp kernel
+qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata decode timing: 44 windows, avg T 1.59, 1.45 tokens/window, 77.13 ms/window = verify 68.60 (GPU-reach wait 58.16 + per-layer host 0.67 [plan 0.25 actq 0.11 jobs 0.10 CPU 0.00] + stage 1.20 + tail 7.29) + commit/emit 1.78 + draft 6.75; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 15.91, PCIe 0.00
+strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18798 ms (220.7 tok/s), 64 generated in 3394 ms (18.9 tok/s), drafts accepted 20 of 26, 1 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (33600 hits / 33600 lookups)
+strata serve: expert tiers: GPU 33600 hits this request; since the start RAM 0 blobs, files 0 blobs 52384.2 MB read (the GGUF in place)
+strata serve: KV streaming: 97.53% of 189995 block reads hit VRAM, 18.9 MiB read from RAM
+strata serve: suffix drafts: 1 windows, 3 of 3 drafts accepted

@@ -1,0 +1,13 @@
+[strata] reading the prompt: 512 of 4,148 tokens, 3 s so far
+[strata] reading the prompt: 1,024 of 4,148 tokens, 5 s so far
+[strata] reading the prompt: 1,536 of 4,148 tokens, 7 s so far
+[strata] reading the prompt: 2,048 of 4,148 tokens, 9 s so far
+[strata] reading the prompt: 2,560 of 4,148 tokens, 11 s so far
+[strata] reading the prompt: 3,072 of 4,148 tokens, 13 s so far
+[strata] reading the prompt: 3,584 of 4,148 tokens, 15 s so far
+[strata] reading the prompt: 4,096 of 4,148 tokens, 18 s so far
+[strata] reading the prompt: 4,147 of 4,148 tokens, 19 s so far
+[strata] thinking: 17 of max 64 tokens, 17.2 tok/s, 20 s
+[strata] thinking: 39 of max 64 tokens, 19.4 tok/s, 21 s
+[strata] thinking: 58 of max 64 tokens, 19.2 tok/s, 22 s
+[strata] done: 64 tokens in 22 s (19.3 tok/s) (length, cancel=False), expert cache 100.0% hit

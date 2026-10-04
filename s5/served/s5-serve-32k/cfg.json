@@ -1,0 +1,52 @@
+{
+ "_note": "I1 (card t_7101e403): the Strata-recommended IQ3_S GSQ-RCO GGUF served through the repo's own path on BOTH B70s. The pack is the native IQ pack written by tools/iq_pack.py from shard 1 (the model, 54.818 GB); --native is that same shard 1 (the engine serves the quantized dense tensors and the experts natively from it, and --mmap-experts maps the GGUF in place because the pack has no experts.bin); --ple-gguf is shard 2 -- the PLE table (per_layer_token_embd, 1 tensor, 28.800 GB) which docs/AMD_HIP.md:141-147 says the ORIGINAL GSQ-RCO files keep in shard 2 (Orca keeps it in shard 1). --mtp is the drafter: the model's OWN MTP head (the GSQ-RCO GGUF ships no MTP head - tools/mtp_fetch.py's docstring), obtained upstream's way from the PUBLIC canonical checkpoint Qwen/Qwen3.8-Flash-Next at mtp_fetch.py's PINNED revision de4b8e4d43b917e7706784d8bb445c9af86a3540 and SHA256-verified 31/31 per tensor, then tools/mtp_pack.py --experts q2_0 -> tools/mtp_rt.py -> cp data/draft_vocab.bin (P7, card t_6789d6df; artifacts under /home/michael/strata-xpu/mtp/). It is NOT built from the W4A16 checkpoint and NOT via tools/mtp_w4a16_adapter.py - that route is out of scope (PLAN U13/U19) and its artifact is byte-identical but was missing the draft_vocab.bin step. 'gpu': [0,1] makes serve/server.py append `--layer-split auto` (serve/server.py:628-629) and ZE_AFFINITY_MASK must then be UNSET (PLAN 11 U11). Local file, gitignored (/.gitignore:37). P6 (card t_5dfc11a3, 2026-10-03): the args below are the 256K config of record -- --max-context 262144 with KV streaming --kv-resident 32768 -- exactly as M6c measured the 256K deliverable (m6c/WRITEUP-M6C.md). The file as P7 left it carried --max-context 4096 with no --kv-resident (P7's 4K serve arm); that pre-P6 file is kept byte-identical at /home/michael/strata-xpu/p6/config-before-p6.json (md5 2fe9a4b711fbd704abc95958166f74fc). D2 (card t_0416a0c0, 2026-10-03): --spec-min-p 0.5 -> 0.7, after re-verifying D1's win in a fresh session at 4K/32K/128K with byte-identical greedy ids (+4.6%/+3.2% decode at 4K/32K, a wash at 128K - strata/d2/STATUS-D2.md); the pre-D2 file is kept byte-identical at strata/d2/config-before-d2.json (md5 4ece57018c7ed9c9692d914af3d8d9b6). Nothing else in this file changed in D2.",
+ "exe": "build-sycl/strata",
+ "cwd": "/home/michael/strata-xpu/strata",
+ "args": [
+  "--pack",
+  "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+  "--native",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+  "--ple-gguf",
+  "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+  "--mtp",
+  "/home/michael/strata-xpu/mtp/rt",
+  "--kv",
+  "int8",
+  "--expert-cache",
+  "auto",
+  "--expert-profile",
+  "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+  "--mmap-experts",
+  "--prefill",
+  "512",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.7",
+  "--max-context",
+  "262144",
+  "--kv-resident",
+  "32768",
+  "--no-capture",
+  "--stats"
+ ],
+ "env": {
+  "STRATA_DECODE_TIMING": "1"
+ },
+ "backend": "sycl",
+ "gpu": [
+  0,
+  1
+ ],
+ "layer_split": "auto",
+ "lib_dirs": [
+  "/opt/intel/oneapi/compiler/2026.1/lib",
+  "/opt/intel/oneapi/mkl/2026.1/lib",
+  "/opt/intel/oneapi/tbb/2023.1/lib/intel64/gcc4.8"
+ ],
+ "tokenizer": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer",
+ "model_name": "qwen3.8-flash-next-iq3s-s4-s5-serve-32k",
+ "log": "/home/michael/strata-xpu/logs/s4-s5-serve-32k-engine.log",
+ "port": 8099
+}

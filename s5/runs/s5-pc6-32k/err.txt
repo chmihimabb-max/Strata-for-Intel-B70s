@@ -1,5 +1,5 @@
 strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
-strata generate: PCIe probe: 26.4 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+strata generate: PCIe probe: 26.7 GB/s host->device -> pcie_frac 0.55 (default 0.55)
 strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
 strata generate: native pack: /run/media/michael/2208B12208B0F63F/strata-iq3s/pack experts (largest blob 2.66 MB), token embedding IQ4_XS in mapped host memory (322 MiB)
 strata generate: 1466 MiB of weights loaded from /run/media/michael/2208B12208B0F63F/strata-iq3s/pack (302 canonical tensors skipped: served natively)
@@ -14,10 +14,10 @@ strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; th
 strata generate: KV streaming: 32768 of 262144 cells per QSA layer in VRAM, the K/V in 1.29 GiB of pinned RAM
 strata generate: PLE on, table 320001536 rows of /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf
 strata generate: layer split: CUDA1 holds its weights, session [23, 48) and the head; 27.27 GiB free
-strata mtp: draft layer loaded, 835 MiB of VRAM (experts 675, dense 111), files read in 0.41 s (1903 MiB/s)
+strata mtp: draft layer loaded, 835 MiB of VRAM (experts 675, dense 111), files read in 0.41 s (1893 MiB/s)
 strata generate: GPU 0: Intel(R) Graphics [0xe223], compute capability 12.0
 strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
-strata generate: expert cache auto: 27.09 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10649 slots
+strata generate: expert cache auto: 27.09 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10648 slots
 strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
 strata generate: the GPU computes the experts in the cache; it rounds differently from the CPU,
                  so a reply can differ slightly from a run without the cache (same quality:
@@ -32,7 +32,7 @@ strata generate: 19 expert-pool workers + the host thread
 strata generate: session is up (engine 0.1.34)
 strata generate: token graph hit path: 24576 resident experts, decided on the device
 strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
-strata serve:   CUDA0 keeps its own prompt buffers (0.64 GiB of 5.88 GiB free): no loan
+strata serve:   CUDA0 keeps its own prompt buffers (0.64 GiB of 5.89 GiB free): no loan
 strata serve:   CUDA1 prompt path borrows 315 of its 12800 slots (0.64 GiB)
 strata hc: CUDA1: the hyper-connection read runs as staged (the norm per token and stream, the down projection's activations staged ahead by cp.async); checked bit for bit against the plain read on this card (STRATA_HC_SPLIT=1 or 0 for the earlier ones)
 strata hc: CUDA1: that check compared the fused variants with each other; the plain gr_read (src/kernels/cuda/gr.cu) is a different kernel and is not part of it
@@ -42,25 +42,27 @@ strata hc: CUDA0: the hyper-connection read runs as staged (the norm per token a
 strata hc: CUDA0: that check compared the fused variants with each other; the plain gr_read (src/kernels/cuda/gr.cu) is a different kernel and is not part of it
 strata verify: window up to 6 tokens, 75.4 MiB of device buffers
 strata mtp: draft head over 106299 tokens (212.9 MiB)
-strata mmvq warmup: 192 launches over 6 types x ncols 1..8 x 2 launch shapes, 38 ms
-strata kernel warmup: 54 launches over 54 sites, 6 ms
-strata serve: 4954 MiB of VRAM free with everything loaded
+strata mmvq warmup: 192 launches over 6 types x ncols 1..8 x 2 launch shapes, 39 ms
+strata kernel warmup: 54 launches over 54 sites, 5 ms
+strata serve: 4956 MiB of VRAM free with everything loaded
 qsa_block_scores: no TF32 tc path on this backend (the device refuses tf32 joint_matrix); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3) -> warp kernel
 qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
 strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
-strata verify: captured the 1-token window (upload no error, sync no error)
-strata verify: captured the 1-token window (upload no error, sync no error)
 strata verify: captured the 4-token window (upload no error, sync no error)
 strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
 strata verify: captured the 3-token window (upload no error, sync no error)
 strata verify: captured the 3-token window (upload no error, sync no error)
 strata verify: captured the 2-token window (upload no error, sync no error)
 strata verify: captured the 2-token window (upload no error, sync no error)
 strata verify: captured the 6-token window (upload no error, sync no error)
 strata verify: captured the 6-token window (upload no error, sync no error)
-strata decode timing: 167 windows, avg T 1.70, 1.53 tokens/window, 81.63 ms/window = verify 71.98 (GPU-reach wait 61.86 + per-layer host 0.68 [plan 0.25 actq 0.12 jobs 0.11 CPU 0.00] + stage 1.26 + tail 7.53) + commit/emit 1.69 + draft 7.95; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 17.01, PCIe 0.00
-strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148323 ms (217.6 tok/s), 256 generated in 13632 ms (18.8 tok/s), drafts accepted 89 of 117, 0 checkpoints
-strata serve: decode expert cache hit rate: 100.0% (136320 hits / 136320 lookups)
-strata serve: expert tiers: GPU 136320 hits this request; since the start RAM 0 blobs, files 0 blobs 65586.8 MB read (the GGUF in place)
-strata serve: KV streaming: 95.89% of 729185 block reads hit VRAM, 120.6 MiB read from RAM
-strata serve: suffix drafts: 1 windows, 2 of 5 drafts accepted
+strata verify: captured the 5-token window (upload no error, sync no error)
+strata verify: captured the 5-token window (upload no error, sync no error)
+strata decode timing: 114 windows, avg T 2.46, 2.25 tokens/window, 100.73 ms/window = verify 88.88 (GPU-reach wait 76.44 + per-layer host 0.81 [plan 0.27 actq 0.17 jobs 0.16 CPU 0.00] + stage 1.08 + tail 9.49) + commit/emit 1.81 + draft 10.03; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.56, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148581 ms (217.2 tok/s), 256 generated in 11483 ms (22.3 tok/s), drafts accepted 143 of 166, 2 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (134400 hits / 134400 lookups)
+strata serve: expert tiers: GPU 134400 hits this request; since the start RAM 0 blobs, files 0 blobs 65582.7 MB read (the GGUF in place)
+strata serve: KV streaming: 96.14% of 729170 block reads hit VRAM, 113.4 MiB read from RAM
+strata serve: suffix drafts: 8 windows, 30 of 31 drafts accepted

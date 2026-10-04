@@ -1,0 +1,327 @@
+S5 (card t_aae723be) EVIDENCE - the raw output, assembled 2026-10-04T00:30:01-06:00
+repo HEAD      : 33491de S5 (t_aae723be): the id-level reproduction and the mechanism arms - the checkpoint save is inert, the read's segmentation is not
+engine binary  : /home/michael/strata-xpu/strata/build-sycl/strata  md5 3dbea776ac8bf94414c199bdae05877c  (2026-10-03 23:52:23.037436726 -0600)
+config of record: strata-sycl-iq3s.json  md5 e787844fd2c564817583e3ae5d34f15c  (unmodified by this card)
+assembled by   : s5/s5_evidence.sh
+
+================================================================================
+1. THE ID-LEVEL PROMPT (what the SERVED request really sent)
+================================================================================
+The served path tokenizes inside serve.server (Service.prepare, serve/server.py:1141): chat template over the
+request's messages, then the pack's tokenizer.  s5/s5_ids.py does those two calls itself and writes the engine's
+own line 'GEN <max_new> <ids>'.  The check is the engine's own count against the S4 arm's count.
+
+--- ctx4096 ---
+{
+ "gen_line": "s5/prompts/gen-ctx4096.txt",
+ "prompt_tokens": 4148,
+ "prompt_text_md5": "6dfc6f62b7ee02fdb6cb65e4c5793b0d",
+ "max_new": 64,
+ "template": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer/chat_template.jinja",
+ "rendered_tail": "he does not hold that the expert profile ranks hottest are copied into RAM at\nstart (locked; page-locked when the driver allows the whole budget), and the rest<|im_end|>\n<|im_start|>assistant\n<think>\n",
+ "rendered_head": "<|im_start|>system\nReasoning effort is set to xhigh. Please think carefully through the task, validate key assumptions, consider plausible alternatives, and prioritize correctness, consistency, and cl",
+ "kwargs": {},
+ "tokdir": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer"
+}ids in the GEN line : 4148
+s4 arm it mirrors   : strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18832 ms (220.3 tok/s), 64 generated in 3313 ms (19.3 tok/s), drafts accepted 26 of 37, 1 checkpoints
+strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18786 ms (220.8 tok/s), 64 generated in 3443 ms (18.6 tok/s), drafts accepted 26 of 37, 1 checkpoints
+
+--- ctx32768 ---
+{
+ "gen_line": "s5/prompts/gen-ctx32768.txt",
+ "prompt_tokens": 32277,
+ "prompt_text_md5": "d217c99bb9a235083120177f62c4f4e9",
+ "max_new": 256,
+ "template": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer/chat_template.jinja",
+ "rendered_tail": "tness or performance risks you find in it, in order of severity, and for each one quote the evidence you saw and give a concrete fix. Take as long as you need.<|im_end|>\n<|im_start|>assistant\n<think>\n",
+ "rendered_head": "<|im_start|>system\nReasoning effort is set to xhigh. Please think carefully through the task, validate key assumptions, consider plausible alternatives, and prioritize correctness, consistency, and cl",
+ "kwargs": {},
+ "tokdir": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer"
+}ids in the GEN line : 32277
+s4 arm it mirrors   : strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148706 ms (217.1 tok/s), 256 generated in 11383 ms (22.5 tok/s), drafts accepted 159 of 200, 1 checkpoints
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148649 ms (217.1 tok/s), 256 generated in 11373 ms (22.5 tok/s), drafts accepted 159 of 200, 2 checkpoints
+
+================================================================================
+2. THE SPLIT ARMS, 4K (4,148 prompt ids, 64 greedy) - ids md5 and the engine's own prompt line
+================================================================================
+  all: config of record verbatim + --serve + --layer-split auto, ZE_AFFINITY_MASK unset, SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c
+  (the served path's own settings are the row with no extra flags)
+  s5-pc0                 64   7f863468c804113e677df220b69cefd9   strata serve: prompt 4148 tokens = 0 reused + 4148 read in 22878 ms (181.3 tok/s), 64 generated in 3937 ms (16.3 tok/s), drafts accepted 27 of 43, 0 checkpoints
+  s5-pc6                 64   f820fbbaa99aacc66b0a11fcffbb0c39   strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18784 ms (220.8 tok/s), 64 generated in 3384 ms (18.9 tok/s), drafts accepted 20 of 26, 1 checkpoints
+  s5-pc6-ns              64   400282fde73e74bbc1b86d906823537d   strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18962 ms (218.8 tok/s), 64 generated in 3661 ms (17.5 tok/s), drafts accepted 19 of 29, 1 checkpoints
+  s5-pc6-ns-c            64   400282fde73e74bbc1b86d906823537d   strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18958 ms (218.8 tok/s), 64 generated in 3648 ms (17.5 tok/s), drafts accepted 19 of 29, 1 checkpoints
+  s5-pc6-ttnon           64   7f863468c804113e677df220b69cefd9   strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18620 ms (222.8 tok/s), 64 generated in 3636 ms (17.6 tok/s), drafts accepted 25 of 45, 0 checkpoints
+  s5-pc6-ttlast          64   7f863468c804113e677df220b69cefd9   strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18692 ms (221.9 tok/s), 64 generated in 3336 ms (19.2 tok/s), drafts accepted 28 of 41, 1 checkpoints
+  s5-pc6-tt1tok          64   f820fbbaa99aacc66b0a11fcffbb0c39   strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18829 ms (220.3 tok/s), 64 generated in 3347 ms (19.1 tok/s), drafts accepted 21 of 27, 1 checkpoints
+  s5-pc6-tt1tok-ns       64   c71b24a6ddde00659613f6147802ede2   strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18977 ms (218.6 tok/s), 64 generated in 3162 ms (20.2 tok/s), drafts accepted 28 of 34, 1 checkpoints
+
+================================================================================
+3. THE ONE-CARD ARMS (ZE_AFFINITY_MASK=0, no --layer-split)
+================================================================================
+  s5-pc0-1card           64   615a2f85bb1cf060bd6d6b08cdbd5134   strata serve: prompt 4148 tokens = 0 reused + 4148 read in 34471 ms (120.3 tok/s), 64 generated in 3751 ms (17.1 tok/s), drafts accepted 21 of 29, 0 checkpoints
+  s5-pc6-1card           64   586aba15a2f3ff532fcf8c9b54ad8205   strata serve: prompt 4148 tokens = 0 reused + 4148 read in 34373 ms (120.7 tok/s), 64 generated in 3949 ms (16.2 tok/s), drafts accepted 18 of 25, 1 checkpoints
+
+  CPU experts per layer-window, from the arms' own 'strata decode timing' line:
+    s5-pc0-1card: CPU experts 0.78 (0.92 entries), VRAM hits 15.83, PCIe 0.00
+    s5-pc6-1card: CPU experts 0.77 (0.90 entries), VRAM hits 14.53, PCIe 0.00
+
+================================================================================
+4. THE 32K ARMS (32,277 prompt ids, 256 greedy - the S4 length)
+================================================================================
+  s5-pc0-32k             256  ed002bb41c9faf3a42686925c81a1b3b   strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148323 ms (217.6 tok/s), 256 generated in 13632 ms (18.8 tok/s), drafts accepted 89 of 117, 0 checkpoints
+  s5-pc6-32k             256  05996f80eeba03763a2110ad2f4badc9   strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148581 ms (217.2 tok/s), 256 generated in 11483 ms (22.3 tok/s), drafts accepted 143 of 166, 2 checkpoints
+
+================================================================================
+5. THE COMPARISONS (s5/s5_cmp.py: md5 of the id list, first divergence)
+================================================================================
+  s5-pc0               s5-pc0                       64 abce92096b40eb1923733c74098da890 strata serve: prompt 4148 tokens = 0 reused + 4148 read in 22878 ms (181.3 tok/s), 64 generated in 3937 ms (16.3 tok/s), drafts accepted 27 of 43, 0 checkpoints
+  s5-pc6               s5-pc6                       64 e9d1e94f1dffa6894d5083bba8c61c6e strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18784 ms (220.8 tok/s), 64 generated in 3384 ms (18.9 tok/s), drafts accepted 20 of 26, 1 checkpoints
+  s5-pc6-ns            s5-pc6-ns                    64 e6f74e069da704745619f8959c5c8c8c strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18962 ms (218.8 tok/s), 64 generated in 3661 ms (17.5 tok/s), drafts accepted 19 of 29, 1 checkpoints
+  s5-pc6-ns-c          s5-pc6-ns-c                  64 e6f74e069da704745619f8959c5c8c8c strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18958 ms (218.8 tok/s), 64 generated in 3648 ms (17.5 tok/s), drafts accepted 19 of 29, 1 checkpoints
+  s5-pc6-ttnon         s5-pc6-ttnon                 64 abce92096b40eb1923733c74098da890 strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18620 ms (222.8 tok/s), 64 generated in 3636 ms (17.6 tok/s), drafts accepted 25 of 45, 0 checkpoints
+  s5-pc6-ttlast        s5-pc6-ttlast                64 abce92096b40eb1923733c74098da890 strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18692 ms (221.9 tok/s), 64 generated in 3336 ms (19.2 tok/s), drafts accepted 28 of 41, 1 checkpoints
+  s5-pc6-tt1tok        s5-pc6-tt1tok                64 e9d1e94f1dffa6894d5083bba8c61c6e strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18829 ms (220.3 tok/s), 64 generated in 3347 ms (19.1 tok/s), drafts accepted 21 of 27, 1 checkpoints
+  s5-pc6-tt1tok-ns     s5-pc6-tt1tok-ns             64 c6b7419eb623fda6623c766d8c5fe240 strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18977 ms (218.6 tok/s), 64 generated in 3162 ms (20.2 tok/s), drafts accepted 28 of 34, 1 checkpoints
+  s5-pc0-1card         s5-pc0-1card                 64 e24df4c28dbf7bc77df6e132f49c781b strata serve: prompt 4148 tokens = 0 reused + 4148 read in 34471 ms (120.3 tok/s), 64 generated in 3751 ms (17.1 tok/s), drafts accepted 21 of 29, 0 checkpoints
+  s5-pc6-1card         s5-pc6-1card                 64 7f119128406888b3bd63d0c586540edd strata serve: prompt 4148 tokens = 0 reused + 4148 read in 34373 ms (120.7 tok/s), 64 generated in 3949 ms (16.2 tok/s), drafts accepted 18 of 25, 1 checkpoints
+  s5-pc0-32k           s5-pc0-32k                  256 6144def934962dc0c42f0703feaa7a00 strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148323 ms (217.6 tok/s), 256 generated in 13632 ms (18.8 tok/s), drafts accepted 89 of 117, 0 checkpoints
+  s5-pc6-32k           s5-pc6-32k                  256 a815a0ef54ca9cb8fb8c9f645348793e strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148581 ms (217.2 tok/s), 256 generated in 11483 ms (22.3 tok/s), drafts accepted 143 of 166, 2 checkpoints
+
+--- div s5-pc0 s5-pc6
+A=s5-pc0 (64 ids)  B=s5-pc6 (64 ids)
+first divergence at index 27 of 64
+  A[27:35] = [2532, 369, 874, 11135, 3296, 13, 14235, 22846]
+  B[27:35] = [14235, 22846, 1622, 30, 2302, 4222, 1318, 2414]
+  shared prefix before it: 27 ids
+
+--- div s5-pc0 s5-pc6-ns
+A=s5-pc0 (64 ids)  B=s5-pc6-ns (64 ids)
+first divergence at index 27 of 64
+  A[27:35] = [2532, 369, 874, 11135, 3296, 13, 14235, 22846]
+  B[27:35] = [14235, 22846, 1622, 30, 2302, 4222, 1318, 2414]
+  shared prefix before it: 27 ids
+
+--- div s5-pc6 s5-pc6-ns
+A=s5-pc6 (64 ids)  B=s5-pc6-ns (64 ids)
+first divergence at index 50 of 64
+  A[50:58] = [6970, 59987, 30, 14235, 22903, 13, 1165, 1144]
+  B[50:58] = [33744, 13, 14235, 6970, 10229, 22841, 10811, 30]
+  shared prefix before it: 50 ids
+
+--- div s5-pc0 s5-pc6-ttnon
+A=s5-pc0 (64 ids)  B=s5-pc6-ttnon (64 ids)
+IDENTICAL (all ids, same length)
+
+--- div s5-pc0 s5-pc6-ttlast
+A=s5-pc0 (64 ids)  B=s5-pc6-ttlast (64 ids)
+IDENTICAL (all ids, same length)
+
+--- div s5-pc6 s5-pc6-tt1tok
+A=s5-pc6 (64 ids)  B=s5-pc6-tt1tok (64 ids)
+IDENTICAL (all ids, same length)
+
+--- div s5-pc0 s5-pc6-tt1tok-ns
+A=s5-pc0 (64 ids)  B=s5-pc6-tt1tok-ns (64 ids)
+first divergence at index 2 of 64
+  A[2:10] = [4087, 310, 1156, 13, 2570, 3766, 264, 1248]
+  B[2:10] = [5707, 310, 1156, 13, 2570, 3766, 264, 1248]
+  shared prefix before it: 2 ids
+
+--- div s5-pc0-1card s5-pc6-1card
+A=s5-pc0-1card (64 ids)  B=s5-pc6-1card (64 ids)
+first divergence at index 27 of 64
+  A[27:35] = [2532, 369, 874, 11135, 3296, 13, 14235, 22846]
+  B[27:35] = [14235, 22846, 3274, 30, 2302, 4222, 1318, 2414]
+  shared prefix before it: 27 ids
+
+--- div s5-pc0-32k s5-pc6-32k
+A=s5-pc0-32k (256 ids)  B=s5-pc6-32k (256 ids)
+first divergence at index 9 of 256
+  A[9:17] = [2128, 318, 2348, 4757, 321, 9417, 314, 799]
+  B[9:17] = [3766, 2128, 318, 2348, 4757, 321, 9417, 314]
+  shared prefix before it: 9 ids
+
+
+================================================================================
+6. THE ID RIG TIED TO THE SERVED TEXTS (the ids detokenized vs the server's own answer)
+================================================================================
+== s5-pc0: 64 ids -> 280 chars ==
+We need answer to user. User provided a long document revision marker: "\s “cd Africa
+
+ DAMdaK]" then markdown. There is no explicit question. Need infer task? They likely want something? The message begins "[document revision marker: \s “cd Africa
+
+ DAMdaK]" maybe they want edit
+== served /home/michael/strata-xpu/strata/s4/runs/s4-pc0-4k/resp-ctx4096.json: 280 chars ==
+We need answer to user. User provided a long document revision marker: "\s “cd Africa
+
+ DAMdaK]" then markdown. There is no explicit question. Need infer task? They likely want something? The message begins "[document revision marker: \s “cd Africa
+
+ DAMdaK]" maybe they want edit
+== equal: True  (prefix shared: 280 chars) ==
+
+== s5-pc6: 64 ids -> 314 chars ==
+We need answer to user. User provided a long document revision marker: "\s “cd Africa
+
+ DAMdaK]" then markdown. Need infer request? They likely want something? The user message is just document content, no explicit question. Need respond maybe summarize? Need analyze. We need produce final answer. Need understand
+== served /home/michael/strata-xpu/strata/s4/runs/s4-ckpt-4k/resp-ctx4096.json: 314 chars ==
+We need answer to user. User provided a long document revision marker: "\s “cd Africa
+
+ DAMdaK]" then markdown. Need infer request? They likely want something? The user message is just document content, no explicit question. Need respond maybe summarize? Need analyze. We need produce final answer. Need understand
+== equal: True  (prefix shared: 314 chars) ==
+
+
+================================================================================
+7. THE SERVED ARMS (serve.server, the config of record verbatim, one real /v1/chat/completions)
+================================================================================
+--- s5-serve-4k  (s4/runs/s5-serve-4k) ---
+# /home/michael/strata-xpu/strata/s5/served/s5-serve-4k/markers.tsv
+ctx=4096 max_new=64 rc=0 wall=22252ms 2026-10-04T00:23:48-06:00
+# /home/michael/strata-xpu/strata/s5/served/s5-serve-4k/argv.txt
+[cfg] /home/michael/strata-xpu/strata/s4/runs/s5-serve-4k/cfg.json
+[cfg] config of record args : --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats
+[cfg] this arm's args       : --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats
+[cfg] --extra added         : <none> (verbatim config of record)
+[cfg] server gpu field      : [0, 1] -> ZE_AFFINITY_MASK=0,1
+[cfg] engine argv           : --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats --layer-split auto
+[cfg] engine argv sha256    : a2cfc6cae6403cb38b831a54db117e518a2e64dde6b8d6826359766977d06ad1
+[cfg] engine log            : /home/michael/strata-xpu/logs/s4-s5-serve-4k-engine.log
+# the engine's own lines for the request
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata decode timing: 44 windows, avg T 1.59, 1.45 tokens/window, 77.13 ms/window = verify 68.60 (GPU-reach wait 58.16 + per-layer host 0.67 [plan 0.25 actq 0.11 jobs 0.10 CPU 0.00] + stage 1.20 + tail 7.29) + commit/emit 1.78 + draft 6.75; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 15.91, PCIe 0.00
+strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18798 ms (220.7 tok/s), 64 generated in 3394 ms (18.9 tok/s), drafts accepted 20 of 26, 1 checkpoints
+# the response body's usage + the answer (first 200 chars)
+usage    : {"prompt_tokens": 4148, "completion_tokens": 64, "total_tokens": 4212, "prompt_tokens_details": {"cached_tokens": 0}}
+timings  : {"cache_n": 0, "prompt_n": 4148, "prompt_ms": 18798.2, "prompt_per_token_ms": 4.532, "prompt_per_second": 220.7, "predicted_n": 64, "predicted_ms": 3393.6, "predicted_per_token_ms": 53.025, "predicted_per_second": 18.9, "draft_n": 26, "draft_n_accepted": 20}
+finish   : length
+answer   : 
+# the response text file this card's ids were compared with
+f5dd7415803c0568aa6839769a468d0f  /home/michael/strata-xpu/strata/s5/served/s5-serve-4k/response-text.txt 413 bytes
+
+--- s5-serve-32k  (s4/runs/s5-serve-32k) ---
+# /home/michael/strata-xpu/strata/s5/served/s5-serve-32k/markers.tsv
+ctx=32768 max_new=64 rc=0 wall=151503ms 2026-10-04T00:26:58-06:00
+# /home/michael/strata-xpu/strata/s5/served/s5-serve-32k/argv.txt
+[cfg] /home/michael/strata-xpu/strata/s4/runs/s5-serve-32k/cfg.json
+[cfg] config of record args : --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats
+[cfg] this arm's args       : --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats
+[cfg] --extra added         : <none> (verbatim config of record)
+[cfg] server gpu field      : [0, 1] -> ZE_AFFINITY_MASK=0,1
+[cfg] engine argv           : --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats --layer-split auto
+[cfg] engine argv sha256    : a2cfc6cae6403cb38b831a54db117e518a2e64dde6b8d6826359766977d06ad1
+[cfg] engine log            : /home/michael/strata-xpu/logs/s4-s5-serve-32k-engine.log
+# the engine's own lines for the request
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 6-token window (upload no error, sync no error)
+strata verify: captured the 6-token window (upload no error, sync no error)
+strata decode timing: 23 windows, avg T 2.96, 2.78 tokens/window, 116.51 ms/window = verify 102.97 (GPU-reach wait 86.93 + per-layer host 0.93 [plan 0.28 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.01 + tail 10.60) + commit/emit 1.90 + draft 11.64; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 29.57, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148712 ms (217.0 tok/s), 64 generated in 2680 ms (23.9 tok/s), drafts accepted 44 of 45, 2 checkpoints
+# the response body's usage + the answer (first 200 chars)
+usage    : {"prompt_tokens": 32277, "completion_tokens": 64, "total_tokens": 32341, "prompt_tokens_details": {"cached_tokens": 0}}
+timings  : {"cache_n": 0, "prompt_n": 32277, "prompt_ms": 148711.6, "prompt_per_token_ms": 4.607, "prompt_per_second": 217.0, "predicted_n": 64, "predicted_ms": 2679.7, "predicted_per_token_ms": 41.87, "predicted_per_second": 23.9, "draft_n": 45, "draft_n_accepted": 44}
+finish   : length
+answer   : 
+# the response text file this card's ids were compared with
+15dcde9e4574f6e99c9d10c12f2b62cd  /home/michael/strata-xpu/strata/s5/served/s5-serve-32k/response-text.txt 415 bytes
+
+--- the served texts against the driver ids of the same setting ---
+== s5-pc6: 64 ids -> 314 chars ==
+We need answer to user. User provided a long document revision marker: "\s “cd Africa
+
+ DAMdaK]" then markdown. Need infer request? They likely want something? The user message is just document content, no explicit question. Need respond maybe summarize? Need analyze. We need produce final answer. Need understand
+== served /home/michael/strata-xpu/strata/s5/served/s5-serve-4k/resp-ctx4096.json: 314 chars ==
+We need answer to user. User provided a long document revision marker: "\s “cd Africa
+
+ DAMdaK]" then markdown. Need infer request? They likely want something? The user message is just document content, no explicit question. Need respond maybe summarize? Need analyze. We need produce final answer. Need understand
+== equal: True  (prefix shared: 314 chars) ==
+
+== s5-pc6-32k: 256 ids -> 1264 chars ==
+We need answer user's request. Need review provided document (source tree and documentation of one C++/CUDA engine? Actually Strata docs). User asks: "Please review the document above, which is the source tree and the documentation of one C++/CUDA engine. List the most important correctness or performance risks you find in it, in order of severity, and for each one quote the evidence you saw and give a concrete fix. Take as long as you need."
+
+We need produce final answer with risks ordered by severity, quote evidence, concrete fix. Need analyze document. It's not actual source code, but documentation. Need infer correctness/performance risks from docs. Need be careful: quote evidence from document. Need list most important correctness or performance risks. Could include:
+- Non-determinism / reproducibility issues: IQ multi-token kernels rounding differences, adaptive expert tier, prompt cache, PCIe fraction, HIP rare nondeterminism. Evidence: "with the IQ models, the CPU computes an expert for one token with ggml's dot product and for several tokens with Strata's multi-token kernels, which round slightly differently... same prompt at temperature 0 can end in a different answer" and "with the default adaptive expert tier a sampled result is not
+== served /home/michael/strata-xpu/strata/s5/served/s5-serve-32k/resp-ctx32768.json: 316 chars ==
+We need answer user's request. Need review provided document (source tree and documentation of one C++/CUDA engine? Actually Strata docs). User asks: "Please review the document above, which is the source tree and the documentation of one C++/CUDA engine. List the most important correctness or performance risks you
+== equal: False  (prefix shared: 316 chars) ==
+
+================================================================================
+8. THE CODE (the operations the arms attribute the difference to)
+================================================================================
+# generate.cpp:408
+    int64_t short_read = 64;
+# generate.cpp:5111
+            auto windows_ok = [&](int64_t a, int64_t b) -> bool {
+# generate.cpp:5119
+            auto read_windows = [&](int64_t a, int64_t b, std::string& e) -> bool {
+# generate.cpp:5310
+            if (o.prompt_cache > 0 && o.turn_token >= 0)
+# generate.cpp:5319
+            if (o.prompt_cache > 0 && o.turn_token >= 0 && o.prompt_cache_root > 0 && read_from == 0)
+# generate.cpp:5326
+            for (const int64_t to : {reread_to, root_at, turn_at, n - 1}) {
+# generate.cpp:5334
+                if (!win && !lend(to - at, err)) {
+# generate.cpp:5363
+                if ((to == turn_at || to == root_at) && !checkpoint_at(to)) {
+# generate.cpp:4394
+        auto checkpoint_at = [&](int64_t L, std::vector<ConvCheckpoint>* parts = nullptr) -> bool {
+# generate.cpp:4448
+            if (o.prompt_cache_every > 0 && done >= pp_next_check) {
+# generate.cpp:3794
+    auto request_chunk = [](int64_t tokens, int64_t max_chunk) -> int64_t {
+# src/kernels/sycl/qsa_prompt_attn.cpp:1035
+    // The v1 kernel is the portable path here for exactly the reason this file gives for Turing ("no cp.async,
+    // so it runs the v1 kernel (launch<1>, same accuracy, another summation order)"), so take it.
+# docs/DETAILS.md (the paragraph this card added)
+ docs/DETAILS.md | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+diff --git a/docs/DETAILS.md b/docs/DETAILS.md
+index 930868a..a1a2248 100644
+--- a/docs/DETAILS.md
++++ b/docs/DETAILS.md
+@@ -90,6 +90,21 @@ answer after a start differ from the next ones. Measured here (IQ3_XXS, a 3.6K-t
+ three switches 1 answer of 4, without `--pcie-frac 0` 2 of 4 (the first one differs), with the defaults 2 of 4.
+ `--pcie-frac 0` costs decode speed (the missed experts all run on the CPU), so keep it for A/B runs.
+ 
++The tail read is visible on a *fresh* request too, with nothing reused and nothing resumed: the checkpoint is taken
++at the last turn boundary - the `<|im_start|>` of the reply's own header - which splits the prompt read there
++(`generate.cpp:5310-5313`, the segment loop at `:5326-5367`) and sends the header's few tokens through the decode
++windows (`windows_ok`/`read_windows`, `:5111`/`:5119`, `--short-read`, default 64) instead of the batched prompt
++path. Measured on the SYCL/Arc port (two B70s, the IQ3_S config of record, greedy): the same prompt continues from a
++different sequence with `--prompt-cache 0` at every length tried - 4,148 prompt tokens (314 vs 280 characters),
++32,277 (1,264 vs 1,326), reproducible run to run, on both the capture and the closure path. The checkpoint **save**
++is not the cause: with the boundary moved to the last prompt token (`--turn-token` = the id at `n-1`) the read is
++one segment again and the reply is byte-identical (all 64 ids) to the `--prompt-cache 0` one while the prompt line
++still reports `1 checkpoints`. What moves is the summation *shape* of the last prompt tokens - the same token read
++inside the batched run's chunk, in a run of its own, and through a decode window gives three different
++continuations; the engine's own description of this family is `same accuracy, another summation order`
++(`src/kernels/sycl/qsa_prompt_attn.cpp:1035`). One card is not a control for it: it holds ~0.9 fewer experts per
++layer-window on the CPU, which moves the ids by the rule above whatever the checkpoints do.
++
+ **The draft layer's tokens (0.1.27, `--draft-vocab`):** the MTP draft layer can only propose tokens from a subset
+ of the vocabulary (`mtp/rt/draft_vocab.bin`). Since 0.1.27 the subset includes every Chinese, Japanese and Korean
+ token (106,299 ids), so answers in those languages are 15-38% faster (Q2_0, RTX 5070). Its head takes ~180 MiB of
+
+================================================================================
+9. MACHINE STATE AT THE END OF THE EVIDENCE PASS
+================================================================================
+engine  : none
+server  : none
+port 8099: free
+----------------------------------------------
+TOTAL on card0                           879.4 MiB
+TOTAL on card1                             0.0 MiB
+HEAD: 33491de S5 (t_aae723be): the id-level reproduction and the mechanism arms - the checkpoint save is inert, the read's segmentation is not

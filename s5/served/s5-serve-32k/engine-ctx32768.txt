@@ -1,0 +1,19 @@
+qsa_block_scores: no TF32 tc path on this backend (the device refuses tf32 joint_matrix); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3) -> warp kernel
+qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 6-token window (upload no error, sync no error)
+strata verify: captured the 6-token window (upload no error, sync no error)
+strata decode timing: 23 windows, avg T 2.96, 2.78 tokens/window, 116.51 ms/window = verify 102.97 (GPU-reach wait 86.93 + per-layer host 0.93 [plan 0.28 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.01 + tail 10.60) + commit/emit 1.90 + draft 11.64; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 29.57, PCIe 0.00
+strata serve: prompt 32277 tokens = 0 reused + 32277 read in 148712 ms (217.0 tok/s), 64 generated in 2680 ms (23.9 tok/s), drafts accepted 44 of 45, 2 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (32640 hits / 32640 lookups)
+strata serve: expert tiers: GPU 32640 hits this request; since the start RAM 0 blobs, files 0 blobs 65582.7 MB read (the GGUF in place)
+strata serve: KV streaming: 91.46% of 184865 block reads hit VRAM, 63.6 MiB read from RAM
+strata serve: suffix drafts: 4 windows, 17 of 18 drafts accepted
