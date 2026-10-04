@@ -1,0 +1,6 @@
+D2x (t_85e61269): drop the throwaways, keep the two helpers that answered a real question
+
+dbg_row.py and dbg_parse.py were one-shot regex debugging; ifnest.py / ifend.py answered the question this
+card actually lost time to (which `if()` block a CMake target lands in), so they stay.  commit-msg-1.txt is
+superseded by commit-msg-1b.txt (the first draft of the bench commit's message said the CUDA/SYCL guards
+would duplicate the target - they do not).
