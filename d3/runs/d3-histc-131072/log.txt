@@ -43,3 +43,28 @@ ask: 559537 B, ids 129024
 == drive pid 1301920; waiting for 'everything loaded' ==
 == loaded=1 after 31s (2026-10-03T19:59:22-06:00) ==
 == ask fed at 2026-10-03T19:59:22-06:00 (epoch_ms 1791079162197) ==
+== the ask finished=1 after 384836 ms (2026-10-03T20:05:47-06:00) ==
+engine exited 0 at epoch 1791079547.926386
+== engine exit 0, wall 422 s (ask wall 384836 ms) ==
+== the graph path's own banner ==
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+== the engine's numbers ==
+strata serve: prompt chunk auto: 8192 tokens
+strata decode timing: 115 windows, avg T 2.40, 2.23 tokens/window, 114.10 ms/window = verify 102.28 (GPU-reach wait 78.26 + per-layer host 0.85 [plan 0.28 actq 0.16 jobs 0.17 CPU 0.00] + stage 1.17 + tail 9.51) + commit/emit 1.94 + draft 9.89; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.00, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 4.48 conv 0.10 ab 0.25 z 2.67 rec 0.36 out-proj 2.43 hc-read1+router 2.56 shared+quant 2.35 waitA 0.14 VRAM hits 7.81 waitB 0.11 PCIe grp 0.39 waitCPU 0.04 copy+combine 0.16 (gap) 0.03   hc0 norm 0.79   hc0 down 0.81   hc0 up 0.73 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.25 kv+idx append 0.56 q+q-idx 1.78 scores+topk 2.65 kv-resolve 0.17 attention 0.63 gate 0.02 out-proj 0.75 hc-read1+router 0.78 shared+quant 0.75 waitA 0.04 VRAM hits 2.31 waitB 0.03 PCIe grp 0.11 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.24   hc0 up 0.21 | total 37.70 ms/window over 115 windows
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 371433 ms (347.4 tok/s), 256 generated in 13122 ms (19.5 tok/s), drafts accepted 143 of 161, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (132480 hits / 132480 lookups)
+== submit lines ==
+strata submit: stage window T=4 pos0=129273 layers 0..22 (23): submitted 2251 (kernel 1682 memset 0 memcpy 556 barrier 13 event 0 hostfn 0 graph 0) + recorded 0; 97.9 per layer; GPU-reach wait 8836.59 ms
+strata submit: stage window T=4 pos0=129273 layers 23..47 (25): submitted 2608 (kernel 1844 memset 0 memcpy 750 barrier 14 event 0 hostfn 0 graph 0) + recorded 0; 104.3 per layer; GPU-reach wait 4631.92 ms
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 2257 (kernel 1682 memset 0 memcpy 556 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 8943.20 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2616 (kernel 1844 memset 0 memcpy 750 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 4688.99 ms
+== the request ==
+DONE 256 129024 371433.1 13121.8 length 143 161 0 132480 132480 0 0 0.0
+PP lines: 16  last: PP 129023 129024 369028 349.6
+T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8
+== the launch-site histogram lines written ==
+920 /home/michael/strata-xpu/strata/d3/runs/d3-histc-131072/hist.txt
+HW	win=1 stage T=1 pos0=129023 layers 0..22 n=23 wall=51.04ms	submissions 1803	sites 56
+H	win=1 stage T=1 pos0=129023 layers 0..22 n=23 wall=51.04ms	4	245.84	strata::kernels::(anonymous namespace)::launch_gu<21>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+H	win=1 stage T=1 pos0=129023 layers 0..22 n=23 wall=51.04ms	5	49.90	strata::kernels::qsa_decode_attn_batch(float const*, strata::kernels::QsaAttnPools const&, int const*, int const*, long, strata::kernels::QsaShapes const&, float*, float*, long, void*)#5

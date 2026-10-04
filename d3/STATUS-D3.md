@@ -59,8 +59,28 @@ side by side), `d3/d3_stall.sh` (the #267 stall rig, P1b's shape), `d3/d3_eviden
 
 ## 2. Config, instruments and their own cost
 
-[PENDING: the instrument-cost table: gpu_stamp 1.703/1.685/2.001 ms per window = 1.29/1.28/1.43% of the counted
-device time, and P9's +3.0% of the wall for the stamp set is confirmed/measured here as X.]
+Every arm is the config of record with exactly one lever or instrument changed, and every arm runs
+`STRATA_DECODE_TIMING=1` and `STRATA_SUBMIT_COUNT=1` (both free: P3's submission counter and the engine's own
+window line).  The census arms add two instruments, both D1/P9's:
+
+* **`STRATA_LAUNCH_HIST=1`** (D1's launch-site census: one line per launch with the site, its device microseconds
+  and the number of launches at that site in that window; `--histwindows 8` = the first 8 windows of the request,
+  which covers the first occurrence of every T the draft policy picks).  It needs the **closure** path
+  (`STRATA_SYCL_GRAPH=0`): a replayed graph hands the driver one submission and carries no per-kernel timestamp
+  (D1's note).
+* **`STRATA_VERIFY_PROFILE=1`** (P9's host-sampled stage stamps, the `strata decode GPU stages` line).
+
+Their own cost, measured rather than assumed: the stamp set is **998 launches and 1.703 / 1.685 / 2.001 ms per
+window = 1.29% / 1.28% / 1.43%** of the window's counted device time at 4K/32K/128K (the `gpu_stamp` row of the
+census), which is the device-time part of P9's measured +3.0% wall cost; the closure path itself is P9's measured
+**+4.9%** on a window (131.27 against 125.14 ms).  The census windows are therefore comparable to each other
+(same instruments throughout) and **not** directly to the uninstrumented arms — which is why the sharing A/B (§4)
+and the record/arm comparisons (§5.2) have their own uninstrumented controls.
+
+Two facts about the arms' shape, both from the engines' own lines: **100.0% expert residency and 0.00 CPU expert
+entries per layer-window in every arm** (`decode expert cache hit rate: 100.0% (…)`), and the 4K arms stop at
+**147 generated tokens** (the prompt's own stop, as in D1/D2/P9) while 32K and 128K run the full 256.
+
 
 ## 3. The selection: kernels, file:line, and per-window or per-token
 
@@ -129,7 +149,44 @@ attention is flat, as P9 measured.
 
 ## 4. The sharing: what is already shared, and what the A/B prices
 
-[PENDING-B: base vs nomulti at 4K/32K/128K, ms/window, decode tok/s, ids md5.]
+**The card's premise does not hold, and the evidence is the call site and the census's launch counts.**  The
+selection is not per query token: `qsa_block_scores` and `qsa_block_topk` are each launched **once per
+(QSA layer, window)** over all `n` rows of the window (`src/core/verify.cpp:1019-1022`), and the census counts
+**12 launches of each per window** — 12 = the model's QSA layers, no factor of T.  A per-token form would count
+12·T ≈ 34 launches at T=2.8.
+
+**What *is* duplicated per row, and what already shares it**: the make-or-break fact is that a window's rows have
+*different* query vectors and *different* positions (`q_idx + t*ID`, `step_ + t*kStepCount`), so their scores are
+genuinely different numbers — a T×B score matrix, not the same B scores computed T times.  The only thing that is
+the same across the rows is the **key block being read**, and that is exactly what the shipping kernel shares:
+`block_scores_multi_kernel` loads `kp` **once per block** and loops the call's queries inside
+(`src/kernels/cuda/qsa_select.cu:623-644`), where the pre-`a20f3b5` form had a grid of `(blocks, nq)` warps and
+"each key re-read per query" (`:600-604`).  So the sharing the card asks to implement **is the tree's default**
+(`STRATA_SCORES_MULTI` unset = the multi kernel; `=0` = the old grid).
+
+**The sharing's price, measured two ways.**
+
+*(a) From the census's own T-dependence* (no extra arm needed: one request's first 8 windows cover T = 1, 2 and 4,
+the same kernel and the same depth):
+
+| depth | `qsa_block_scores`, T=1 window | T=2 | T=4 | rows ×4 ⇒ cost ×? |
+|---|---|---|---|---|
+| 4K | 0.081-0.103 ms | 0.122-0.129 ms | 0.202-0.210 ms | **×2.1-2.5** (a per-query read would be ×4) |
+| 32K | 0.525 ms | 0.782-1.085 ms | 1.438-1.466 ms | **×2.8** (a per-query read would be ×4) |
+
+i.e. the shipped kernel's cost grows *sublinearly* in the window's rows — the shared key read is the reason — and
+what remains per row is the dot product and the score store.
+
+*(b) The direct A/B*: the same arms with `STRATA_SCORES_MULTI=0`, which is the old per-(query, block) grid and the
+same arithmetic per (block, query) (so the ids must not move — the guard):
+
+[PENDING-B: the base/no-multi table at 4K/32K/128K with ms/window, decode tok/s and the ids md5.]
+
+**What cannot be shared, and why the window is not "the same scores three times"**: each row's `step` carries its
+own `n_kv = pos + 1` and `n_bid = n_kv / 4` (`src/core/verify.cpp:1461`, `qsa_step_fill`), so row *t* scores a
+*different, larger* block set against a *different* query — the rows' candidate sets are nested, not equal.  The
+one sharing left to take is therefore not across rows but *inside* the per-(block, query) work (§5.4).
+
 
 ## 5. The top-k's dispatch and the score sweep's real ceiling
 
@@ -145,8 +202,15 @@ The census records the **launcher** symbol, and the memory kernel has its own la
 | `d3-histc-4096` | **262,144** | **`qsa_block_topk_ref`** (memory) | **0.485** | 0.205 | 136.33 ms | 130.53 ms |
 | `d3-hist-32768` | 32,768 | `qsa_block_topk` (register) | 0.750 | 1.466 | 131.82 ms | 124.96 ms |
 | `d3-histc-32768` | **262,144** | **`qsa_block_topk_ref`** (memory) | **1.070** | 1.438 | 137.52 ms | 126.97 ms |
-| `d3-hist-131072` | 131,072 | `qsa_block_topk` (register) | 1.403 | 5.361 | 140.25 ms | PENDING |
-| `d3-histc-131072` | **262,144** | **`qsa_block_topk_ref`** (memory) | PENDING | PENDING | PENDING | PENDING |
+| `d3-hist-131072` | 131,072 | `qsa_block_topk` (register) | 1.403 | 5.361 | 140.25 ms | (reg) |
+| `d3-histc-131072` | **262,144** | **`qsa_block_topk_ref`** (memory) | **3.044** | 5.378 | 140.82 ms | 114.10 ms (avg T 2.40) |
+
+and at 128K the direction is the other way from 4K: the memory kernel costs **2.2× the register one**
+(3.044 against 1.403 ms, +1.64 ms = **+1.2% of the window**), which is what the register kernel's "keys read once"
+buys once `n_bid` is 32,257 blocks — a top-k of 3.0 ms is 2.2% of a window on the record's config against 1.0% on
+the arms'.  Both 128K arms emitted the **same token ids** (`c60e72d3…`), i.e. the two kernels select identically
+on this data, as their contract says, so this is a speed question only; and `d3-oldtopkhist-131072` (E3) is the
+clean same-maxctx pair that separates the kernel from the max-context.
 
 Two things fall out of this table and one does not:
 
@@ -230,13 +294,125 @@ observes).  That is the term a coarser sync can buy, and it is what §6.2 measur
 
 ### 6.2 The measured ceiling: E-6, the engine's own coarsest exact sync
 
-[PENDING-D: the E-6 arms with the same instruments as the census control.]
+The engine already contains the answer to "what would coarser synchronisation look like":
+**`STRATA_VERIFY_DEVICE_PLAN=1` (E-6)** lets the **device** plan its own expert group and makes the device's waits
+return **without touching the host's flag**:
+
+```
+src/kernels/cuda/verify_kernels.cu:500-506   resident_plan(): one 1-thread kernel on the window's stream plans the
+                                             group on the device and, when every one of its experts is resident,
+                                             writes `*skip = ring` in DEVICE memory (:477-478); if any expert is
+                                             not resident it writes `*skip = 0` and returns (:446) - the host's
+                                             flag is then the only path, i.e. E-6 is exact, not approximate.
+src/kernels/cuda/verify_kernels.cu:480-486   wait_flag_ge_or(): `if (*skip == value) return;` - the device does
+                                             not stall at all for a group it planned itself.
+src/kernels/cuda/verify_kernels.cu:487-497   copy_i32_unless() / copy_or_zero(): the host->device plan and
+                                             CPU-share copies become no-ops for such a group.
+src/core/verify.cpp:682-689, :1067-1070, :1112, :1144, :1156   the switch and its three call sites.
+```
+
+So E-6 **is the coarsest sync the engine can currently do without redesigning the heartbeat**, and the ceiling for
+a "sync every N layers" design is what it measures plus the host's own per-layer work if the host cadence were
+dropped too (1.00 / 0.90 ms per window = 0.8% / 0.7%, §6.1).  Measured with the census instruments so it is
+directly comparable to `d3-histc-*` (same closure path, same stamps, same max-context):
+
+[PENDING-D: the E-6 table at 4K/32K/128K: wait_flag_ge/wait_flag_ge_or launches and ms, the window, decode tok/s,
+and the ids md5 against `d3-histc-*`.]
+
+The 4K pair, with the same instruments, the same `--max-context 262144` and one env var between them:
+
+| arm | the device's per-layer waits | window, counted device time | window, decode line | decode tok/s | ids md5 |
+|---|---|---|---|---|---|
+| `d3-histc-4096` (control) | `wait_flag_ge` **18.462 ms** (144 launches, 128 µs each) | 136.33 ms | 130.53 ms | 21.25 | `66bf952d…` |
+| `d3-devplan-4096` (**E-6**) | `wait_flag_ge_or` **0.143 ms** (144 launches, 1 µs each) | **122.87 ms (−9.9%)** | **126.89 ms (−2.8%)** | **21.86 (+2.9%)** | `66bf952d…` **identical** |
+| `d3-histc-32768` (control) | `wait_flag_ge` **17.813 ms** | 137.52 ms | 126.97 ms | 21.92 | `d87373e8…` |
+| `d3-devplan-32768` (**E-6**) | `wait_flag_ge_or` **0.144 ms** | **126.53 ms (−8.0%)** | **122.84 ms (−3.3%)** | **22.65 (+3.3%)** | `d87373e8…` **identical** |
+
+So the device's stall on the host's flags is **17.7-18.5 ms of device time per window** and removing it is worth
+**−3.6 / −4.1 ms of the window's wall, i.e. +2.9% / +3.3% decode, at 4K / 32K**, with identical greedy ids; the
+smaller wall figure than the device figure is the overlap: part of the time the device spends spinning, the host
+spends waiting for the device's ring (§6.1's 83-88 ms), so only the unoverlapped part leaves the critical path.
+**This is the measured ceiling for the card's "coarser synchronisation" question**: the engine's own device-plan
+mode, which is exact (its bail-out writes `*skip = 0` whenever a layer has a non-resident expert), buys ~3% of the
+decode window and nothing more can be bought by coarser cadence alone (the host's own per-layer work is another
+0.7-0.8%, and the two together are the whole term).
+
+
+**A design for a coarser cadence, and why it is not implemented here.**  The host must publish per layer today
+because the *plan* (which resident slot holds each of the group's experts) and the CPU share are computed host-side
+from the router's top-10 that the device produces one layer at a time; E-6 shows the device can compute the plan
+itself whenever the layer's experts are all resident (which they are, 100%, in the record's configuration).  A
+"every N layers" cadence would therefore be: E-6 on (device plan), the host's flag publications raised once per N
+layers, and the pool invoked on the device's *miss* signal only.  What it would touch is exactly the protocol
+P1/P1b stabilised — the bounded per-layer wait, the release path and the deterministic exit (`#267`) — and the card
+says not to destabilise that for a few percent; so this card measures the ceiling (§6.2's arm) and re-proves the
+guarantee on the same binary (§6.3) instead of landing it.  The evidence path if it were attempted: E-6's delta at
+three depths (here), the stall rig (here), plus a determinism sweep (N runs, one ids md5) which this card's
+single-arm-per-configuration discipline cannot provide.
 
 ### 6.3 The release path's guarantee (#267), re-proved on this binary
 
 [PENDING-S: the stall rig's lines.]
 
 
+
 ## 7. Not validated
 
+* **No variance estimate.**  One arm per configuration, as in P1b/P3/P9/D1/D2.  The rig's band is a few tenths of a
+  percent (D2 measured −0.6% between two binaries on the same configuration that session); the ±0.2-0.3 ms
+  differences §5.1 quotes for the top-k at 4K/32K are inside it, and the 128K pair (+1.64 ms, +1.3% of the window)
+  is a single A/B.
+* **The 128K top-k comparison is cross-`--max-context`** (262,144 against 131,072): the arms differ in the KV
+  allocation as well as in the dispatch.  `d3-oldtopkhist-131072` (E3) is the same-maxctx pair that separates
+  them, and its result is reported in §5.2; until it is read, the kernel's share of that +1.3% is an inference
+  from the census symbol, not a clean measurement.
+* **The max-context effect itself is measured at 4K only** (`d3-basearmctx-4096` against `d3-base-4096`): a
+  request at 262,144 cells pins ~3.3 GB of KV state that the 4,096-cell configuration does not, and the two
+  configurations' expert caches are therefore not the same size even though both report 100% residency.
+* **The score sweep's latency-bound reading is an inference**, not a stall profile: it rests on the measured
+  achieved bandwidth (28-37 GB/s) and on the kernel's shape.  No device-level profile of this window is obtainable
+  on this port (P9: every device-instrumenting unitrace mode stalls the window at layer 1), so the "~14× above its
+  bandwidth floor" figure is a floor-to-measured ratio, and the ~3.5%-of-window ceiling in §5.4 is an upper bound
+  that a reshaped kernel need not reach.
+* **The E-6 measurement is a switch, not a landed default.**  It is measured with the census instruments at 4K and
+  32K (and 128K if the arm lands); it is not proposed as the shipped configuration here, because it changes the
+  engine's per-layer plan ownership and P1b's bounded-sync/deterministic-exit properties are correctness
+  properties — the stall rig's result (§6.3) is what would make that argument, and it is run on the same binary.
+* **The "sync every N layers" design of the card is not implemented**, and §6.2 says what it would need and what
+  the ceiling is; no code was written for it.
+* **The P9 stage lines are host-sampled at 33-39% coverage** (P9's own measured limit), so their `scores+topk`
+  numbers are floors of the census's exact ones; they are quoted side by side for that reason.
+* **One prompt per depth**, the m6c nested prompt of that length, as in every decode card; the selection's cost is
+  a function of the position the window sits at, and the arms stop at the prompt's own stop (147 at 4K).
+* **`--kv-resident 32768` is a no-op below 32,768 cells**, so the 4K and 32K arms are the all-resident
+  configuration and the 128K arm is the streaming one; both are the record's own setting.
+* **The served path (HTTP, `serve/server.py`) was not re-run**: the arms use the engine's own `--serve` protocol
+  with the record's args plus the two stated deviations, as D1/D2/P9 did.
+* **No ctest run**: no engine source changed in this card (the binary is byte-identical to D2's `e841fd06…`), so
+  there is nothing for the suite to cover that D2 did not already state.
+* **Nothing is pushed**: the origin (`github.com/Niko1221/Strata`) has no `sycl-xpu` branch.
+
 ## 8. The state left behind, and the files
+
+* **No engine and no server are running**: every arm ran one engine at a time on both B70s with `ZE_AFFINITY_MASK`
+  unset, and the last arm was allowed to exit; port 8099 is free and no `strata` process is left.  The P6 resident
+  server was already stopped by S4 (D2 left it stopped too) and this card did not restart it.  The raw
+  `pgrep`/`fuser`/`loadavg` output of the state at the end is in `d3/D3-EVIDENCE.txt` §5.
+* **The tree is on branch `sycl-xpu` with this card's commits** and `build-sycl/strata` still holds
+  `e841fd061fec873c2f24e785973a2ebe` — this card changed **no engine source**, so the binary every arm measured is
+  the same one D2 left (its own md5 is recorded in every arm's log).
+* The config of record (`strata-sycl-iq3s.json`) is **untouched**: `--spec-min-p 0.7` as D2 landed it, and E-6 was
+  measured as a switch, not landed (§6.2).
+* Raw arm output is committed under `d3/runs/<tag>/` and `d3/stall/<tag>/`; `d3/D3-EVIDENCE.txt` holds the
+  assembled raw lines.
+
+| what | path |
+|---|---|
+| the arm runner (one engine, both cards, the ask from a FIFO) | `d3/d3_run_arm.sh`, `d3/d3_drive.py` |
+| the arm blocks | `d3/d3_chain.sh` (A), `d3/d3_chain3.sh` (F/A3/B), `d3/d3_chain4.sh` (D/E), `d3/d3_chain5.sh` (the whole remaining sequence) |
+| the #267 stall rig | `d3/d3_stall.sh` |
+| the census reader (per window: selection, handshake, instrument) | `d3/d3_select.py` |
+| one row per arm / the engine's own window line | `d3/d3_report.py`, `d3/d3_stages.py` |
+| every raw line the acceptance asks for | `d3/d3_evidence.sh` → `d3/D3-EVIDENCE.txt` |
+| the census dumps committed early | `d3/D3-CENSUS-ARMCTX.txt`, `d3/D3-NOTES.md` |
+| this write-up | `d3/STATUS-D3.md` |
