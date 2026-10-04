@@ -1,0 +1,60 @@
+D2b arm d2b-wu-32768   2026-10-03T21:55:24-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 graph=<unset=default>
+extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c (331 entries) NEO_CACHE_DIR=<default ~/.cache/neo_compiler_cache> (n/a files) mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 2aab731 D2a (t_8306429a): the generic multi-column MMVQ layout is not racy - its spread is a cold program cache
+engine binary: 2026-10-03 21:48:45.566926367 -0600  35983616 bytes  md5 f49fe6669704561bb8155f9c4c9acaed
+-- device check BEFORE the run --
+   no engine of ours
+   no server of ours
+                     USER        PID ACCESS COMMAND
+/dev/dri/renderD128: michael    4359 F.... gnome-shell
+                     michael    4867 F...m Xwayland
+                     michael    5200 F...m ibus-x11
+                     michael    5201 F...m mutter-x11-fram
+                     michael   12379 F...m ptyxis
+                     michael   12722 F...m firefox
+                     michael   14495 F...m nautilus
+                     michael   37892 F...m gnome-text-edit
+                     michael   38552 F...m missioncenter
+/dev/dri/renderD129: michael   12379 F.... ptyxis
+                     michael   14495 F.... nautilus
+                     michael   37892 F.... gnome-text-edit
+                     michael   38552 F.... missioncenter
+4.35 3.60 3.66 1/1684 1377272
+ 
+:: initializing oneAPI environment ...
+   d2b_run_arm.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+== the exact command ==
+cd /home/michael/strata-xpu/strata/d2/runs/d2b-wu-32768 && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.7 --max-context 32768 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --layer-split auto --kv-resident 32768   (stdin from /home/michael/strata-xpu/strata/d2/runs/d2b-wu-32768/stdin.fifo)
+ask: 139834 B, ids 32256
+== drive pid 1377564; waiting for 'everything loaded' ==
+== loaded=1 after 32s (2026-10-03T21:55:57-06:00) ==
+== ask fed at 2026-10-03T21:55:57-06:00 (epoch_ms 1791086157911) ==
+== the ask finished=1 after 102213 ms (2026-10-03T21:57:40-06:00) ==
+engine exited 0 at epoch 1791086261.023756
+== engine exit 0, wall 141 s (ask wall 102213 ms) ==
+== cache census: SYCL 0.src entries 331 -> 331 (+0); NEO files n/a -> n/a (+n/a) ==
+== the warm-up's own line, if this binary has one ==
+strata mmvq warmup: 192 launches over 6 types x ncols 1..8 x 2 launch shapes, 41 ms
+== the engine's numbers ==
+strata serve: prompt chunk auto: 8192 tokens
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 113.60 ms/window = verify 99.65 (GPU-reach wait 85.07 + per-layer host 0.91 [plan 0.29 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.34 + tail 10.95) + commit/emit 1.88 + draft 12.06; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91710 ms (351.7 tok/s), 256 generated in 10451 ms (24.5 tok/s), drafts accepted 164 of 185, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (132960 hits / 132960 lookups)
+== the request ==
+DONE 256 32256 91710.2 10450.9 length 164 185 0 132960 132960 0 0 0.0
+PP lines: 4  last: PP 32255 32256 89078 362.1
+T lines: 256  md5 124a3cd39b33f7da31e225829625983a

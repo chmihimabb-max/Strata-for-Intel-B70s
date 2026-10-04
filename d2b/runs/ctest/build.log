@@ -1,0 +1,199 @@
+ 
+:: initializing oneAPI environment ...
+   d2b_ctest.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+[  2%] Built target strata-plan
+[  3%] Built target strata_spec
+[  4%] Built target strata-gguf
+[  4%] Built target strata-dequant
+[  4%] Built target gguf_split_test
+[  5%] Built target gguf_reader_test
+[  9%] Built target ggml-base
+[ 12%] Built target strata_core
+[ 12%] Built target conv_cache_test
+[ 14%] Built target bf16_bits_test
+[ 14%] Built target controller_test
+[ 14%] Built target coupled_draft_test
+[ 15%] Built target suffix_drafter_test
+[ 16%] Built target direct_file_async_test
+[ 16%] Built target draft_policy_test
+[ 22%] Built target ggml-cpu
+[ 24%] Linking CXX executable pinned_shared_test
+[ 24%] Linking CXX executable platform_memory_test
+[ 24%] Linking CXX executable strata-device
+[ 24%] Linking CXX executable pack_census
+[ 27%] Built target strata_kernels_cpu
+[ 30%] Built target expert_multi_test
+[ 30%] Built target pool_test
+[ 30%] Built target expert_parity
+[ 31%] Built target pool_stress
+[ 63%] Built target strata_kernels
+[ 65%] Linking CXX executable strata-load
+[ 65%] Linking CXX executable dequant_s2_parity
+[ 65%] Linking CXX executable s2_gemv_parity
+[ 65%] Linking CXX executable s2_gemv_q8_parity
+[ 66%] Built target platform_memory_test
+[ 66%] Built target strata-device
+[ 66%] Built target pack_census
+[ 66%] Built target pinned_shared_test
+[ 68%] Linking CXX executable s_gemv_q8k_parity
+[ 68%] Linking CXX executable rope_parity
+[ 68%] Linking CXX executable s_gemv_parity
+[ 68%] Linking CXX executable router_top10_parity
+[ 68%] Built target strata-load
+[ 69%] Built target s2_gemv_parity
+[ 69%] Built target dequant_s2_parity
+[ 69%] Linking CXX executable bf16_gemv_parity
+[ 69%] Linking CXX executable elementwise_parity
+[ 69%] Linking CXX executable quantize_act_parity
+[ 69%] Built target s2_gemv_q8_parity
+[ 69%] Linking CXX executable s2_expert_grouped_parity
+[ 69%] Built target router_top10_parity
+[ 70%] Built target rope_parity
+[ 70%] Building CXX object CMakeFiles/mmvq_multi_parity.dir/src/kernels/mmvq_multi_parity.cpp.o
+[ 70%] Linking CXX executable iq_multi_parity
+[ 71%] Built target bf16_gemv_parity
+[ 71%] Built target s_gemv_parity
+[ 72%] Built target quantize_act_parity
+[ 72%] Linking CXX executable kv_q8_parity
+[ 72%] Linking CXX executable kv_q4_parity
+[ 73%] Linking CXX executable kv_stream_parity
+[ 73%] Built target s_gemv_q8k_parity
+[ 74%] Building CXX object CMakeFiles/mmvq_multi_spread.dir/src/kernels/mmvq_multi_spread.cpp.o
+[ 74%] Built target s2_expert_grouped_parity
+[ 74%] Linking CXX executable sampler_parity
+In file included from <built-in>:1:
+/home/michael/strata-xpu/strata/include/strata/sycl_compat/cuda_runtime.h:673:75: warning: format specifies type 'unsigned long long' but the argument has type 'size_type' (aka 'unsigned long') [-Wformat]
+  673 |     std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
+      |                                          ~~~~                             ^~~~~~~~~~~~
+      |                                          %zu
+In file included from <built-in>:1:
+/home/michael/strata-xpu/strata/include/strata/sycl_compat/cuda_runtime.h:673:75: warning: format specifies type 'unsigned long long' but the argument has type 'size_type' (aka 'unsigned long') [-Wformat]
+  673 |     std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
+      |                                          ~~~~                             ^~~~~~~~~~~~
+      |                                          %zu
+1 warning generated.
+[ 75%] Built target kv_q4_parity
+[ 75%] Linking CXX executable sycl_handoff_test
+[ 76%] Built target kv_q8_parity
+[ 76%] Linking CXX executable sycl_mapped_alias_test
+1 warning generated.
+[ 76%] Built target kv_stream_parity
+[ 76%] Linking CXX executable qsa_parity
+[ 77%] Built target sampler_parity
+[ 77%] Linking CXX executable gdn_parity
+In file included from <built-in>:1:
+/home/michael/strata-xpu/strata/include/strata/sycl_compat/cuda_runtime.h:673:75: warning: format specifies type 'unsigned long long' but the argument has type 'size_type' (aka 'unsigned long') [-Wformat]
+  673 |     std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
+      |                                          ~~~~                             ^~~~~~~~~~~~
+      |                                          %zu
+[ 78%] Built target elementwise_parity
+[ 78%] Linking CXX executable gr_parity
+1 warning generated.
+[ 79%] Built target iq_multi_parity
+[ 79%] Linking CXX executable mmvq_multi_parity
+[ 80%] Linking CXX executable shared_expert_parity
+In file included from <built-in>:1:
+/home/michael/strata-xpu/strata/include/strata/sycl_compat/cuda_runtime.h:673:75: warning: format specifies type 'unsigned long long' but the argument has type 'size_type' (aka 'unsigned long') [-Wformat]
+  673 |     std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
+      |                                          ~~~~                             ^~~~~~~~~~~~
+      |                                          %zu
+[ 81%] Built target sycl_mapped_alias_test
+[ 81%] Linking CXX executable cvec_parity
+[ 81%] Built target sycl_handoff_test
+[ 81%] Linking CXX executable kv_hybrid_parity
+[ 81%] Built target qsa_parity
+[ 81%] Linking CXX executable sycl_prompt_attn_parity
+[ 81%] Built target gdn_parity
+[ 81%] Building CXX object CMakeFiles/iq_parity.dir/src/kernels/iq_parity.cpp.o
+1 warning generated.
+[ 81%] Linking CXX executable mmvq_multi_spread
+In file included from <built-in>:1:
+/home/michael/strata-xpu/strata/include/strata/sycl_compat/cuda_runtime.h:673:75: warning: format specifies type 'unsigned long long' but the argument has type 'size_type' (aka 'unsigned long') [-Wformat]
+  673 |     std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
+      |                                          ~~~~                             ^~~~~~~~~~~~
+      |                                          %zu
+[ 82%] Built target gr_parity
+[ 87%] Built target strata_engine
+[ 88%] Building CXX object CMakeFiles/w4a16_expert_parity.dir/src/kernels/w4a16_expert_parity.cpp.o
+1 warning generated.
+[ 89%] Built target cvec_parity
+[ 89%] Building CXX object CMakeFiles/w4a16_gemv_bench.dir/bench/micro/w4a16_gemv_bench.cpp.o
+[ 89%] Built target kv_hybrid_parity
+[ 89%] Built target sycl_prompt_attn_parity
+[ 90%] Linking CXX executable w4a16_pack_check
+[ 94%] Built target strata_prefill
+[ 95%] Linking CXX executable strata
+In file included from <built-in>:1:
+/home/michael/strata-xpu/strata/include/strata/sycl_compat/cuda_runtime.h:673:75: warning: format specifies type 'unsigned long long' but the argument has type 'size_type' (aka 'unsigned long') [-Wformat]
+  673 |     std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
+      |                                          ~~~~                             ^~~~~~~~~~~~
+      |                                          %zu
+In file included from <built-in>:1:
+/home/michael/strata-xpu/strata/include/strata/sycl_compat/cuda_runtime.h:673:75: warning: format specifies type 'unsigned long long' but the argument has type 'size_type' (aka 'unsigned long') [-Wformat]
+  673 |     std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
+      |                                          ~~~~                             ^~~~~~~~~~~~
+      |                                          %zu
+In file included from <built-in>:1:
+/home/michael/strata-xpu/strata/include/strata/sycl_compat/cuda_runtime.h:673:75: warning: format specifies type 'unsigned long long' but the argument has type 'size_type' (aka 'unsigned long') [-Wformat]
+  673 |     std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
+      |                                          ~~~~                             ^~~~~~~~~~~~
+      |                                          %zu
+/home/michael/strata-xpu/strata/src/kernels/w4a16_expert_parity.cpp:131:6: warning: unused function 'dequant_q8_1_bytes' [-Wunused-function]
+  131 | void dequant_q8_1_bytes(const uint8_t* blocks, int64_t n, std::vector<double>& a) {   // 36 B: fp16 d, fp16 sum
+      |      ^~~~~~~~~~~~~~~~~~
+2 warnings generated.
+/home/michael/strata-xpu/strata/bench/micro/w4a16_gemv_bench.cpp:65:45: warning: unused parameter 'layer' [-Wunused-parameter]
+   65 | bool read_blob(const std::string& pack, int layer, int expert, uint64_t layer_off, std::vector<uint8_t>& out) {
+      |                                             ^
+/home/michael/strata-xpu/strata/bench/micro/w4a16_gemv_bench.cpp:97:23: warning: variable 'd_type' set but not used [-Wunused-but-set-variable]
+   97 |     int gu_type = -1, d_type = -1;
+      |                       ^
+1 warning generated.
+[ 96%] Linking CXX executable iq_parity
+3 warnings generated.
+In file included from <built-in>:1:
+/home/michael/strata-xpu/strata/include/strata/sycl_compat/cuda_runtime.h:673:75: warning: format specifies type 'unsigned long long' but the argument has type 'size_type' (aka 'unsigned long') [-Wformat]
+  673 |     std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
+      |                                          ~~~~                             ^~~~~~~~~~~~
+      |                                          %zu
+/home/michael/strata-xpu/strata/src/kernels/w4a16_expert_parity.cpp:131:6: warning: unused function 'dequant_q8_1_bytes' [-Wunused-function]
+  131 | void dequant_q8_1_bytes(const uint8_t* blocks, int64_t n, std::vector<double>& a) {   // 36 B: fp16 d, fp16 sum
+      |      ^~~~~~~~~~~~~~~~~~
+In file included from <built-in>:1:
+/home/michael/strata-xpu/strata/include/strata/sycl_compat/cuda_runtime.h:673:75: warning: format specifies type 'unsigned long long' but the argument has type 'size_type' (aka 'unsigned long') [-Wformat]
+  673 |     std::fprintf(f, "HW\t%s\tsubmissions %llu\tsites %zu\n", tag.c_str(), slice.size(), agg.size());
+      |                                          ~~~~                             ^~~~~~~~~~~~
+      |                                          %zu
+2 warnings generated.
+[ 96%] Linking CXX executable w4a16_expert_parity
+/home/michael/strata-xpu/strata/bench/micro/w4a16_gemv_bench.cpp:65:45: warning: unused parameter 'layer' [-Wunused-parameter]
+   65 | bool read_blob(const std::string& pack, int layer, int expert, uint64_t layer_off, std::vector<uint8_t>& out) {
+      |                                             ^
+/home/michael/strata-xpu/strata/bench/micro/w4a16_gemv_bench.cpp:97:23: warning: variable 'd_type' set but not used [-Wunused-but-set-variable]
+   97 |     int gu_type = -1, d_type = -1;
+      |                       ^
+[ 96%] Built target w4a16_pack_check
+[ 97%] Linking CXX executable sycl_mkl_gemm
+3 warnings generated.
+[ 98%] Linking CXX executable w4a16_gemv_bench
+[ 98%] Built target mmvq_multi_parity
+[100%] Linking CXX executable sycl_prefill
+[100%] Built target shared_expert_parity
+[100%] Built target mmvq_multi_spread
+[100%] Built target sycl_mkl_gemm
+[100%] Built target iq_parity
+[100%] Built target w4a16_expert_parity
+[100%] Built target w4a16_gemv_bench
+[100%] Built target strata
+[100%] Built target sycl_prefill

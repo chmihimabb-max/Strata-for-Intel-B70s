@@ -1,0 +1,60 @@
+D2b arm d2b-ctloff-cold-4096   2026-10-03T21:54:11-06:00
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 graph=<unset=default>
+extra= extraenv=STRATA_MMVQ_WARMUP=0
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/tmp/d2b-cold3/sycl (0 entries) NEO_CACHE_DIR=/tmp/d2b-cold3/neo (0 files) mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 2aab731 D2a (t_8306429a): the generic multi-column MMVQ layout is not racy - its spread is a cold program cache
+engine binary: 2026-10-03 21:48:45.566926367 -0600  35983616 bytes  md5 f49fe6669704561bb8155f9c4c9acaed
+-- device check BEFORE the run --
+   no engine of ours
+   no server of ours
+                     USER        PID ACCESS COMMAND
+/dev/dri/renderD128: michael    4359 F.... gnome-shell
+                     michael    4867 F...m Xwayland
+                     michael    5200 F...m ibus-x11
+                     michael    5201 F...m mutter-x11-fram
+                     michael   12379 F...m ptyxis
+                     michael   12722 F...m firefox
+                     michael   14495 F...m nautilus
+                     michael   37892 F...m gnome-text-edit
+                     michael   38552 F...m missioncenter
+/dev/dri/renderD129: michael   12379 F.... ptyxis
+                     michael   14495 F.... nautilus
+                     michael   37892 F.... gnome-text-edit
+                     michael   38552 F.... missioncenter
+5.30 3.54 3.65 1/1688 1376479
+ 
+:: initializing oneAPI environment ...
+   d2b_run_arm.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+== the exact command ==
+cd /home/michael/strata-xpu/strata/d2/runs/d2b-ctloff-cold-4096 && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.7 --max-context 4096 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --layer-split auto --kv-resident 32768   (stdin from /home/michael/strata-xpu/strata/d2/runs/d2b-ctloff-cold-4096/stdin.fifo)
+ask: 16155 B, ids 3832
+== drive pid 1376771; waiting for 'everything loaded' ==
+== loaded=1 after 31s (2026-10-03T21:54:44-06:00) ==
+== ask fed at 2026-10-03T21:54:44-06:00 (epoch_ms 1791086084540) ==
+== the ask finished=1 after 33768 ms (2026-10-03T21:55:18-06:00) ==
+engine exited 0 at epoch 1791086119.214090
+== engine exit 0, wall 71 s (ask wall 33768 ms) ==
+== cache census: SYCL 0.src entries 0 -> 157 (+157); NEO files 0 -> 155 (+155) ==
+== the warm-up's own line, if this binary has one ==
+strata mmvq warmup: off (STRATA_MMVQ_WARMUP=0)
+== the engine's numbers ==
+strata serve: prompt chunk auto: 8192 tokens
+strata decode timing: 54 windows, avg T 3.09, 2.72 tokens/window, 254.00 ms/window = verify 230.11 (GPU-reach wait 88.57 + per-layer host 0.93 [plan 0.29 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.27 + tail 11.11) + commit/emit 1.91 + draft 21.97; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.93, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 19569 ms (195.8 tok/s), 147 generated in 13716 ms (10.7 tok/s), drafts accepted 93 of 113, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (80160 hits / 80160 lookups)
+== the request ==
+DONE 147 3832 19569.1 13716.2 stop 93 113 0 80160 80160 0 0 0.0
+PP lines: 1  last: PP 3831 3832 18210 210.4
+T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51

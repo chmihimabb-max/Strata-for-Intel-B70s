@@ -1,0 +1,4 @@
+== D2b ctest 2026-10-03T22:00:45-06:00
+HEAD: 2aab731 D2a (t_8306429a): the generic multi-column MMVQ layout is not racy - its spread is a cold program cache
+engine binary: md5 f49fe6669704561bb8155f9c4c9acaed  2026-10-03 22:00:41.763872580 -0600
+ZE_AFFINITY_MASK=

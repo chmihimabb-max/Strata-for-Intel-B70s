@@ -1,0 +1,115 @@
+Test project /home/michael/strata-xpu/strata/build-sycl
+    Start 18: mmvq_multi_parity
+1/4 Test #18: mmvq_multi_parity ................   Passed    1.51 sec
+    Start 19: iq_multi_parity
+2/4 Test #19: iq_multi_parity ..................***Failed    2.07 sec
+IQ2_XXS  type 16     67 x  2560  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 3.13e-05)
+IQ2_XXS  type 16      5 x  1024  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 3.53e-05)
+  IQ2_XS      67 x  2560  ncols  1: 0 outputs differ from the old kernel, ref rel 1.03e+00  FAIL
+  IQ2_XS      67 x  2560  ncols  2: 0 outputs differ from the old kernel, ref rel 1.04e+00  FAIL
+  IQ2_XS      67 x  2560  ncols  3: 0 outputs differ from the old kernel, ref rel 1.04e+00  FAIL
+  IQ2_XS      67 x  2560  ncols  4: 0 outputs differ from the old kernel, ref rel 1.04e+00  FAIL
+  IQ2_XS      67 x  2560  ncols  5: 0 outputs differ from the old kernel, ref rel 1.03e+00  FAIL
+  IQ2_XS      67 x  2560  ncols  6: 0 outputs differ from the old kernel, ref rel 1.03e+00  FAIL
+  IQ2_XS      67 x  2560  ncols  7: 0 outputs differ from the old kernel, ref rel 1.04e+00  FAIL
+  IQ2_XS      67 x  2560  ncols  8: 0 outputs differ from the old kernel, ref rel 1.04e+00  FAIL
+  IQ2_XS      67 x  2560  ncols 11: 0 outputs differ from the old kernel, ref rel 1.04e+00  FAIL
+IQ2_XS   type 17     67 x  2560  iq_mmvq ncols 1..8, 11: FAIL (ref rel <= 1.04e+00)
+  IQ2_XS       5 x  1024  ncols  1: 0 outputs differ from the old kernel, ref rel 9.98e-01  FAIL
+  IQ2_XS       5 x  1024  ncols  2: 0 outputs differ from the old kernel, ref rel 1.26e+00  FAIL
+  IQ2_XS       5 x  1024  ncols  3: 0 outputs differ from the old kernel, ref rel 1.08e+00  FAIL
+  IQ2_XS       5 x  1024  ncols  4: 0 outputs differ from the old kernel, ref rel 1.02e+00  FAIL
+  IQ2_XS       5 x  1024  ncols  5: 0 outputs differ from the old kernel, ref rel 9.85e-01  FAIL
+  IQ2_XS       5 x  1024  ncols  6: 0 outputs differ from the old kernel, ref rel 9.65e-01  FAIL
+  IQ2_XS       5 x  1024  ncols  7: 0 outputs differ from the old kernel, ref rel 9.98e-01  FAIL
+  IQ2_XS       5 x  1024  ncols  8: 0 outputs differ from the old kernel, ref rel 9.68e-01  FAIL
+  IQ2_XS       5 x  1024  ncols 11: 0 outputs differ from the old kernel, ref rel 9.81e-01  FAIL
+IQ2_XS   type 17      5 x  1024  iq_mmvq ncols 1..8, 11: FAIL (ref rel <= 1.26e+00)
+  IQ3_XXS     67 x  2560  ncols  1: 0 outputs differ from the old kernel, ref rel 1.84e+33  FAIL
+  IQ3_XXS     67 x  2560  ncols  2: 0 outputs differ from the old kernel, ref rel 3.82e+33  FAIL
+  IQ3_XXS     67 x  2560  ncols  3: 0 outputs differ from the old kernel, ref rel 5.88e+33  FAIL
+  IQ3_XXS     67 x  2560  ncols  4: 0 outputs differ from the old kernel, ref rel 7.84e+33  FAIL
+  IQ3_XXS     67 x  2560  ncols  5: 0 outputs differ from the old kernel, ref rel 9.79e+33  FAIL
+  IQ3_XXS     67 x  2560  ncols  6: 0 outputs differ from the old kernel, ref rel 1.14e+01  FAIL
+  IQ3_XXS     67 x  2560  ncols  7: 0 outputs differ from the old kernel, ref rel 3.84e+00  FAIL
+  IQ3_XXS     67 x  2560  ncols  8: 0 outputs differ from the old kernel, ref rel 2.45e+00  FAIL
+  IQ3_XXS     67 x  2560  ncols 11: 0 outputs differ from the old kernel, ref rel 1.04e+00  FAIL
+IQ3_XXS  type 18     67 x  2560  iq_mmvq ncols 1..8, 11: FAIL (ref rel <= 9.79e+33)
+IQ3_XXS  type 18      5 x  1024  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 9.44e-06)
+  IQ4_NL      67 x  2560  ncols  1: 0 outputs differ from the old kernel, ref rel 9.72e+32  FAIL
+  IQ4_NL      67 x  2560  ncols  2: 0 outputs differ from the old kernel, ref rel 1.81e+33  FAIL
+  IQ4_NL      67 x  2560  ncols  3: 0 outputs differ from the old kernel, ref rel 2.71e+33  FAIL
+  IQ4_NL      67 x  2560  ncols  4: 0 outputs differ from the old kernel, ref rel 3.69e+33  FAIL
+  IQ4_NL      67 x  2560  ncols  5: 0 outputs differ from the old kernel, ref rel 4.57e+33  FAIL
+  IQ4_NL      67 x  2560  ncols  6: 0 outputs differ from the old kernel, ref rel 1.04e+01  FAIL
+  IQ4_NL      67 x  2560  ncols  7: 0 outputs differ from the old kernel, ref rel 3.62e+00  FAIL
+  IQ4_NL      67 x  2560  ncols  8: 0 outputs differ from the old kernel, ref rel 2.34e+00  FAIL
+  IQ4_NL      67 x  2560  ncols 11: 0 outputs differ from the old kernel, ref rel 1.26e+00  FAIL
+IQ4_NL   type 20     67 x  2560  iq_mmvq ncols 1..8, 11: FAIL (ref rel <= 4.57e+33)
+IQ4_NL   type 20      5 x  1024  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 7.65e-08)
+  IQ3_S       67 x  2560  ncols  1: 0 outputs differ from the old kernel, ref rel 2.18e+33  FAIL
+  IQ3_S       67 x  2560  ncols  2: 0 outputs differ from the old kernel, ref rel 5.15e+00  FAIL
+  IQ3_S       67 x  2560  ncols  3: 0 outputs differ from the old kernel, ref rel 2.51e+00  FAIL
+  IQ3_S       67 x  2560  ncols  4: 0 outputs differ from the old kernel, ref rel 2.73e+00  FAIL
+  IQ3_S       67 x  2560  ncols  5: 0 outputs differ from the old kernel, ref rel 2.57e+00  FAIL
+  IQ3_S       67 x  2560  ncols  6: 0 outputs differ from the old kernel, ref rel 1.74e+00  FAIL
+  IQ3_S       67 x  2560  ncols  7: 0 outputs differ from the old kernel, ref rel 1.28e+00  FAIL
+  IQ3_S       67 x  2560  ncols  8: 0 outputs differ from the old kernel, ref rel 1.03e+00  FAIL
+  IQ3_S       67 x  2560  ncols 11: 0 outputs differ from the old kernel, ref rel 6.28e-01  FAIL
+IQ3_S    type 21     67 x  2560  iq_mmvq ncols 1..8, 11: FAIL (ref rel <= 2.18e+33)
+IQ3_S    type 21      5 x  1024  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 5.04e-08)
+  IQ2_S       67 x  2560  ncols  1: 0 outputs differ from the old kernel, ref rel 2.52e+00  FAIL
+  IQ2_S       67 x  2560  ncols  2: 0 outputs differ from the old kernel, ref rel 9.20e-01  FAIL
+  IQ2_S       67 x  2560  ncols  3: 0 outputs differ from the old kernel, ref rel 4.90e-01  FAIL
+  IQ2_S       67 x  2560  ncols  4: 0 outputs differ from the old kernel, ref rel 5.78e-01  FAIL
+  IQ2_S       67 x  2560  ncols  5: 0 outputs differ from the old kernel, ref rel 6.00e-01  FAIL
+  IQ2_S       67 x  2560  ncols  6: 0 outputs differ from the old kernel, ref rel 4.95e-01  FAIL
+  IQ2_S       67 x  2560  ncols  7: 0 outputs differ from the old kernel, ref rel 4.08e-01  FAIL
+  IQ2_S       67 x  2560  ncols  8: 0 outputs differ from the old kernel, ref rel 3.52e-01  FAIL
+  IQ2_S       67 x  2560  ncols 11: 0 outputs differ from the old kernel, ref rel 2.39e-01  FAIL
+IQ2_S    type 22     67 x  2560  iq_mmvq ncols 1..8, 11: FAIL (ref rel <= 2.52e+00)
+IQ2_S    type 22      5 x  1024  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 5.66e-05)
+IQ4_XS   type 23     67 x  2560  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 6.98e-08)
+IQ4_XS   type 23      5 x  1024  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 1.63e-07)
+IQ1_M    type 29     67 x  2560  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 6.75e-08)
+IQ1_M    type 29      5 x  1024  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 6.65e-08)
+Q2_0     type 42     67 x  2560  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 7.04e-08)
+Q2_0     type 42      5 x  1024  iq_mmvq ncols 1..8, 11: bitwise equal to the old kernel (ref rel <= 8.68e-08)
+IQ2_XXS /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_XXS /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_XXS /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_XS  /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_XS  /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_XS  /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_XXS /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_XXS /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_XXS /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_S   /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_S   /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_S   /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_S   /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_S   /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_S   /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ4_XS  /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ4_XS  /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ4_XS  /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ1_M   /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ1_M   /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ1_M   /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+Q2_0    /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+Q2_0    /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+Q2_0    /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+iq_multi_parity: 54 failures
+
+    Start 41: draft_policy_test
+3/4 Test #41: draft_policy_test ................   Passed    0.00 sec
+    Start 43: coupled_draft_test
+4/4 Test #43: coupled_draft_test ...............   Passed    0.00 sec
+
+75% tests passed, 1 tests failed out of 4
+
+Total Test time (real) =   3.59 sec
+
+The following tests FAILED:
+	 19 - iq_multi_parity (Failed)
+Errors while running CTest

@@ -4649,6 +4649,15 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "strata trace: %s %lld %lld\n", what, a, b);
             std::fflush(stderr);
         };
+        // D2b (card t_f93760a1): the decode path's (quant type x ncols) specializations are built HERE, in the
+        // load phase, instead of inside the first decode windows that reach them.  A window lands in
+        // `native_mmvq_multi_kernel<F, NCOLS, NW, ROWS>` with NCOLS = its own token count, so on a fresh install
+        // the first request paid 63.8-519.7 ms of SYCL compiler per (type, ncols) pair its window sequence
+        // happened to need - D2a measured 25 programs = 3095 ms, every one of them inside the ask, against
+        // 121.19-123.98 ms/window for the same lever with 0 new programs.  This is the load phase: the ask cannot
+        // have arrived (it is fed from the FIFO after "everything loaded") and no window has run yet.  Nothing
+        // the warm-up computes is read, so it changes no number; STRATA_MMVQ_WARMUP=0 is the A/B control arm.
+        strata::kernels::native_mmvq_warmup(main_cs);
         {
             // what is left once everything is allocated: under WDDM a GPU filled to the brim does not fail, it pages -
             // and a page-in while the verify graph spins on a host flag stalls the request for good

@@ -109,4 +109,12 @@ std::size_t native_mmvq_weight_bytes(int ggml_type, int n_in, int n_out);
 void native_mmvq(int ggml_type, const void* weights, const void* x_q8_1, float* y,
                  int n_in, int n_out, int ncols, void* stream);
 
+// D2b (card t_f93760a1): launch the decode path's (quant type x ncols = 1..8) specializations once so their
+// SYCL programs are built in the load phase rather than inside the first decode windows that reach them.  A
+// decode window lands in `native_mmvq_multi_kernel<F, NCOLS, NW, ROWS>` with the shape chosen at runtime from
+// n_in, so this launches two input sizes per type to cover both.  It cannot change a number: the kernels run
+// over scratch buffers of its own and nothing it computes is read.  STRATA_MMVQ_WARMUP=0 skips it (the
+// comparison arm).  Call it after the weights are loaded and before the first window or graph capture.
+void native_mmvq_warmup(void* stream);
+
 } // namespace strata::kernels

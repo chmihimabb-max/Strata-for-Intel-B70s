@@ -31,6 +31,9 @@
 #include <cuda_runtime.h>
 
 #include <cstdint>
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -1140,6 +1143,112 @@ void small_f32(const void* weights, const float* x, void* scratch_q8_1,
 }
 
 } // namespace
+
+// --------------------------------------------------------------------------------------------------------------
+// D2b (card t_f93760a1): build the decode path's (quant type x ncols) specializations in the LOAD phase instead
+// of inside the first decode windows that reach them.
+//
+// A decode window reaches `native_mmvq` with ncols = the window's token count (1..8) and one of the quant types
+// the dense tensors carry.  With ncols > 1 the call lands in `native_mmvq_multi_kernel<F, NCOLS, NW, ROWS>`, so
+// every (type, ncols) pair is its own SYCL program - and the launch shape is chosen at RUNTIME from
+// `n_in / F::DIV` against `F::BPI` (the exact layout) or its NW-scaled twin (the generic one), so each pair has
+// two specializations in play.  The first launch that has to build one pays 63.8-519.7 ms of compiler inside
+// whichever window it lands in (`d2a/spread-cold-fully.txt`): D2a measured 25 such programs = 3095 ms of one
+// run's own window time arriving that way, against 121.19-123.98 ms/window for the same lever with 0 new
+// programs.  On a fresh install (both caches empty) that first window is the first request's.
+//
+// This warms the set before the first window.  It cannot change a number: it launches the same kernels on the
+// caller's stream over scratch buffers of its own and nothing it computes is read.  Two input sizes per type are
+// used because of the runtime shape choice above - one input below the `n_in / F::DIV < F::BPI` crossing and one
+// above, so both specializations are built.  The operands are deliberately small: the specialization depends on
+// (type, ncols, NW, ROWS) alone, never on n_in or n_out, so the whole warm-up costs a few hundred KiB of
+// scratch and (with the programs already built) tens of milliseconds.
+//
+// The type list is the six the config of record's decode path reaches: `d2/D2-TYPES.txt` shows the IQ3_S pack's
+// NATIVE-DENSE tensors are IQ4_XS, Q4_K, Q5_K, Q6_K and IQ4_NL, and the MTP drafter (mtp.cpp's `native_mmvq`
+// calls and its head) is Q8_0.  A pack carrying another native type (Q2_0, Q3_K, Q4_0, Q5_0) needs it added
+// here; the warm-up launches kernels the request may never use, which is the price of not knowing the window
+// sequence in advance (the layout's own arms are the alternative: a data-dependent 0.1-3.1 s inside the ask).
+void native_mmvq_warmup(void* stream) {
+    const cudaStream_t s = static_cast<cudaStream_t>(stream);
+    if (s == nullptr) return;
+    const char* off = std::getenv("STRATA_MMVQ_WARMUP");   // 0 = the A/B control arm
+    if (off != nullptr && off[0] == '0') {
+        std::fprintf(stderr, "strata mmvq warmup: off (STRATA_MMVQ_WARMUP=0)\n");
+        return;
+    }
+
+    struct WarmType { int type; int div; int block_bytes; int bpi; const char* name; };
+    static const WarmType types[] = {
+        {12, Q4KTraits::DIV,               (int) sizeof(Q4KTraits::Block),               Q4KTraits::BPI,               "Q4_K"},
+        {13, Q5KTraits::DIV,               (int) sizeof(Q5KTraits::Block),               Q5KTraits::BPI,               "Q5_K"},
+        {14, Q6KTraits::DIV,               (int) sizeof(Q6KTraits::Block),               Q6KTraits::BPI,               "Q6_K"},
+        {23, IQ4XSTraits::DIV,             (int) sizeof(IQ4XSTraits::Block),             IQ4XSTraits::BPI,             "IQ4_XS"},
+        {20, SmallTraits<IQ4NLBlock, 4>::DIV, (int) sizeof(SmallTraits<IQ4NLBlock, 4>::Block), SmallTraits<IQ4NLBlock, 4>::BPI, "IQ4_NL"},
+        {8,  SmallTraits<Q80Block, 8>::DIV,   (int) sizeof(SmallTraits<Q80Block, 8>::Block),   SmallTraits<Q80Block, 8>::BPI,   "Q8_0"},
+    };
+    const int kOut = 8;                    // output rows: never part of a specialization
+    const int kCols = MAX_NCOLS;           // ncols 1..8 is the kernel contract's whole range
+
+    size_t w_bytes = 0, q_bytes = 0, x_bytes = 0, y_bytes = 0;
+    for (const WarmType& t : types) {
+        const int n_big = t.div * (t.bpi + 4);          // blocks above the BPI crossing
+        const size_t n = (size_t) t.block_bytes * (size_t) (t.bpi + 4) * (size_t) kOut;
+        if (n > w_bytes) w_bytes = n;
+        const size_t q = native_q8_1_bytes(n_big, kCols);
+        if (q > q_bytes) q_bytes = q;
+        const size_t x = (size_t) n_big * sizeof(float) * (size_t) kCols;
+        if (x > x_bytes) x_bytes = x;
+    }
+    y_bytes = (size_t) kOut * sizeof(float) * (size_t) kCols;
+
+    void* w = nullptr; void* q = nullptr; float* x = nullptr; float* y = nullptr;
+    const bool ok = cudaMalloc(&w, w_bytes) == cudaSuccess && cudaMalloc(&q, q_bytes) == cudaSuccess &&
+                    cudaMalloc((void**) &x, x_bytes) == cudaSuccess && cudaMalloc((void**) &y, y_bytes) == cudaSuccess;
+    if (!ok) {
+        std::fprintf(stderr, "strata mmvq warmup: scratch allocation failed (%s); the first windows will build\n",
+                     cudaGetErrorString(cudaGetLastError()));
+        if (w) cudaFree(w);
+        if (q) cudaFree(q);
+        if (x) cudaFree(x);
+        if (y) cudaFree(y);
+        cudaGetLastError();
+        return;
+    }
+    cudaMemsetAsync(w, 0, w_bytes, s);
+    cudaMemsetAsync(q, 0, q_bytes, s);
+    cudaMemsetAsync(x, 0, x_bytes, s);
+    cudaMemsetAsync(y, 0, y_bytes, s);
+
+    const auto t0 = std::chrono::steady_clock::now();
+    int launches = 0;
+    int failed = 0;
+    for (const WarmType& t : types) {
+        const int sizes[2] = {t.div, t.div * (t.bpi + 4)};   // below and above the launch-shape crossing
+        for (const int n_in : sizes) {
+            for (int ncols = 1; ncols <= kCols; ++ncols) {
+                try {
+                    native_quantize_q8_1(x, q, n_in, ncols, s);
+                    native_mmvq(t.type, w, q, y, n_in, kOut, ncols, s);
+                    launches += 2;
+                } catch (const std::exception& e) {
+                    if (failed++ == 0)
+                        std::fprintf(stderr, "strata mmvq warmup: %s n_in %d ncols %d: %s\n", t.name, n_in, ncols,
+                                     e.what());
+                }
+            }
+        }
+    }
+    const bool synced = cudaStreamSynchronize(s) == cudaSuccess;
+    const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+    std::fprintf(stderr, "strata mmvq warmup: %d launches over %zu types x ncols 1..%d x 2 launch shapes, %.0f ms%s\n",
+                 launches, sizeof(types) / sizeof(types[0]), kCols, ms,
+                 failed ? " (SOME LAUNCHES REFUSED)" : (synced ? "" : " (STREAM SYNC FAILED)"));
+    cudaFree(w);
+    cudaFree(q);
+    cudaFree(x);
+    cudaFree(y);
+}
 
 void native_mmvq_set_multi_exact(bool exact) { g_multi_exact = exact; }
 bool native_mmvq_multi_exact() { return g_multi_exact; }
