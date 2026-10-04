@@ -756,6 +756,159 @@ int main(int argc, char** argv) {
                         activation_mode_name(mode), ok ? "pass" : "*** FAIL ***", rm, ri);
             if (!ok) ++bad;
         }
+        // ---- D2b (card t_2b6b6797): THE MISSING ORACLE - the fused read against gr_read -------------------
+        // The decode path runs the FUSED hyper-connection read (`fused_gr_read_multi`).  Its load-time check
+        // (`fused_gr_check` -> `fused_gr_selftest`) compares the fused variants against EACH OTHER - against
+        // fused_gr.cu's own variant 1, which the banner calls "the plain read".  `gr_read` (this file's subject,
+        // the kernel `scripts/m5g_headmix.py` reproduces in numpy, and the one `STRATA_WINDOW_PLAIN_GR=1` runs
+        // instead on a native pack) is NOT part of that check.  This block is the A/B the banner's wording
+        // implies and does not perform: both reads, the same fixture, the same real dims, each against the host
+        // reference below.  INFORMATIONAL: it adds no failure, so the suite's verdict does not move.
+        {
+            const int MT = 4;
+            float *d_xn2 = nullptr, *f_lo = nullptr, *f_rs = nullptr, *f_inj = nullptr, *f_mx = nullptr;
+            float *f_rout = nullptr, *d_bo = nullptr, *d_ipp = nullptr, *d_rw = nullptr, *d_rwo = nullptr;
+            check(cudaMalloc(&d_xn2, (size_t) MT * rdim * 4), "fused xn");
+            check(cudaMalloc(&f_lo, (size_t) MT * rlr * 4), "fused lo");
+            check(cudaMalloc(&f_rs, (size_t) MT * rhc * 4), "fused rs");
+            check(cudaMalloc(&f_inj, (size_t) MT * rhc * 4), "fused inject");
+            check(cudaMalloc(&f_mx, (size_t) MT * rn * 4), "fused mixed");
+            check(cudaMalloc(&f_rout, (size_t) MT * rdim * 4), "fused R_out");
+            check(cudaMalloc(&d_bo, (size_t) rn * 4), "fused bo_prev");
+            check(cudaMalloc(&d_ipp, (size_t) rhc * 4), "fused inj_prev");
+            check(cudaMalloc(&d_rw, (size_t) rdim * 4), "write R");
+            check(cudaMalloc(&d_rwo, (size_t) rdim * 4), "write R_out");
+            std::vector<float> fbo((size_t) rn), fip((size_t) rhc);
+            for (long long d = 0; d < rn; ++d) fbo[(size_t) d] = rR[(size_t) d];
+            fip[0] = 0.7f; fip[1] = -0.4f; fip[2] = 1.3f; fip[3] = 0.2f;
+            check(cudaMemcpy(d_bo, fbo.data(), fbo.size() * 4, cudaMemcpyHostToDevice), "c fbo");
+            check(cudaMemcpy(d_ipp, fip.data(), fip.size() * 4, cudaMemcpyHostToDevice), "c fip");
+
+            std::vector<float> gm[3], gi[3];
+            for (int mode = 0; mode < 3; ++mode) {
+                select_activation_mode(mode);
+                gr_read(dR, dN, dD, dU, dJ, eps, rsh, rws, dM, dI, nullptr);
+                gm[mode].resize((size_t) rn); gi[mode].resize((size_t) rhc);
+                check(cudaMemcpy(gm[mode].data(), dM, gm[mode].size() * 4, cudaMemcpyDeviceToHost), "gm");
+                check(cudaMemcpy(gi[mode].data(), dI, gi[mode].size() * 4, cudaMemcpyDeviceToHost), "gi");
+            }
+            // the host reference is the FP32 transcription of `ref/gr.py`; mode 2 (the native branch) is what a
+            // native pack selects, and `want_mixed`/`want_inject` are the same quantities M5g's numpy script
+            // recomputes (its own agreement target is 1e-6 on this pack).
+
+            // Modes 0..2 in the reference's own terms (already printed above); now the two fused variants, each
+            // forced through the env switch `fused_gr_variant` reads when no on-card check has run.  Both arms
+            // take the SAME step: with `apply` the plain arm runs the engine's own sequence (gr_write in place on
+            // R, then gr_read reads the written R) and the fused arm folds that same write into the read.
+            auto run_plain = [&](bool apply, std::vector<float>& mixed, std::vector<float>& inject,
+                                 std::vector<float>& lo, std::vector<float>& rout, std::vector<float>& xs) {
+                select_activation_mode(2);   // the native branch: what a native pack selects
+                const float* src = dR;
+                if (apply) {
+                    check(cudaMemcpy(d_rw, dR, (size_t) rdim * 4, cudaMemcpyDeviceToDevice), "rw copy");
+                    strata::kernels::gr_write(d_rw, d_bo, d_ipp, rsh, d_rw, nullptr);   // R_out == R, as the engine calls it
+                    src = d_rw;
+                }
+                gr_read(src, dN, dD, dU, dJ, eps, rsh, rws, dM, dI, nullptr);
+                mixed.resize((size_t) rn); inject.resize((size_t) rhc); lo.resize((size_t) rlr);
+                check(cudaMemcpy(mixed.data(), dM, mixed.size() * 4, cudaMemcpyDeviceToHost), "p mixed");
+                check(cudaMemcpy(inject.data(), dI, inject.size() * 4, cudaMemcpyDeviceToHost), "p inject");
+                check(cudaMemcpy(lo.data(), rws.lo, lo.size() * 4, cudaMemcpyDeviceToHost), "p lo");
+                xs.resize((size_t) rdim);
+                check(cudaMemcpy(xs.data(), rws.xn, xs.size() * 4, cudaMemcpyDeviceToHost), "p xn");
+                if (apply) {
+                    rout.resize((size_t) rdim);
+                    check(cudaMemcpy(rout.data(), d_rw, rout.size() * 4, cudaMemcpyDeviceToHost), "p R_out");
+                }
+            };
+            auto run_fused = [&](const char* split, bool apply, std::vector<float>& mixed,
+                                 std::vector<float>& inject, std::vector<float>& lo, std::vector<float>& rout,
+                                 std::vector<float>& xs) {
+                setenv("STRATA_HC_SPLIT", split, 1);
+                std::vector<strata::kernels::FusedGrArgs> fa((size_t) MT);
+                for (int t = 0; t < MT; ++t) {
+                    strata::kernels::FusedGrArgs& a = fa[(size_t) t];
+                    a.R = dR; a.R_out = f_rout + (size_t) t * rdim; a.apply = apply;
+                    a.bo_prev = d_bo; a.inj_prev = d_ipp;
+                    a.w_norm = dN; a.w_down = dD; a.w_up = dU; a.w_inject = dJ; a.eps = eps;
+                    a.lo = f_lo + (size_t) t * rlr; a.rs = f_rs + (size_t) t * rhc;
+                    a.inject_out = f_inj + (size_t) t * rhc; a.mixed = f_mx + (size_t) t * rn;
+                }
+                strata::kernels::fused_gr_read_multi(fa.data(), MT, d_xn2, nullptr);
+                check(cudaStreamSynchronize(nullptr), "fused sync");
+                mixed.resize((size_t) rn); inject.resize((size_t) rhc); lo.resize((size_t) rlr);
+                check(cudaMemcpy(mixed.data(), f_mx, mixed.size() * 4, cudaMemcpyDeviceToHost), "f mixed");
+                check(cudaMemcpy(inject.data(), f_inj, inject.size() * 4, cudaMemcpyDeviceToHost), "f inject");
+                check(cudaMemcpy(lo.data(), f_lo, lo.size() * 4, cudaMemcpyDeviceToHost), "f lo");
+                xs.resize((size_t) rdim);
+                check(cudaMemcpy(xs.data(), d_xn2, xs.size() * 4, cudaMemcpyDeviceToHost), "f xn");
+                if (apply) {
+                    rout.resize((size_t) rdim);
+                    check(cudaMemcpy(rout.data(), f_rout, rout.size() * 4, cudaMemcpyDeviceToHost), "f R_out");
+                }
+            };
+            auto cmp = [&](const char* what, const std::vector<float>& x, const std::vector<float>& y) {
+                size_t nd = 0;
+                double worst = 0.0, mag = 1e-30;
+                for (size_t i = 0; i < x.size(); ++i) {
+                    if (std::memcmp(&x[i], &y[i], 4) != 0) ++nd;
+                    worst = std::max(worst, (double) std::fabs((double) x[i] - (double) y[i]));
+                    mag = std::max(mag, (double) std::fabs((double) y[i]));
+                }
+                std::printf("      %-28s %5zu/%zu floats differ, worst rel %.3e\n", what, nd, x.size(),
+                            worst / (mag > 1e-30 ? mag : 1e-30));
+            };
+            auto rows = [&](const char* vname, const std::vector<float>& fm, const std::vector<float>& fi,
+                            const std::vector<float>& fl, const std::vector<float>& gm2,
+                            const std::vector<float>& gi2, const std::vector<float>& gl2,
+                            const std::vector<float>* fr, const std::vector<float>* pr) {
+                std::printf("\n  %s vs gr_read native (real dims 2560/4/320, T=%d)\n", vname, MT);
+                cmp("mixed", fm, gm2);
+                cmp("inject", fi, gi2);
+                cmp("lo (down+silu)", fl, gl2);
+                if (fr != nullptr) cmp("R_out (write folded)", *fr, *pr);
+            };
+            std::vector<float> p_m, p_i, p_l, p_r, f1_m, f1_i, f1_l, f1_r, f3_m, f3_i, f3_l, f3_r;
+            std::vector<float> p_xn, f1_xn, f3_xn;
+            // the write-free case is kept under its own names: the reference has no apply fold, and the applied
+            // run below would otherwise overwrite the tensors the reference comparison is about
+            std::vector<float> pn_m, pn_i, pn_l, pn_r, pn_xn, sn_m, sn_i, sn_l, sn_r, sn_xn;
+            run_plain(false, pn_m, pn_i, pn_l, pn_r, pn_xn);
+            run_fused("0", false, f1_m, f1_i, f1_l, f1_r, f1_xn);
+            run_fused("2", false, sn_m, sn_i, sn_l, sn_r, sn_xn);
+            rows("fused plain ", f1_m, f1_i, f1_l, pn_m, pn_i, pn_l, nullptr, nullptr);
+            cmp("xn (norm, before down)", f1_xn, pn_xn);
+            rows("fused staged", sn_m, sn_i, sn_l, pn_m, pn_i, pn_l, nullptr, nullptr);
+            cmp("xn (norm, before down)", sn_xn, pn_xn);
+            std::printf("\n  fused staged vs fused plain (the load-time check's own claim, re-run at real dims)\n");
+            cmp("mixed", sn_m, f1_m);
+            cmp("inject", sn_i, f1_i);
+            cmp("lo (down+silu)", sn_l, f1_l);
+            cmp("xn (norm, before down)", sn_xn, f1_xn);
+            // the applied case: the engine's plain arm writes first, the fused arm folds the same write in
+            run_plain(true, p_m, p_i, p_l, p_r, p_xn);
+            run_fused("2", true, f3_m, f3_i, f3_l, f3_r, f3_xn);
+            rows("fused staged + write", f3_m, f3_i, f3_l, p_m, p_i, p_l, &f3_r, &p_r);
+            // each arm against the host reference, at the real dims: which one the reference separates.  The
+            // reference has no apply fold, so only the write-free case is comparable.
+            Opts precision;
+            precision.round_activation = false;
+            std::vector<float> wm, wi;
+            reference(rR, rnorm, rdown, rup, rinj, eps, rn, rhc, rlr, precision, wm, wi);
+            std::printf("\n  against the host reference (ref/gr.py transcription):\n");
+            for (int mode = 0; mode < 3; ++mode)
+                std::printf("      gr_read %-15s mixed %.3e inject %.3e\n", activation_mode_name(mode),
+                            rel_diff(wm, gm[mode]), rel_diff(wi, gi[mode]));
+            std::printf("      %-22s mixed %.3e inject %.3e\n", "fused plain", rel_diff(wm, f1_m), rel_diff(wi, f1_i));
+            std::printf("      %-22s mixed %.3e inject %.3e\n", "fused staged", rel_diff(wm, sn_m), rel_diff(wi, sn_i));
+            // and how far APART the two reads are, on the same scale as the distances above
+            std::printf("      %-22s mixed %.3e inject %.3e\n", "fused plain vs gr_read", rel_diff(pn_m, f1_m),
+                        rel_diff(pn_i, f1_i));
+            unsetenv("STRATA_HC_SPLIT");
+            select_activation_mode(0);
+            cudaFree(d_xn2); cudaFree(f_lo); cudaFree(f_rs); cudaFree(f_inj); cudaFree(f_mx); cudaFree(f_rout);
+            cudaFree(d_bo); cudaFree(d_ipp); cudaFree(d_rw); cudaFree(d_rwo);
+        }
         bad += fused_multi_lds_parity(dN, dD, dU, dJ, eps);
         select_activation_mode(0);
         cudaFree(rws_raw);

@@ -7,3 +7,10 @@ runs/*/stdin.fifo
 runs/*/drive.pid
 runs/*/hist.txt
 runs/*/sites.csv
+
+# D2b (t_2b6b6797): the per-arm ladder / window-state dumps (~1-2 MB each) - regenerable, see the arm command
+# in runs/<tag>/log.txt; the derived tables are committed under d2/plain/ instead.
+*.bin.lb*
+window-state.bin
+ladder.bin.lb*
+d2/plain/*.bin

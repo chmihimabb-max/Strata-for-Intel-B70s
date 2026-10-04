@@ -1,0 +1,46 @@
+D2b (t_2b6b6797): the fused hyper-connection read is not bit-equal to gr_read - the load-time check compares the fused family with itself
+
+The card's question: the load banner says the shipped (fused, staged) hyper-connection read is "checked bit for bit
+against the plain read on this card", yet STRATA_WINDOW_PLAIN_GR=1 (which runs gr_read, src/kernels/cuda/gr.cu)
+costs 21.5% and moves the greedy ids at 4K.  Verdict: the banner's claim is true and its SCOPE is what was wrong -
+"the plain read" there is fused_gr.cu's own variant 1 (the what[] table at sycl/fused_gr.cpp:1271), so
+fused_gr_check/fused_gr_selfcheck only ever compare the fused variants WITH EACH OTHER.  gr_read is a different
+kernel and was never part of the check; no test in the tree compared the two reads before this card.  Neither path
+is measurably wrong (both ~2e-07 from the ref/gr.py reference, 2.004e-07 apart from each other; numpy agrees with
+each to 4-5e-07, inside its own 1e-6 target), so the fused read stays - the defect is the claim.
+
+Measured (d2/plain/STATUS-D2B-PLAINGR.md has the whole write-up, every number backed by a file):
+
+* the arms re-ran D2's pair exactly: shipped 125.31 ms/window / 23.0 tok/s / 147 ids (ac9f16fc…), forced plain
+  159.53 ms/window / 18.1 tok/s / 150 ids (ad985c23…) = +27.3% window time, -21.5% decode, the stream moves;
+* kernel-level A/B at the real geometry (2560/4/320, T=4, one card, new gr_parity block): fused staged == fused
+  plain bitwise (0/2560 mixed); fused vs gr_read's native branch = 1707/2560 mixed floats differ (worst 5.884e-07),
+  3/4 inject, 267/320 lo, xn bit-identical, R_out (the folded write) 0/10240 bit-equal.  The inject row is a pure
+  dot with no activation and already differs, so the reduction order alone suffices; the fused silu/sigmoid's
+  __expf -> sycl::native::exp is a second, port-documented candidate this fixture does not isolate;
+* layer ladder (one card, so it covers all 48 layers): first divergence at layer 0, residual R after layer 0,
+  last-bit only (rel_rms 1.450e-07, max/rms 3.3e-06); still last-bit at layer 1; first MATERIAL divergence at
+  layer 2 (9.030e-04, a 6,200x jump = the first router near-tie flip), ~1.6e-02 by layer 22.  The .bo
+  (attention-half) ladder is bit-identical for layers 0-1 and first differs at layer 2;
+* the two-card ladder had to be understood first: the dump site is only reached by the LAST stage of a layer split
+  (verify.cpp:1720-1733 returns before it), so that file covers layers >= lb (23 here, 1.1e-02 already apart at
+  its first entry).
+
+Engine changes, all instrumentation and default-neutral:
+
+* src/core/verify.cpp: STRATA_DUMP_LADDER_PERSTAGE=1 appends .lb<lb_> to the ladder and its .bo companion
+  (default off), with the comment that only the last stage reaches the dump;
+* src/kernels/gr_parity.cpp: the informational fused-vs-gr_read block above (adds no failure: the binary still
+  prints "gr_read/gr_write: 0 failures" and "gr_parity OK");
+* src/kernels/sycl/fused_gr.cpp + src/kernels/cuda/fused_gr.cu: one additive stderr line at load saying which
+  comparison the check made.  The ids control arm d2b-fused2-4096 on the final binary cc6a41ad… is byte-identical
+  to the shipped stream (147 ids, 124.98 against 125.31 ms/window).
+
+Not validated: one fixture for the kernel A/B (xn agreeing there is that fixture's result, not proof the two norms
+are identical arithmetic); the fixture does not separate the reduction order from expf_fast; the one-card arms'
+streams are their own (different split), so the layer numbers describe the one-card stream while the ids outcome is
+the two-card pair; the ladder covers the first window only (T=1); no ctest run (the only test touched, gr_parity,
+passes run directly); nothing pushed (origin has no sycl-xpu branch).  Machine left clean: no engine, no server.
+
+Raw arm data: d2/runs/d2b-fused-4096/, d2/runs/d2b-plain-4096/, d2/runs/d2p-1c-fused-4096/,
+d2/runs/d2p-1c-plain-4096/, d2/runs/d2b-fused2-4096/.  Tables and scripts: d2/plain/ (d2/STATUS-D2.md §10).

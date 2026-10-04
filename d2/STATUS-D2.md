@@ -403,3 +403,43 @@ things.  It is named here as the largest measured opportunity on the decode path
   `d2/config-before-d2.json`.
 * Raw arm data is committed under `d2/runs/<tag>/` inside the repo (this card's rule) and the write-up's every
   number is backed by those files plus `d2/D2-EVIDENCE.txt` and `d2/D2-CENSUS.txt`.
+
+## 10. D2b (card `t_2b6b6797`) — the fused read is not bit-equal to `gr_read`; the load-time check compares the fused family with itself
+
+The card D2 opened as "the unfused mixer read (-21.7%, and ids move)".  Full write-up:
+`d2/plain/STATUS-D2B-PLAINGR.md`, raw tables under `d2/plain/`, arm data under `d2/runs/d2b-fused-4096/`,
+`d2/runs/d2b-plain-4096/`, `d2/runs/d2p-1c-fused-4096/`, `d2/runs/d2p-1c-plain-4096/`.
+
+* **The arms re-ran D2's pair exactly** (rig + D2's reader both checked): shipped `d2b-fused-4096` 125.31 ms/window,
+  23.0 tok/s, 147 ids, `ac9f16fc…`/`7a7638cd…`; forced plain `d2b-plain-4096` 159.53 ms/window, 18.1 tok/s, 150 ids,
+  `ad985c23…`/`61767199…` = **+27.3% window time, -21.5% decode, the stream moves**.  The ladder instrumentation
+  used below changed neither stream (control).
+* **The banner's claim is true but about itself.**  `fused_gr_check` -> `fused_gr_selftest` compares the fused
+  variants against `fused_gr.cu`'s own variant 1, which the `what[]` table calls "the plain read"
+  (`src/kernels/sycl/fused_gr.cpp:1271`).  `strata::kernels::gr_read` is never part of it — no test in the tree
+  compared the two reads before this card's `gr_parity` block.
+* **Measured at the real geometry (2560/4/320, T=4, one card)**: fused staged == fused plain bitwise
+  (0/2560 `mixed`), and fused vs `gr_read`'s native branch = **1707/2560 `mixed` floats differ, worst 5.884e-07**,
+  3/4 `inject`, 267/320 `lo`, `xn` bit-identical, and the folded write `R_out` **0/10240 (bit-equal)**.  The
+  `inject` row has no activation function and still differs, so the **reduction order alone** (fused `dot8` lane
+  order vs native MMVF) suffices; the fused silu/sigmoid's `__expf` -> `sycl::native::exp` (port-documented fast
+  set) is a second candidate this fixture does not separate.
+* **The reference cannot separate the two reads**: host `ref/gr.py` transcription — fused 1.907e-07, `gr_read`
+  native 1.960e-07, the two 2.004e-07 apart; numpy `scripts/m5g_headmix.py` on each arm's own window state —
+  4.07e-07 vs 5.02e-07, both inside its 1e-6 target.
+* **First-divergence layer = 0**, tensor class = the residual R after layer 0 (last-bit only: rel_rms 1.450e-07,
+  max|diff| 2.980e-08, 8660/10240 values); the `.bo` (attention-half) ladder first differs at layer 2; **layer 2
+  is where it goes material** (9.030e-04, a 6,200x jump = the first router near-tie flip), growing to ~1.6e-02 by
+  layer 22.  The layer table had to come from a **one-card** pair: under a layer split the ladder dump site is
+  only reached by the last stage (`verify.cpp:1720-1733`), so the two-card ladder covers layers >= lb (23) and the
+  arms are already 1.1e-02 apart at its first entry.
+* **Verdict: keep the fused read** (21.5% faster); neither path is measurably wrong, and the defect is the
+  banner's scope, not the kernel.  Making the fused read bit-equal would need the MMVF reduction tree in the
+  three dots plus accurate `expf` in the silu/sigmoid — i.e. the structure that buys the 21.5% — and no
+  measurement here says that is a precision win.
+* **Tree**: `src/core/verify.cpp` +7 lines (`STRATA_DUMP_LADDER_PERSTAGE=1` names each stage's ladder file;
+  default off, unchanged), `src/kernels/gr_parity.cpp` +~120 lines (the informational fused-vs-`gr_read` block;
+  adds no failure, `gr_parity` still prints `gr_read/gr_write: 0 failures` and `gr_parity OK`), and one additive
+  stderr line in `src/kernels/{sycl/fused_gr.cpp,cuda/fused_gr.cu}` saying which comparison the load-time check
+  actually made (the ids control arm `d2b-fused2-4096` on the final binary `cc6a41ad…` is byte-identical to the
+  shipped stream).  No ctest run; no engine default moved.  Nothing pushed.

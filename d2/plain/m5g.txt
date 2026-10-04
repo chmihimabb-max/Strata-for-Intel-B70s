@@ -1,0 +1,14 @@
+=== fused
+state d2b/state-fused.bin: T 1 n_embd 2560 hc 4 pos0 3831
+index: norm kind 2 40960 bytes=40960 | down kind 4 ne 10240x320 | up kind 4 ne 320x10240
+gamma: min 0.63281 max 13.375 mean 3.7497 | w_down (320, 10240) | w_up (10240, 320)
+
+-- col 0 (pos 3831): residual rms 0.65816, engine head input rms 2.41329
+   gamma=asis    mixed rms 2.41329  rel_rms vs engine 4.0685e-07  max|diff| 2.7657e-05  corr 1.000000
+=== plain
+state d2b/state-plain.bin: T 1 n_embd 2560 hc 4 pos0 3831
+index: norm kind 2 40960 bytes=40960 | down kind 4 ne 10240x320 | up kind 4 ne 320x10240
+gamma: min 0.63281 max 13.375 mean 3.7497 | w_down (320, 10240) | w_up (10240, 320)
+
+-- col 0 (pos 3831): residual rms 0.653212, engine head input rms 2.4505
+   gamma=asis    mixed rms 2.4505  rel_rms vs engine 5.0206e-07  max|diff| 1.0014e-05  corr 1.000000

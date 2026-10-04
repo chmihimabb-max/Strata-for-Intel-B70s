@@ -1770,9 +1770,16 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
     //   int32 hdr[5] = { n_entries, hc, n_embd, pos0, T }, then n_entries * T * hc * n_embd floats
     if (const char* lp = std::getenv("STRATA_DUMP_LADDER");
         lp != nullptr && lad_ != nullptr && windows == 0) {
+        // D2b (card t_2b6b6797): in a layer split BOTH stages run a Verifier in this process and both open this
+        // path, so the stage that writes last owns the file and the other stage's ladder is gone - a race, and
+        // half of a 48-layer stack cannot answer "which layer diverges first".  With STRATA_DUMP_LADDER_PERSTAGE
+        // set, the stage's first layer goes into the name so every stage keeps its own file.  Unset: unchanged.
+        const std::string lpath = std::getenv("STRATA_DUMP_LADDER_PERSTAGE") != nullptr
+                                      ? std::string(lp) + ".lb" + std::to_string(lb_)
+                                      : std::string(lp);
         const int64_t n_entries = g.n_layers - lb_ + 2;
-        std::FILE* f = std::fopen(lp, "wb");
-        if (f == nullptr) { err = std::string("STRATA_DUMP_LADDER: cannot write ") + lp; return false; }
+        std::FILE* f = std::fopen(lpath.c_str(), "wb");
+        if (f == nullptr) { err = std::string("STRATA_DUMP_LADDER: cannot write ") + lpath; return false; }
         const int32_t hdr[5] = {(int32_t) n_entries, (int32_t) g.hc, (int32_t) g.n_embd, (int32_t) pos0, (int32_t) T};
         const size_t per = (size_t) T * (size_t) (g.hc * g.n_embd);
         const size_t stride = (size_t) max_t_ * (size_t) (g.hc * g.n_embd);   // entries are strided by max_t_ columns
@@ -1786,12 +1793,12 @@ bool Verifier::run(int T, const int32_t* tokens, int64_t pos0, PoolMultiFn pool,
         std::fclose(f);
         if (!ok) { err = "STRATA_DUMP_LADDER: a write failed"; return false; }
         std::fprintf(stderr, "strata dbg: ladder -> %s (%lld entries x T %d x hc %lld x n_embd %lld, pos0 %lld)\n",
-                     lp, (long long) n_entries, T, (long long) g.hc, (long long) g.n_embd, (long long) pos0);
+                     lpath.c_str(), (long long) n_entries, T, (long long) g.hc, (long long) g.n_embd, (long long) pos0);
         // the attention half's output, same row layout, one row per layer - and only the rows that were filled:
         // slot k is layer (lb_ + k), there are n_layers - lb_ of them, and the buffer's zero-initialised tail is
         // NOT written out (it used to be, and read as a layer with a bit-zero attention output).
         const int64_t nb = g.n_layers - lb_;
-        std::string bop = std::string(lp) + ".bo";
+        std::string bop = lpath + ".bo";
         if (std::FILE* fb = std::fopen(bop.c_str(), "wb")) {
             const size_t pb = (size_t) T * (size_t) g.n_embd;
             const size_t sb = (size_t) max_t_ * (size_t) g.n_embd;

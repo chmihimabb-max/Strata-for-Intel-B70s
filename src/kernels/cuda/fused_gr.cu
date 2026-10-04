@@ -1075,6 +1075,13 @@ void fused_gr_check() {
     std::fprintf(stderr, "strata hc: CUDA%d: the hyper-connection read runs as %s%s\n", dev, what[use],
                  use >= kHcSplit ? "; checked bit for bit against the plain read on this card (STRATA_HC_SPLIT=1 or 0 "
                                    "for the earlier ones)" : "");
+    // D2b (card t_2b6b6797): the sentence above is easy to over-read.  What was checked is the FUSED variants
+    // against EACH OTHER - variant 1 above is what this file calls "the plain read".  `gr_read` in gr.cu is a
+    // different kernel (another reduction order in the three dots, `expf` where this file uses `__expf`), it is
+    // NOT compared at load, and forcing it with STRATA_WINDOW_PLAIN_GR=1 moves the greedy ids at last-bit level
+    // (measured: d2/plain/STATUS-D2B-PLAINGR.md).  Say so here rather than leave the next reader to find out.
+    std::fprintf(stderr, "strata hc: CUDA%d: that check compared the fused variants with each other; the plain "
+                         "gr_read (src/kernels/cuda/gr.cu) is a different kernel and is not part of it\n", dev);
 }
 
 
