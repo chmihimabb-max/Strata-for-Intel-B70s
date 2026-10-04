@@ -1,0 +1,23 @@
+S4 (t_30d9ccfb): the write-up, the raw evidence, and the closure/4K probes
+
+STATUS-S4.md is the card's write-up: the reproduction (both failing arms, the three-line engine
+stderr, HTTP 400, exit 1), the length sweep that brackets the failure at the engine's own
+16,384-token mid-prompt checkpoint (4,096 / 16,052 / 16,352 pass, 16,452 fails on the chunk that
+ends at 16,384), the path diff against P10's driver arms (the one functional difference is
+--prompt-cache), the cause with file:line, the fix, and the served-path proof (a 32,277-token
+/v1/chat/completions on the config of record with 2 checkpoints, 217.1 tok/s prefill, 22.2 tok/s
+decode, 0.00 CPU experts, both cards free afterwards).
+
+S4-EVIDENCE.txt is assembled from the arm directories by s4_evidence.sh - every block is raw.
+
+The extra probes answer the numerics question the fix had to make a statement about:
+- the fix is numerically inert: the pre-fix and the fixed binary give byte-identical greedy text,
+  both with checkpoints off and with the turn-boundary-only checkpoint on (the configuration the
+  pre-fix binary can survive);
+- --prompt-cache itself changes the served greedy text at every length tested (4,148 and 32,277
+  prompt tokens), on both the graph path and the closure path (STRATA_SYCL_GRAPH=0), with both
+  binaries - which is not this card's bug and is handed on as t_aae723be (S5), filed at low
+  priority so D2/D3 go first.
+
+The suite is unchanged: 5 failed of 49, the same five as D1's pre-fix baseline, and conv_cache_test
+(the checkpoint-path test in this build) passes.
