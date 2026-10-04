@@ -376,6 +376,21 @@ things.  It is named here as the largest measured opportunity on the decode path
 * **Not attempted (named, not hidden)**: the int8-XMX MMVQ rewrite (§6); re-deriving the QSA selection sharing
   (that is D3's card).
 
+## 8b. The follow-up cards this session created
+
+* **`t_8306429a`** — the generic multi-column MMVQ layout is non-deterministic (three identical runs, three token
+  streams, 120.68-191.79 ms/window): find the mechanism, or bound it, and never ship it on this evidence.
+* **`t_2b6b6797`** — the fused hyper-connection read and the plain `gr_read` disagree on the greedy ids at 4K even
+  though the engine's load-time check says they are bit-for-bit equal: find the first divergent layer/tensor class
+  and say which path the m5g numpy reference supports.  This is the only correctness question this card raised that
+  it could not close.
+* **`t_85e61269`** — price an int8-XMX (DPAS) MMVQ against the shipped scalar MMVQ on the decode shapes: the 40.9%
+  family is a scalar FMA integer dot on a device with int8 XMX, and nobody has measured the ceiling.  A microbench
+  and a bandwidth floor, not a rewrite.
+* `t_87aa2963` (D3, pre-existing) is the selection-sharing + sync-pricing card and was released by this card's
+  completion; D3 also inherits §4's corrected census, since its premise ("the expert chain is the dominant
+  device-time consumer") is corrected here to "the dense projection MMVQ is, at 40.9%".
+
 ## 9. The state this card left the machine in
 
 * **No engine and no server are running**: every arm ran one engine at a time and the last arm

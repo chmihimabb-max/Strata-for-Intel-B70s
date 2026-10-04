@@ -1,9 +1,9 @@
-# D2 (t_0416a0c0) raw evidence -- generated 2026-10-03T19:35:10-06:00
+# D2 (t_0416a0c0) raw evidence -- generated 2026-10-03T19:36:08-06:00
 ## HEAD
+55697ea D2 (t_0416a0c0): the write-up, the corrected census table, and the raw evidence
 569cfdb D2 (t_0416a0c0): the multi-column MMVQ's layout switch, the corrected census, and every arm
 3da0feb D2 (t_0416a0c0): the arm rig, the tensor census, and task 0's first arms
 3e0a390 S4 (t_30d9ccfb): the write-up, the raw evidence, and the closure/4K probes
-e41fa26 S4 (t_30d9ccfb): a split's mid-prompt checkpoint part is copied on ITS stage's device
 ## the engine binary the arms ran (md5 per arm is in each arm's own log)
 e841fd061fec873c2f24e785973a2ebe  /home/michael/strata-xpu/strata/build-sycl/strata
 
