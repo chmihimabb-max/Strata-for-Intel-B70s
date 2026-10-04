@@ -1,0 +1,4 @@
+strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+strata generate: PCIe probe: 26.6 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
+strata generate: /run/media/michael/2208B12208B0F63F/strata-iq3s/pack is a native (IQ) pack: it needs --native SHARD1, --spec T (T >= 2) and --prefill CHUNK

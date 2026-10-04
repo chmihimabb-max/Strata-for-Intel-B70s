@@ -1,0 +1,39 @@
+=== S5 DRIVER arm s5-pc6-ttnon   2026-10-04T00:06:56-06:00
+HEAD        : b1c620e S5 (t_aae723be): the driver rig - the server's own ids for the S4 prompt, and the engine's own T lines
+engine      : 2026-10-03 23:52:23.037436726 -0600 50820208 bytes  md5 3dbea776ac8bf94414c199bdae05877c
+GEN line    : /home/michael/strata-xpu/strata/s5/prompts/gen-ctx4096.txt  (17575 B, 4148 ids)
+extra       : --turn-token -1   env: <none>
+onecard     : <none>  ZE_AFFINITY_MASK=<unset>
+engine argv : /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill 512 --spec 4 --spec-min-p 0.7 --max-context 262144 --kv-resident 32768 --no-capture --stats --layer-split auto --turn-token -1
+argv sha256 : ce79f4d2a1261b984d5c9e16481512f25f7a531d8d9053462c6fa649c5f26a79
+-- device check BEFORE --
+   no engine
+   no server
+----------------------------------------------
+TOTAL on card0                           883.5 MiB
+TOTAL on card1                             0.0 MiB
+2.81 1.53 1.16 1/1694 1518302
+               total        used        free      shared  buff/cache   available
+Mem:             123           7          50           0          66         115
+== running (timeout 1800s) 2026-10-04T00:06:56-06:00 ==
+rc=0  wall=55376ms  2026-10-04T00:07:51-06:00
+T lines     : 64   ids md5: 7f863468c804113e677df220b69cefd9
+unique ids  : 48
+-- the engine's own prompt/checkpoint line --
+strata serve: prompt 4148 tokens = 0 reused + 4148 read in 18620 ms (222.8 tok/s), 64 generated in 3636 ms (17.6 tok/s), drafts accepted 25 of 45, 0 checkpoints
+-- errors --
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 5-token window (upload no error, sync no error)
+strata verify: captured the 5-token window (upload no error, sync no error)
+-- what is left --
+   no engine
+----------------------------------------------
+TOTAL on card0                           883.5 MiB
+TOTAL on card1                             0.0 MiB

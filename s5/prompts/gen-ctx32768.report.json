@@ -1,0 +1,11 @@
+{
+ "gen_line": "s5/prompts/gen-ctx32768.txt",
+ "prompt_tokens": 32277,
+ "prompt_text_md5": "d217c99bb9a235083120177f62c4f4e9",
+ "max_new": 256,
+ "template": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer/chat_template.jinja",
+ "rendered_tail": "tness or performance risks you find in it, in order of severity, and for each one quote the evidence you saw and give a concrete fix. Take as long as you need.<|im_end|>\n<|im_start|>assistant\n<think>\n",
+ "rendered_head": "<|im_start|>system\nReasoning effort is set to xhigh. Please think carefully through the task, validate key assumptions, consider plausible alternatives, and prioritize correctness, consistency, and cl",
+ "kwargs": {},
+ "tokdir": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer"
+}

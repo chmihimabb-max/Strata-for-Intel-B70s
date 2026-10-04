@@ -1,0 +1,11 @@
+{
+ "gen": "/home/michael/strata-xpu/strata/s5/prompts/gen-ctx4096.txt",
+ "out": "/home/michael/strata-xpu/strata/s5/prompts/gen-ctx4096-p1.txt",
+ "n_base": 4148,
+ "n_p1": 4149,
+ "rare_id": 200,
+ "rare_token": [
+  "\u010c"
+ ],
+ "turn_at": 4148
+}

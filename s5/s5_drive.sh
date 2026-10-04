@@ -22,6 +22,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -r "$GEN" ] || { echo "no GEN line file $GEN"; exit 2; }
+GEN=$(readlink -f "$GEN")       # the run happens in $D, so the redirect needs an absolute path
 
 D=$SRC/s5/runs/$TAG
 CACHEDIR=$R/sycl-cache/m6c

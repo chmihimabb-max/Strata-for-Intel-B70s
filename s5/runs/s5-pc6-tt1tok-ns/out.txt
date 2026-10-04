@@ -1,0 +1,79 @@
+INFO context=262144 kv=int8 kv_resident=32768 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=4952 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.70 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+READY 262144 stop
+RESUME 0
+PP 512 4148 2842 180.2
+PP 1024 4148 4526 226.2
+PP 1536 4148 6493 236.6
+PP 2048 4148 8646 236.9
+PP 2560 4148 10885 235.2
+PP 3072 4148 13127 234.0
+PP 3584 4148 15380 233.0
+PP 4096 4148 17637 232.2
+PP 4146 4148 18278 226.8
+PP 4147 4148 18629 222.6
+REUSED 0
+T 1596
+T 1144
+T 5707
+T 310
+T 1156
+T 13
+T 2570
+T 3766
+T 264
+T 1248
+T 2128
+T 22841
+T 10811
+T 25
+T 498
+T 5872
+T 22841
+T 10811
+T 25
+T 1088
+T 82
+T 1001
+T 4243
+T 9871
+T 271
+T 12007
+T 3131
+T 42
+T 60
+T 198
+T 2
+T 4361
+T 450
+T 471
+T 279
+T 3447
+T 2423
+T 1049
+T 4816
+T 781
+T 1318
+T 6970
+T 4351
+T 30
+T 561
+T 9640
+T 369
+T 1066
+T 2128
+T 30
+T 14235
+T 22846
+T 3274
+T 13
+T 2302
+T 4222
+T 1318
+T 586
+T 310
+T 1817
+T 30
+T 2532
+T 369
+T 874
+DONE 64 4148 18976.7 3161.6 length 28 34 0 33600 33600 0 0 0.0
