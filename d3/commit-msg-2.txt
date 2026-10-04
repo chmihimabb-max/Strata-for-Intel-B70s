@@ -1,0 +1,15 @@
+D3 (t_87aa2963): the chains, the census reader, and the evidence collector
+
+d3/d3_select.py is the card's own reader of the same launch-site histogram D2 used: per dumped window it prints
+the window's counted device time, the selection (qsa_block_scores / qsa_block_topk / qsa_decode_attn_batch), the
+per-layer handshake (wait_flag_ge / doorbell_publish) and the instrument's own cost (gpu_stamp), each with its
+launch count, ms and share.  d3/d3_report.py is D2's one-row-per-arm reader (root defaulted at d3/runs),
+d3/d3_evidence.sh writes every raw line the card's acceptance asks for into d3/D3-EVIDENCE.txt.
+
+d3/d3_chain2.sh and d3/d3_chain3.sh are the remaining arm blocks.  Both pass --maxctx (a NEW rig option: the
+engine's --max-context, distinct from the arm's prompt length) because the QSA top-k's dispatch reads the
+CAPACITY, not the depth a window reaches: qsa_select.cu:748-783 takes the register kernel while
+reach = max_cells/4 + 2 <= fit = TK_T*TK_PER = 1024*33 = 33,792 blocks (135,168 cells).  The config of record's
+--max-context 262,144 is 65,538 blocks, i.e. the MEMORY-keyed kernel, while D1's and D2's rigs passed the ARM's
+own CTX as --max-context - so every published decode arm ran the register one.  D3 measures the record's own
+value and keeps the arm-CTX arm as the control.
