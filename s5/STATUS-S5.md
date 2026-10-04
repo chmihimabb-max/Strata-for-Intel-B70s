@@ -102,8 +102,9 @@ Prompt read cost is a wash (217.6 vs 217.2 tok/s, same tokens), so this is not a
    attention's summation order follows the launch shape; the engine's own words for exactly this family are
    `same accuracy, another summation order` (`src/kernels/sycl/qsa_prompt_attn.cpp:1035`, the comment on why the
    SYCL port takes the portable v1 kernel).
-5. **The segment's own chunk** is `request_chunk(tokens, --prefill)` = `min(chunk, tokens rounded up to 256)`
-   (`:3794-3800`), so a short segment cannot even borrow the big run's chunk width.
+5. **The segment's chunk is chosen per segment** (`request_chunk`, `:3794-3800`: `min(--prefill, the segment rounded
+   up to 256)`), and `lend` (`:5229`) only relayouts the prompt path's borrowed buffers when the new segment needs
+   more than the loan in hand — a second, independent knob on the run's shape.
 
 **Bounded statement of what it is NOT** (each with the arm that excludes it):
 
