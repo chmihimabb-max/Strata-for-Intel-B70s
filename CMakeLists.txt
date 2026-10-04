@@ -799,6 +799,18 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP OR STRATA_ENABLE_SYCL)
   endif()
   endif()   # NOT STRATA_ENABLE_SYCL
 
+  # D2x (card t_85e61269): what a matrix-unit (XMX) MMVQ would buy this config's dense projections, priced
+  # against the shipped scalar MMVQ on the 25 real (type, n_in, n_out) geometries at ncols 4/6, with the
+  # card's measured streaming bandwidth as the floor, the device's own joint_matrix tiles probed at run time,
+  # an f16 16x16x16 prototype checked against an fp64 reference, and the window extrapolation.  Outside the
+  # `NOT STRATA_ENABLE_SYCL` block on purpose: SYCL is the backend the measurement is for (the two mmvq
+  # harnesses above are CUDA/HIP-only, which is why D2a's had to be hand-built for this build).
+  if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_SYCL)
+    add_executable(mmvq_xmx_price bench/micro/mmvq_xmx_price.cpp)
+    target_include_directories(mmvq_xmx_price PRIVATE ${_strata_gpu_include_directories})
+    target_link_libraries(mmvq_xmx_price PRIVATE strata_kernels ${_strata_gpu_runtime_target})
+  endif()
+
   # ---- the SYCL M1 acceptance set (PLAN.md M1) ------------------------------------------------------
   if(STRATA_ENABLE_SYCL)
     enable_testing()
