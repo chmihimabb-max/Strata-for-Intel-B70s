@@ -1,0 +1,86 @@
+D3 (card t_87aa2963) census dump   2026-10-03T19:46:08-06:00
+repo 6c5da81 D3 (t_87aa2963): the chains, the census reader, and the evidence collector
+usage: d3/d3_select.py --brief <files>  then per file
+
+hist.txt                             T window_ms    scores      topk      attn      sel%  waitflag     stamp
+d3/runs/d3-hist-4096/hist.txt        4    132.07     0.210     0.684     2.031     0.68%    14.690     1.703
+d3/runs/d3-hist-32768/hist.txt       4    131.82     1.466     0.750     2.000     1.68%    15.423     1.685
+
+== d3/runs/d3-hist-4096/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3800         0      99.00        0.103        0.771        0.88%
+   2    4        4808         0     132.07        0.210        0.684        0.68%
+   3    2        4136         0      90.55        0.129        0.686        0.90%
+   4    1        3800         0      61.71        0.082        0.675        1.23%
+   5    1        3800         0      61.73        0.081        0.621        1.14%
+   6    2        4136         0      81.10        0.122        0.601        0.89%
+   7    4        4808         0     124.86        0.202        0.658        0.69%
+   8    4        4808         0     123.17        0.203        0.669        0.71%
+
+   ---- window 2: win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=76.75ms
+        counted sites 4808, device time 132.075 ms, wall 76.75 ms, submissions 4808
+        -- the selection --
+           qsa_decode_attn_batch                          24 launches      2.031 ms   1.54%
+           qsa_block_topk                                 12 launches      0.684 ms   0.52%
+           qsa_block_scores                               12 launches      0.210 ms   0.16%
+           native_qsa_indexer_append                      48 launches      0.098 ms   0.07%
+        -- the per-layer handshake --
+           wait_flag_ge                                  144 launches     14.690 ms  11.12%
+           doorbell_publish                               48 launches      0.357 ms   0.27%
+        -- the instrument itself --
+           gpu_stamp                                     998 launches      1.703 ms   1.29%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     52.796 ms  39.97%
+           launch_down                                    96 launches     18.363 ms  13.90%
+           launch_gu                                      96 launches     16.059 ms  12.16%
+           wait_flag_ge                                  144 launches     14.690 ms  11.12%
+           launch_multi                                  288 launches     12.698 ms   9.61%
+           copy_from_mapped                               41 launches      2.395 ms   1.81%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.077 ms   1.57%
+           qsa_decode_attn_batch                          24 launches      2.031 ms   1.54%
+           gpu_stamp                                     998 launches      1.703 ms   1.29%
+           bf16_gemv_fp32_mmvf                            16 launches      1.262 ms   0.96%
+                                                        1306 launches      1.205 ms   0.91%
+           gdn_step_norm_multi                            36 launches      0.936 ms   0.71%
+           native_quantize_q8_1                          193 launches      0.688 ms   0.52%
+           qsa_block_topk                                 12 launches      0.684 ms   0.52%
+
+== d3/runs/d3-hist-32768/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3800         0      96.12        0.525        0.918        1.50%
+   2    4        4808         0     131.82        1.466        0.750        1.68%
+   3    4        4808         0     128.81        1.496        0.751        1.74%
+   4    2        4136         0      89.14        0.782        0.753        1.72%
+   5    1        3800         0      62.44        0.405        0.687        1.75%
+   6    3        4472         0     112.14        1.085        0.701        1.59%
+   7    4        4808         0     122.92        1.441        0.730        1.77%
+   8    4        4808         0     130.46        1.460        0.750        1.69%
+
+   ---- window 2: win=2 stage T=4 pos0=32256 layers 23..47 n=25 wall=74.58ms
+        counted sites 4808, device time 131.823 ms, wall 74.58 ms, submissions 4808
+        -- the selection --
+           qsa_decode_attn_batch                          24 launches      2.000 ms   1.52%
+           qsa_block_scores                               12 launches      1.466 ms   1.11%
+           qsa_block_topk                                 12 launches      0.750 ms   0.57%
+           native_qsa_indexer_append                      48 launches      0.097 ms   0.07%
+        -- the per-layer handshake --
+           wait_flag_ge                                  144 launches     15.423 ms  11.70%
+           doorbell_publish                               48 launches      0.360 ms   0.27%
+        -- the instrument itself --
+           gpu_stamp                                     998 launches      1.685 ms   1.28%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     52.009 ms  39.45%
+           launch_down                                    96 launches     17.785 ms  13.49%
+           launch_gu                                      96 launches     15.581 ms  11.82%
+           wait_flag_ge                                  144 launches     15.423 ms  11.70%
+           launch_multi                                  288 launches     12.506 ms   9.49%
+           copy_from_mapped                               41 launches      2.318 ms   1.76%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.034 ms   1.54%
+           qsa_decode_attn_batch                          24 launches      2.000 ms   1.52%
+           gpu_stamp                                     998 launches      1.685 ms   1.28%
+           qsa_block_scores                               12 launches      1.466 ms   1.11%
+           bf16_gemv_fp32_mmvf                            16 launches      1.262 ms   0.96%
+                                                        1306 launches      1.203 ms   0.91%
+           gdn_step_norm_multi                            36 launches      0.906 ms   0.69%
+           qsa_block_topk                                 12 launches      0.750 ms   0.57%
+
