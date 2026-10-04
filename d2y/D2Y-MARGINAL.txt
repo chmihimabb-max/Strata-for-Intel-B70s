@@ -1,0 +1,235 @@
+D2x -- an int8-XMX MMVQ priced against the shipped scalar MMVQ, on this config's decode shapes
+source: d2y/D2Y-BASE.txt (bench build-sycl/mmvq_xmx_price, one B70, ZE_AFFINITY_MASK=0)
+card read-only rate, incompressible (this bench): 571.6 GB/s
+
+======================================================================================================================
+ncols = 2
+======================================================================================================================
+case                     cnt      weight B   floor us  bench us     GB/s   gen us    f16 us f16 GB/s   f16/ex
+Q6_K 2560x10240           22      21504000       37.6     274.7     78.3    272.4     104.1    503.4     0.38
+Q6_K 2560x12288            5      25804800       45.1     290.1     89.0    296.5     121.9    516.2     0.42
+Q6_K 2560x6144            14      12902400       22.6     128.8    100.2    141.4      55.6    566.3     0.43
+Q6_K 2560x640             26       1344000        2.4      28.9     46.6     24.8      19.8    165.1     0.69
+Q6_K 2560x512             21       1075200        1.9      18.9     57.0     20.8      19.6    133.4     1.04
+Q6_K 6144x2560            40      12902400       22.6     124.8    103.4    143.5     118.3    265.8     0.95
+Q6_K 2560x248320-head      1     521472000      912.3    6093.0     85.6   6093.6    2379.2    534.4     0.39
+Q5_K 2560x10240           10      18022400       31.5     198.9     90.6    202.9     104.3    502.7     0.52
+Q5_K 2560x12288            3      21626880       37.8     211.3    102.4    193.9     124.0    507.5     0.59
+Q5_K 2560x6144             4      10813440       18.9      90.1    120.0     93.5      55.5    567.0     0.62
+Q5_K 2560x640             12       1126400        2.0      19.1     58.9     18.7      19.8    165.5     1.04
+Q5_K 2560x512              2        901120        1.6      12.7     70.9     15.0      19.6    133.4     1.54
+Q5_K 6144x2560             4      10813440       18.9      69.2    156.3     73.5     117.6    267.5     1.70
+Q4_K 2560x10240            2      14745600       25.8     191.7     76.9    227.3     105.4    497.3     0.55
+Q4_K 2560x12288            1      17694720       31.0     235.3     75.2    214.1     125.1    503.0     0.53
+Q4_K 2560x6144            10       8847360       15.5      88.5     99.9     93.4      55.4    567.5     0.63
+Q4_K 2560x640             30        921600        1.6      18.9     48.6     16.9      19.8    165.5     1.05
+Q4_K 6144x2560             4       8847360       15.5      66.7    132.6     73.6     117.7    267.3     1.76
+IQ4_XS 2560x10240          2      13926400       24.4     397.7     35.0    551.6     109.8    477.3     0.28
+IQ4_XS 2560x12288          3      16711680       29.2     344.0     48.6    303.2     124.8    504.2     0.36
+IQ4_XS 2560x6144           8       8355840       14.6     134.4     62.1    127.3      55.5    566.9     0.41
+IQ4_XS 2560x640           28        870400        1.5      27.6     31.5     19.7      19.7    166.1     0.71
+IQ4_XS 2560x512            1        696320        1.2      25.6     27.2     17.3      19.7    133.2     0.77
+IQ4_NL 640x2560           47        921600        1.6      88.4     10.4     78.2      10.9    301.6     0.12
+Q8_0 640x2560              1       1740800        3.0      50.8     34.3     38.2       7.1    460.9     0.14
+----------------------------------------------------------------------------------------------------------------------
+WINDOW (301 calls)              2638423040     4616.7   35289.2     74.8  35621.0   18183.3    290.2     0.52
+
+   the bench's shipped-layout window total   35289.2 us     35.29 ms
+   (the engine's census is a T=4 window's: 51267.3 us.  This is ncols=2, the other window width
+    the config reaches, so it has no census of its own; every variant in this row is measured
+    at the same ncols in the same run, so the shipped-vs-variant ratios stand.)
+
+   variant                           window us  window ms  % of window   vs shipped
+   shipped layout                      35289.2      35.29       28.14%        1.00x
+   generic layout                      35621.0      35.62       28.41%        0.99x
+   f16 XMX prototype                   18183.3      18.18       14.50%        1.94x
+   the pack's own floor                 4616.7       4.62        3.68%        7.64x
+   the f16 prototype's floor           12405.5      12.41        9.89%        2.84x
+
+   the family's own share of a T=4 window is 40.9% (the census); at this ncols = 2 table:
+     an f16 MMA/MMVQ measured like this makes the family 1.94x smaller: 21.1% of the window instead of 40.9%
+     its own representation's floor would make it 2.84x smaller (14.4% of the window)
+   the same kernel reading the PACK'S OWN bytes would buy 7.64x (5.4% of the window): that is
+   the lever that does NOT need the matrix unit, and it is the larger one
+
+   one-time price of the f16 representation (dequantize + repack, this host): 3780 ms
+
+======================================================================================================================
+ncols = 4
+======================================================================================================================
+case                     cnt      weight B   floor us  bench us     GB/s   gen us    f16 us f16 GB/s   f16/ex
+Q6_K 2560x10240           22      21504000       37.6     398.3     54.0    376.4     101.5    516.5     0.25
+Q6_K 2560x12288            5      25804800       45.1     373.7     69.1    372.9     122.8    512.3     0.33
+Q6_K 2560x6144            14      12902400       22.6     190.5     67.7    195.5      56.0    562.1     0.29
+Q6_K 2560x640             26       1344000        2.4      39.9     33.7     32.1      19.8    165.2     0.50
+Q6_K 2560x512             21       1075200        1.9      25.5     42.2     27.7      19.8    132.7     0.78
+Q6_K 6144x2560            40      12902400       22.6     167.8     76.9    198.2     118.5    265.5     0.71
+Q6_K 2560x248320-head      1     521472000      912.3    8837.7     59.0   8406.8    2300.3    552.7     0.26
+Q5_K 2560x10240           10      18022400       31.5     318.8     56.5    270.0     101.6    516.2     0.32
+Q5_K 2560x12288            3      21626880       37.8     314.0     68.9    310.1     123.3    510.4     0.39
+Q5_K 2560x6144             4      10813440       18.9     154.6     69.9    164.9      55.5    567.1     0.36
+Q5_K 2560x640             12       1126400        2.0      32.4     34.7     29.1      19.9    165.0     0.61
+Q5_K 2560x512              2        901120        1.6      22.1     40.8     26.0      19.7    133.4     0.89
+Q5_K 6144x2560             4      10813440       18.9     112.1     96.5    128.0     120.3    261.4     1.07
+Q4_K 2560x10240            2      14745600       25.8     352.4     41.8    255.0     101.4    517.2     0.29
+Q4_K 2560x12288            1      17694720       31.0     310.5     57.0    300.3     123.0    511.4     0.40
+Q4_K 2560x6144            10       8847360       15.5     155.0     57.1    163.4      55.5    566.4     0.36
+Q4_K 2560x640             30        921600        1.6      32.9     28.1     28.8      19.8    165.5     0.60
+Q4_K 6144x2560             4       8847360       15.5     113.3     78.1    128.0     119.9    262.3     1.06
+IQ4_XS 2560x10240          2      13926400       24.4     347.6     40.1    290.8     101.5    516.6     0.29
+IQ4_XS 2560x12288          3      16711680       29.2     409.6     40.8    346.9     123.7    508.5     0.30
+IQ4_XS 2560x6144           8       8355840       14.6     217.3     38.5    182.0      55.6    565.6     0.26
+IQ4_XS 2560x640           28        870400        1.5      37.7     23.1     27.0      19.8    165.6     0.53
+IQ4_XS 2560x512            1        696320        1.2      34.5     20.2     23.4      19.7    133.2     0.57
+IQ4_NL 640x2560           47        921600        1.6     227.3      4.1    135.7      10.1    325.8     0.04
+Q8_0 640x2560              1       1740800        3.0     121.6     14.3     66.9       6.9    474.1     0.06
+----------------------------------------------------------------------------------------------------------------------
+WINDOW (301 calls)              2638423040     4616.7   55613.2     47.4  49959.3   17998.2    293.2     0.32
+
+   the bench's shipped-layout window total   55613.2 us     55.61 ms
+   the engine's own census for the same 301   51267.3 us     51.27 ms   -> this table is +8.5%
+   (the proxy is the check the card asked for: same launches, same order, same answer)
+
+   variant                           window us  window ms  % of window   vs shipped
+   shipped layout                      55613.2      55.61       44.35%        1.00x
+   generic layout                      49959.3      49.96       39.84%        1.11x
+   f16 XMX prototype                   17998.2      18.00       14.35%        3.09x
+   the pack's own floor                 4616.7       4.62        3.68%       12.05x
+   the f16 prototype's floor           12405.5      12.41        9.89%        4.48x
+
+   the family's own share of a T=4 window is 40.9% (the census); at this ncols = 4 table:
+     an f16 MMA/MMVQ measured like this makes the family 3.09x smaller: 13.2% of the window instead of 40.9%
+     its own representation's floor would make it 4.48x smaller (9.1% of the window)
+   the same kernel reading the PACK'S OWN bytes would buy 12.05x (3.4% of the window): that is
+   the lever that does NOT need the matrix unit, and it is the larger one
+
+   one-time price of the f16 representation (dequantize + repack, this host): 3780 ms
+
+======================================================================================================================
+ncols = 6
+======================================================================================================================
+case                     cnt      weight B   floor us  bench us     GB/s   gen us    f16 us f16 GB/s   f16/ex
+Q6_K 2560x10240           22      21504000       37.6     393.3     54.7    378.0     103.6    506.1     0.26
+Q6_K 2560x12288            5      25804800       45.1     480.2     53.7    459.6     123.8    508.2     0.26
+Q6_K 2560x6144            14      12902400       22.6     242.6     53.2    233.6      57.3    549.0     0.24
+Q6_K 2560x640             26       1344000        2.4      50.0     26.9     45.3      20.0    164.1     0.40
+Q6_K 2560x512             21       1075200        1.9      32.3     33.3     40.9      19.9    132.0     0.62
+Q6_K 6144x2560            40      12902400       22.6     212.7     60.7    306.6     122.1    257.6     0.57
+Q6_K 2560x248320-head      1     521472000      912.3   11116.3     46.9  10017.1    2326.5    546.5     0.21
+Q5_K 2560x10240           10      18022400       31.5     377.5     47.7    318.7     103.5    506.6     0.27
+Q5_K 2560x12288            3      21626880       37.8     470.0     46.0    383.7     125.9    499.8     0.27
+Q5_K 2560x6144             4      10813440       18.9     235.1     46.0    193.0      56.9    553.2     0.24
+Q5_K 2560x640             12       1126400        2.0      47.7     23.6     43.9      20.0    163.8     0.42
+Q5_K 2560x512              2        901120        1.6      29.7     30.3     41.4      19.9    131.7     0.67
+Q5_K 6144x2560             4      10813440       18.9     160.2     67.5    216.1     122.8    256.1     0.77
+Q4_K 2560x10240            2      14745600       25.8     375.0     39.3    323.5     102.7    510.5     0.27
+Q4_K 2560x12288            1      17694720       31.0     451.5     39.2    391.1     123.5    509.3     0.27
+Q4_K 2560x6144            10       8847360       15.5     235.1     37.6    196.0      56.9    553.2     0.24
+Q4_K 2560x640             30        921600        1.6      48.4     19.0     45.1      20.0    164.0     0.41
+Q4_K 6144x2560             4       8847360       15.5     159.7     55.4    220.4     120.0    262.2     0.75
+IQ4_XS 2560x10240          2      13926400       24.4     509.1     27.4    342.3     102.1    513.7     0.20
+IQ4_XS 2560x12288          3      16711680       29.2     613.6     27.2    412.6     124.0    507.5     0.20
+IQ4_XS 2560x6144           8       8355840       14.6     324.3     25.8    203.8      56.1    560.9     0.17
+IQ4_XS 2560x640           28        870400        1.5      52.4     16.6     40.0      20.0    164.0     0.38
+IQ4_XS 2560x512            1        696320        1.2      47.6     14.6     37.9      19.9    132.0     0.42
+IQ4_NL 640x2560           47        921600        1.6     286.4      3.2    106.7       6.6    494.2     0.02
+Q8_0 640x2560              1       1740800        3.0     153.9     11.3     99.2       7.0    467.1     0.05
+----------------------------------------------------------------------------------------------------------------------
+WINDOW (301 calls)              2638423040     4616.7   69676.8     37.9  59843.8   18160.1    290.6     0.26
+
+   the bench's shipped-layout window total   69676.8 us     69.68 ms
+   (the engine's census is a T=4 window's: 51267.3 us.  This is ncols=6, the other window width
+    the config reaches, so it has no census of its own; every variant in this row is measured
+    at the same ncols in the same run, so the shipped-vs-variant ratios stand.)
+
+   variant                           window us  window ms  % of window   vs shipped
+   shipped layout                      69676.8      69.68       55.56%        1.00x
+   generic layout                      59843.8      59.84       47.72%        1.16x
+   f16 XMX prototype                   18160.1      18.16       14.48%        3.84x
+   the pack's own floor                 4616.7       4.62        3.68%       15.09x
+   the f16 prototype's floor           12405.5      12.41        9.89%        5.62x
+
+   the family's own share of a T=4 window is 40.9% (the census); at this ncols = 6 table:
+     an f16 MMA/MMVQ measured like this makes the family 3.84x smaller: 10.7% of the window instead of 40.9%
+     its own representation's floor would make it 5.62x smaller (7.3% of the window)
+   the same kernel reading the PACK'S OWN bytes would buy 15.09x (2.7% of the window): that is
+   the lever that does NOT need the matrix unit, and it is the larger one
+
+   one-time price of the f16 representation (dequantize + repack, this host): 3780 ms
+
+======================================================================================================================
+per type at ncols = 2: this bench's per-call proxy against the engine's own census
+======================================================================================================================
+type     launches  bench n         bytes   bench us  census us bench GB/s bench/census
+Q6_K          129      129    1877836800    21530.4    30718.5       87.2      0.70
+Q5_K           35       35     346931200     3514.7     5131.1       98.7      0.68
+Q4_K           47       47     198696960     2337.5     4171.1       85.0      0.56
+IQ4_XS         42       42     169902080     3701.0     4940.6       45.9      0.75
+IQ4_NL         47       47      43315200     4154.8     6213.2       10.4      0.67
+Q8_0            1        1       1740800       50.8       92.8       34.3      0.55
+
+======================================================================================================================
+the byte arithmetic for every representation the card could be asked for (one window, 301 calls)
+======================================================================================================================
+representation                             bytes    x pack   floor us   floor ms vs shipped
+the pack's blocks (shipped)           2638423040      1.00     4615.9       4.62       7.65x
+int8 (1 B/element)                    3545497600      1.34     6202.8       6.20       5.69x
+f16 / bf16 (2 B/element)              7090995200      2.69    12405.5      12.41       2.84x
+f32 (4 B/element)                    14181990400      5.38    24811.0      24.81       1.42x
+
+   the int8 dot IS the one this card was proposed for, and it is the one the driver refuses
+   (bench section 1: 'joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=8,
+   Cols=32 is not supported on this device'); the f16 16x16x16 tile probe21 recorded as running no
+   longer builds on this toolchain either, so the prototype above runs on f16 8x16x16.
+
+   the bandwidth a variant must reach to beat the shipped layout, per shape class:
+     with 2 B/element it must exceed 2.69x the shipped kernel's achieved rate; the shipped kernel
+     runs at 13.1% of this card's measured 572 GB/s, so the bar is 201 GB/s (and the prototype
+     reaches 568 GB/s on the big shapes and 133-461 GB/s on the small ones)
+
+   the bar every variant must clear to beat the shipped layout, per shape: its own bytes per
+   element x the shipped kernel's rate on THAT shape.  The f16 prototype against its own bar:
+   case                    T  pack B/e shipped GB/s  bar GB/s  f16 GB/s  vs bar
+   Q6_K 2560x10240         2     0.820      78.3     190.9     503.4    2.64
+   Q6_K 2560x12288         2     0.820      89.0     217.0     516.2    2.38
+   Q6_K 2560x6144          2     0.820     100.2     244.3     566.3    2.32
+   Q6_K 2560x640           2     0.820      46.6     113.6     165.1    1.45
+   Q6_K 2560x512           2     0.820      57.0     139.0     133.4    0.96   <-- misses
+   Q6_K 6144x2560          2     0.820     103.4     252.1     265.8    1.05
+   Q6_K 2560x248320-head   2     0.820      85.6     208.7     534.4    2.56
+   Q5_K 2560x10240         2     0.688      90.6     263.6     502.7    1.91
+   Q5_K 2560x12288         2     0.688     102.4     297.9     507.5    1.70
+   Q5_K 2560x6144          2     0.688     120.0     349.1     567.0    1.62
+   Q5_K 2560x640           2     0.688      58.9     171.3     165.5    0.97   <-- misses
+   Q5_K 2560x512           2     0.688      70.9     206.3     133.4    0.65   <-- misses
+   Q5_K 6144x2560          2     0.688     156.3     454.7     267.5    0.59   <-- misses
+   Q4_K 2560x10240         2     0.562      76.9     273.4     497.3    1.82
+   Q4_K 2560x12288         2     0.562      75.2     267.4     503.0    1.88
+   Q4_K 2560x6144          2     0.562      99.9     355.2     567.5    1.60
+   Q4_K 2560x640           2     0.562      48.6     172.8     165.5    0.96   <-- misses
+   Q4_K 6144x2560          2     0.562     132.6     471.5     267.3    0.57   <-- misses
+   IQ4_XS 2560x10240       2     0.531      35.0     131.8     477.3    3.62
+   IQ4_XS 2560x12288       2     0.531      48.6     183.0     504.2    2.76
+   IQ4_XS 2560x6144        2     0.531      62.1     233.8     566.9    2.42
+   IQ4_XS 2560x640         2     0.531      31.5     118.6     166.1    1.40
+   IQ4_XS 2560x512         2     0.531      27.2     102.4     133.2    1.30
+   IQ4_NL 640x2560         2     0.562      10.4      37.0     301.6    8.16
+   Q8_0 640x2560           2     1.062      34.3      64.6     460.9    7.14
+   19 of 25 geometries clear their own bar at ncols = 2; the worst is 0.57x
+
+======================================================================================================================
+the shipped kernel against its own column count: which part of it scales with the columns
+======================================================================================================================
+   ncols       window us         GB/s   vs ncols=2
+   2             35289.2         74.8         1.00x
+   4             55613.2         47.4         1.58x
+   6             69676.8         37.9         1.97x
+
+   a straight line through ncols = 2 and 6: 8.60 ms of window time per extra column, and 18.10 ms
+   at zero columns -- i.e. the work that scales with the column count (the activation loads, the
+   integer dot and the per-output reduction) is 48.7% of the family at ncols = 2, and the part that
+   does not (reading the weight bytes, once per row regardless of the columns) is 51.3%.
+   the weight-byte part at 0 columns is 146 GB/s against the 572 GB/s floor: even with every column's
+   work removed, what is left runs at 26% of the card, so the part of this kernel that only reads the
+   weights is itself 3.9x above its own floor -- the bytes are not what the 8.8% is made of.
+

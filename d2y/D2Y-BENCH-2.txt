@@ -1,0 +1,164 @@
+###### d2y bench 2026-10-03T23:48:21-06:00
+###### binary: /home/michael/strata-xpu/strata/build-sycl/mmvq_xmx_price md5 159c3b1878590839de95f7938e14988f
+###### ZE_AFFINITY_MASK=0 (card 0 only; see d2y/machine.txt for which cards were free)
+###### command: ZE_AFFINITY_MASK=0 build-sycl/mmvq_xmx_price --reps 20 --t 4 --variants
+
+device: Intel(R) Graphics [0xe223] (SM 12.0)
+sycl device: Intel(R) Graphics [0xe223], driver 1.15.37833+4, max work-group 1024
+reps 20, ncols 4
+
+== 1. the device's own joint_matrix shapes (probe21 re-run at this HEAD, not inherited) ==
+  f16  16x16x16  (A row_major, B row_major)              REFUSED: The program was built for 1 devices
+Build program log for 'Intel(R) Graphics [0xe223]':
+
+error: undefined reference to `__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_RowMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32'
+in function: '__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_RowMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32' called by kernel: 'typeinfo name for bool (anonymous namespace)::probe_tile<sycl::_V1::detail::half_impl::half, sycl::_V1::detail::half_impl::half, float, 16, 16, 16, (sycl::_V1::ext::oneapi::experimental::matrix::layout)0, (sycl::_V1::ext::oneapi::experimental::matrix::layout)0>(sycl::_V1::queue&, char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*)::'lambda'(sycl::_V1::nd_item<1>)'
+
+error: backend compiler failed build.
+
+  f16  16x16x16  (A col_major, B row_major)              REFUSED: The program was built for 1 devices
+Build program log for 'Intel(R) Graphics [0xe223]':
+
+error: undefined reference to `__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_ColumnMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32'
+in function: '__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_ColumnMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32' called by kernel: 'typeinfo name for bool (anonymous namespace)::probe_tile<sycl::_V1::detail::half_impl::half, sycl::_V1::detail::half_impl::half, float, 16, 16, 16, (sycl::_V1::ext::oneapi::experimental::matrix::layout)1, (sycl::_V1::ext::oneapi::experimental::matrix::layout)0>(sycl::_V1::queue&, char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*)::'lambda'(sycl::_V1::nd_item<1>)'
+
+error: backend compiler failed build.
+
+  f16  16x16x16  (A intel_packed, B intel_packed)        REFUSED: The program was built for 1 devices
+Build program log for 'Intel(R) Graphics [0xe223]':
+
+error: undefined reference to `__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_SG16_16x16_i16_8_global_v8i8_pi32_i32'
+in function: '__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_SG16_16x16_i16_8_global_v8i8_pi32_i32' called by kernel: 'typeinfo name for bool (anonymous namespace)::probe_tile<sycl::_V1::detail::half_impl::half, sycl::_V1::detail::half_impl::half, float, 16, 16, 16, (sycl::_V1::ext::oneapi::experimental::matrix::layout)2, (sycl::_V1::ext::oneapi::experimental::matrix::layout)2>(sycl::_V1::queue&, char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*)::'lambda'(sycl::_V1::nd_item<1>)'
+
+error: backend compiler failed build.
+
+  f16   8x16x16  (A row_major, B row_major)              RUNS
+  f16   8x16x16  (A col_major, B row_major)              RUNS
+  bf16 16x16x16  (A row_major, B row_major)              REFUSED: The program was built for 1 devices
+Build program log for 'Intel(R) Graphics [0xe223]':
+
+error: undefined reference to `__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_RowMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32'
+in function: '__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_RowMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32' called by kernel: 'typeinfo name for bool (anonymous namespace)::probe_tile<sycl::_V1::ext::oneapi::bfloat16, sycl::_V1::ext::oneapi::bfloat16, float, 16, 16, 16, (sycl::_V1::ext::oneapi::experimental::matrix::layout)0, (sycl::_V1::ext::oneapi::experimental::matrix::layout)0>(sycl::_V1::queue&, char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*)::'lambda'(sycl::_V1::nd_item<1>)'
+
+error: backend compiler failed build.
+
+  bf16  8x16x16  (A row_major, B row_major)              RUNS
+  int8  8x32x16  (A row_major, B row_major)              REFUSED: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=8, Cols=32 is not supported on this device
+  int8  8x32x16  (A row_major, B col_major)              REFUSED: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=8, Cols=32 is not supported on this device
+  int8  8x32x16  (A row_major, B intel_packed)           REFUSED: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=8, Cols=32 is not supported on this device
+  int8 16x32x16  (A row_major, B row_major)              REFUSED: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=16, Cols=32 is not supported on this device
+
+  VERDICT on this driver (1.15.37833+4):
+    f16 16x16x16 / bf16 16x16x16 (the shapes probe21 recorded as RUNNING): DOES NOT BUILD
+    f16  8x16x16 (the only tile that builds for a GEMV-shaped kernel): RUNS
+    the int8 8x32x16 / 16x32x16 dot (the shape this card was proposed for): REFUSED by the driver in every layout tried
+  driver text: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=16, Cols=32 is not supported on this device
+
+== 2. the card's streaming rate, measured here (event-timed on the same stream as the kernels below) ==
+   read-only over      8 MiB [memset-filled]: event    0.009 ms ->   982.0 GB/s | wall/burst    0.006 ms ->  1358.1 GB/s
+   read-only over    256 MiB [memset-filled]: event    0.203 ms ->  1325.6 GB/s | wall/burst    0.201 ms ->  1336.8 GB/s
+   read-only over   1024 MiB [memset-filled]: event    0.794 ms ->  1351.9 GB/s | wall/burst    0.792 ms ->  1355.3 GB/s
+   read-only over   1024 MiB [hash-filled, incompressible]: 1.879 ms ->   571.5 GB/s   <- the floor below uses this
+        (wall/burst cross-check: 1.876 ms -> 572.3 GB/s)
+   the memset-filled read above is 2.37x the incompressible rate: the driver compresses uniform pages, so a constant-filled
+   buffer is not a bandwidth measurement
+   write-only memset of   1024 MiB (constant, compressible): event    0.772 ms ->  1390.3 GB/s
+   device->device copy of    256 MiB x3: 0.592 ms -> 2722.6 GB/s of traffic (read+write)
+   (the floor below uses the read-only number: a GEMV reads the weights and writes n_out outputs)
+
+== 3. per (type, shape, ncols): the shipped kernel, the generic layout, the f16 XMX prototype
+   (floor = this card's measured 571.5 GB/s on the pack's own weight bytes; prototype GB/s is on f16 bytes;
+    us/call is the IN-STREAM price - `reps` launches back to back / reps - which is what the census measures)
+case                    T   cnt      weight B  floor us    ex us  ex GB/s   gen us gen GB/s   f16 us f16 GB/s   dq ms ex 1call
+Q6_K 2560x10240         4    22      21504000      37.6    402.2     53.5    312.2     68.9    100.8    519.9    31.4    433.4
+Q6_K 2560x12288         4     5      25804800      45.2    448.6     57.5    367.8     70.2    123.8    508.4    37.6    482.4
+Q6_K 2560x6144          4    14      12902400      22.6    191.6     67.3    196.7     65.6     55.8    563.6    19.0    195.4
+Q6_K 2560x640           4    26       1344000       2.4     39.6     34.0     34.0     39.5     19.8    165.5     1.9     43.9
+Q6_K 2560x512           4    21       1075200       1.9     25.2     42.6     28.1     38.3     19.7    133.2     1.5     29.6
+Q6_K 6144x2560          4    40      12902400      22.6    168.0     76.8    199.8     64.6    118.6    265.3    18.9    171.8
+Q6_K 2560x248320-head   4     1     521472000     912.4   8818.5     59.1   8411.3     62.0   2301.4    552.4   459.3   8541.8
+Q5_K 2560x10240         4    10      18022400      31.5    313.3     57.5    299.4     60.2    102.6    510.9    26.5    316.6
+Q5_K 2560x12288         4     3      21626880      37.8    370.9     58.3    371.4     58.2    122.9    512.1    31.9    386.9
+Q5_K 2560x6144          4     4      10813440      18.9    155.0     69.8    166.3     65.0     55.6    565.6    15.9    159.8
+Q5_K 2560x640           4    12       1126400       2.0     32.5     34.6     29.3     38.4     19.8    165.4     1.4     37.0
+Q5_K 2560x512           4     2        901120       1.6     22.1     40.8     25.8     35.0     19.7    133.2     1.1     26.6
+Q5_K 6144x2560          4     4      10813440      18.9    112.9     95.8    129.5     83.5    120.6    260.8    15.8    117.4
+Q4_K 2560x10240         4     2      14745600      25.8    320.2     46.0    300.9     49.0    102.7    510.4    26.1    324.2
+Q4_K 2560x12288         4     1      17694720      31.0    378.6     46.7    364.2     48.6    123.8    508.3    31.5    394.5
+Q4_K 2560x6144          4    10       8847360      15.5    155.2     57.0    164.4     53.8     55.9    563.2    15.7    159.7
+Q4_K 2560x640           4    30        921600       1.6     33.2     27.8     28.9     31.9     19.9    165.0     1.4     37.5
+Q4_K 6144x2560          4     4       8847360      15.5    112.4     78.7    129.6     68.3    120.6    260.9    15.6    113.8
+IQ4_XS 2560x10240       4     2      13926400      24.4    437.0     31.9    336.9     41.3    101.6    516.1    30.7    465.8
+IQ4_XS 2560x12288       4     3      16711680      29.2    492.4     33.9    379.1     44.1    122.5    513.7    36.9    524.8
+IQ4_XS 2560x6144        4     8       8355840      14.6    217.3     38.4    180.9     46.2     55.5    566.6    18.6    221.5
+IQ4_XS 2560x640         4    28        870400       1.5     37.6     23.1     27.0     32.3     19.8    165.3     1.8     40.9
+IQ4_XS 2560x512         4     1        696320       1.2     34.3     20.3     23.3     29.8     19.7    133.1     1.5     37.7
+IQ4_NL 640x2560         4    47        921600       1.6    134.2      6.9     87.0     10.6      6.6    497.7     1.8    137.1
+Q8_0 640x2560           4     1       1740800       3.0     79.3     21.9     63.3     27.5      6.5    502.9     1.4     82.4
+
+== 4. accuracy (any variant that changes the numerics states its own tolerance) ==
+  parity, Q6_K 2560x10240 ncols=4, rows {0, 5120, 10176} + 64 (192 x 4 outputs), fp64 reference = the same dequantized weights . the same f32 activations:
+    (1) the f16 encoding alone      (f16(w).x  vs w.x)     : max 5.500e-01  rel_rms 2.081e-04
+    (2) shipped kernel vs ref       (Q8_1 activations)    : max 1.579e+01  rel_rms 5.650e-03
+    (3) f16 XMX kernel vs ref       (f16 activations)     : max 1.073e+00  rel_rms 2.951e-04
+    (4) f16 XMX kernel vs f16(w).f16(x), its own encoding : max 5.166e-04  rel_rms 1.158e-07   <- the kernel's own arithmetic
+    (5) f16 XMX kernel vs shipped kernel                  : max 1.551e+01  rel_rms 5.670e-03
+
+== 5. what a whole T=4 window's 301 dense calls would cost ==
+   the census (d2-hist-4096) measures this family at 301 launches / 51267.3 us of device time / 40.9% of the window
+   weight bytes per window: 2638423040 (2516.2 MiB); card read-only rate 571.5 GB/s
+   shipped layout (multi_exact)         52203.5 us   52.20 ms   41.6% of the window  vs shipped    +0.0%  vs the pack's floor 11.31x
+   generic layout (multi_exact off)     47216.5 us   47.22 ms   37.7% of the window  vs shipped    -9.6%  vs the pack's floor 10.23x
+   f16 XMX prototype (as written)       17839.7 us   17.84 ms   14.2% of the window  vs shipped   -65.8%  vs the pack's floor  3.86x
+   the pack's own bandwidth floor        4616.5 us    4.62 ms    3.7% of the window  vs shipped   -91.2%  vs the pack's floor  1.00x
+   the prototype's own bandwidth floor   12407.3 us   12.41 ms    9.9% of the window  vs shipped   -76.2%  vs the pack's floor  2.69x
+   the census's own 51267.3 us is the check on the shipped row above: this table's per-call
+   times x the census's own launch counts (the geometries' counts sum to 301)
+
+== 6. D2y: the pack's own bytes read flat, and the exact layout's rows per work-group forced ==
+   T = 4.  flat4 / flat16: section 6's kernels -- the shipped grid and the shipped row-to-group
+   mapping, reading the SAME bytes with no dot, no activation and no reduction, at 4 and at 16 bytes
+   per thread per pass (16 only where the row length is a multiple of 16).  rN: the shipped exact
+   kernel with ROWS forced to N (native_mmvq_set_exact_rows, OFF by default).  gen: the generic
+   multi-column layout.  eq: bit for bit against the shipped kernel's own y over all 4 x n_out
+   outputs.
+case                        weight B   floor  ship us   GB/s    flat4   GB/s   flat16   GB/s   r2 us   r4 us   r8 us  r16 us  gen us  eq (bit for bit)
+Q6_K 2560x10240             21504000    37.6    311.3   69.1     21.7  990.4      0.0    0.0   315.9   438.1   674.3   952.6   312.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x12288             25804800    45.2    371.1   69.5     25.9  995.3      0.0    0.0   374.8   522.6   804.1  1138.8   370.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x6144              12902400    22.6    190.1   67.9     10.3 1255.6      0.0    0.0   196.6   270.8   424.8   550.0   195.8  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x640                1344000     2.4     39.9   33.7      2.4  549.0      0.0    0.0    32.6    50.5    99.1   170.5    32.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x512                1075200     1.9     25.3   42.6      2.4  453.7      0.0    0.0    27.9    43.4    82.7   164.3    28.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 6144x2560              12902400    22.6    168.0   76.8      8.3 1555.1      5.3 2414.5   197.0   302.3   366.0   505.4   197.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x248320-head      521472000   912.4   8829.1   59.1    884.7  589.4      0.0    0.0  8406.2 10357.5 14643.0 19779.3  8528.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x10240             18022400    31.5    247.5   72.8     16.9 1063.4     12.3 1467.5   261.2   373.2   483.6  1109.3   260.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x12288             21626880    37.8    294.3   73.5     18.2 1191.2     11.9 1816.4   311.6   438.8   586.0  1344.0   308.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x6144              10813440    18.9    155.0   69.8      9.2 1179.0      6.2 1735.9   165.5   240.1   304.6   637.0   165.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x640                1126400     2.0     32.2   34.9      2.3  481.7      2.3  483.8    29.2    47.1    86.8   227.4    29.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x512                 901120     1.6     21.9   41.2      2.3  386.2      2.2  406.1    25.7    44.5    83.6   206.7    25.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 6144x2560              10813440    18.9    113.3   95.5      7.4 1467.3      4.5 2405.8   129.0   214.7   186.0   535.5   128.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x10240             14745600    25.8    247.8   59.5     13.3 1110.7      8.8 1673.3   257.8   373.7   489.3  1263.7   256.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x12288             17694720    31.0    295.4   59.9     17.5 1010.5     12.0 1468.8   305.7   437.7   586.6  1371.6   300.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x6144               8847360    15.5    155.5   56.9      8.4 1051.2      5.8 1537.3   163.7   235.5   305.8   642.5   163.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x640                 921600     1.6     32.7   28.2      2.4  390.6      2.3  397.6    29.0    46.0    82.0   232.3    29.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 6144x2560               8847360    15.5    112.8   78.4      6.3 1395.8      4.0 2209.0   128.4   210.5   190.8   549.0   128.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x10240           13926400    24.4    346.5   40.2     10.4 1332.9      6.4 2189.9   290.1   346.8   503.6   751.6   290.8  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x12288           16711680    29.2    408.0   41.0     12.1 1378.3      7.3 2300.1   347.1   407.0   600.2   910.3   345.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x6144             8355840    14.6    217.7   38.4      6.7 1242.7      4.4 1880.8   180.8   217.9   314.1   423.6   180.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x640               870400     1.5     37.6   23.1      2.6  333.6      2.3  379.8    27.1    37.7    78.3   141.6    27.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x512               696320     1.2     34.4   20.2      2.7  261.1      2.4  291.3    23.3    34.5    68.8   125.0    23.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_NL 640x2560               921600     1.6    134.1    6.9      2.5  370.2      0.0    0.0    86.7   134.2   116.1   178.8    86.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q8_0 640x2560                1740800     3.0     79.5   21.9      3.2  540.8      0.0    0.0    63.3    79.3    94.1   126.6    63.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+
+   variant                             window us      GB/s   vs shipped   of floor bit for bit
+   shipped layout (the rule in n_in)     48252.6      54.7        1.00x      0.10x  the reference
+   flat4  (same bytes, no dot)            2935.4     898.8       16.44x      1.57x  not applicable
+   flat16 (same bytes, 16 B/thread)        756.9    3485.6       63.75x      6.10x  not applicable
+   exact rows = 2                        46255.5      57.0        1.04x      0.10x  yes (rows 2/4/8/16, by construction)
+   exact rows = 4                        65134.5      40.5        0.74x      0.07x  yes (rows 2/4/8/16, by construction)
+   exact rows = 8                        89142.8      29.6        0.54x      0.05x  yes (rows 2/4/8/16, by construction)
+   exact rows = 16                      144917.9      18.2        0.33x      0.03x  yes (rows 2/4/8/16, by construction)
+   generic layout (multi_exact off)      46245.6      57.1        1.04x      0.10x  no (a different reduction grouping)
+   the pack's bandwidth floor             4616.5     571.5       10.45x      1.00x  not applicable
+
+byte-table check (this file's own block sizes vs native_mmvq_weight_bytes): every case MATCHES
+###### exit=0 at 2026-10-03T23:48:33-06:00

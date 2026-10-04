@@ -999,6 +999,15 @@ struct SmallTraits {
 // equal to ncols = 1 only to float rounding (the cross-warp reduction groups partial sums differently).
 bool g_multi_exact = true;   // until the upstream layout is timed on an idle GPU (plan rule: default only what is measured)
 
+// D2y (card t_ba006576): the exact layout picks ROWS from `n_in` -- 1 normally, WARPS when the row is shorter
+// than one block-per-iteration count.  This knob FORCES a ROWS so the shape-specialised variant (`more rows per
+// block`) can be priced against the shipped one.  0 is the shipped rule and the default: an engine run that
+// never calls the setter is the shipped kernel, bit for bit, and every shipped number in
+// bench/micro/mmvq_xmx_price.cpp is taken with it at 0.  Any ROWS keeps every column bitwise equal to a
+// single-column call: a thread's kbx sequence, its accumulation order and the warp/cross-warp reduction tree
+// are unchanged -- only which rows a work-group covers changes.
+int g_exact_rows = 0;
+
 template<typename F, int NCOLS, int NW, int ROWS>
 __launch_bounds__(NW * WARP, 1)
 __global__ void native_mmvq_multi_kernel(const typename F::Block* __restrict__ w,
@@ -1056,6 +1065,19 @@ void launch_multi_n(const void* weights, const void* x_q8_1, float* y, int n_in,
         return;
     }
     const dim3 threads(WARP, WARPS);
+    if (g_exact_rows > 0) {
+        // D2y pricing arm: the shipped rule below is a runtime choice between ROWS = 1 and ROWS = WARPS; this
+        // forces any of the four it can take (2, 4, 8, 16) with everything else identical.
+        const unsigned rows = unsigned(g_exact_rows);
+        const unsigned blocks = unsigned((std::size_t(n_out) + rows - 1) / rows);
+        switch (rows) {
+            case 2: native_mmvq_multi_kernel<F, NCOLS, WARPS, 2><<<blocks, threads, 0, s>>>(w, x, y, n_in, n_out); return;
+            case 4: native_mmvq_multi_kernel<F, NCOLS, WARPS, 4><<<blocks, threads, 0, s>>>(w, x, y, n_in, n_out); return;
+            case 8: native_mmvq_multi_kernel<F, NCOLS, WARPS, 8><<<blocks, threads, 0, s>>>(w, x, y, n_in, n_out); return;
+            case 16: native_mmvq_multi_kernel<F, NCOLS, WARPS, 16><<<blocks, threads, 0, s>>>(w, x, y, n_in, n_out); return;
+            default: throw std::invalid_argument("native MMVQ exact ROWS supports 2, 4, 8 or 16");
+        }
+    }
     if (n_in / F::DIV < F::BPI) {
         const unsigned blocks = unsigned((std::size_t(n_out) + WARPS - 1) / WARPS);
         native_mmvq_multi_kernel<F, NCOLS, WARPS, WARPS><<<blocks, threads, 0, s>>>(w, x, y, n_in, n_out);
@@ -1252,6 +1274,12 @@ void native_mmvq_warmup(void* stream) {
 
 void native_mmvq_set_multi_exact(bool exact) { g_multi_exact = exact; }
 bool native_mmvq_multi_exact() { return g_multi_exact; }
+
+// D2y (card t_ba006576) pricing arm.  0 (the default) is the shipped rule; 2/4/8/16 force ROWS in the exact
+// multi-column layout.  Nothing in the engine sets this: it exists so a caller can price the variant against
+// the shipped kernel on the same shapes, and it restores 0 on the next call from anyone who wants the default.
+void native_mmvq_set_exact_rows(int rows) { g_exact_rows = rows; }
+int native_mmvq_exact_rows() { return g_exact_rows; }
 
 std::size_t native_q8_1_bytes(int n_in, int ncols) {
     validate_shape(n_in, ncols);

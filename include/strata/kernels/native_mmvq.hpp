@@ -32,6 +32,13 @@ std::size_t native_q8_1_bytes(int n_in, int ncols = 1);
 void native_mmvq_set_multi_exact(bool exact);
 bool native_mmvq_multi_exact();
 
+// D2y (card t_ba006576) pricing arm: force the exact multi-column layout's rows per work-group (2, 4, 8 or 16)
+// instead of the rule it picks from n_in.  0 restores the shipped rule and is the default, so a process that
+// never calls this runs the shipped kernel bit for bit.  Every ROWS keeps each column bitwise equal to a
+// single-column call.  Set before graph capture; captured graphs keep the kernels they captured.
+void native_mmvq_set_exact_rows(int rows);
+int native_mmvq_exact_rows();
+
 // One quantization may serve multiple weight matrices sharing the same input.
 // Q8_1 stores FP16 scale and FP16 warp sum of the ORIGINAL float inputs; it does
 // not reconstruct that sum from the quantized integers.

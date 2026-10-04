@@ -130,14 +130,17 @@ struct TypeInfo {
     int block_bytes;
     int scale_at[2];
     void (*dequant)(const uint8_t*, float*);
+    int div;    // D2y: the kernel traits' DIV (elements per reduction block)
+    int bpi;    // D2y: the kernel traits' BPI (blocks per iteration, unscaled); ROWS = WARPS when
+                // n_in / div < bpi, else 1 -- the shipped rule (native_mmvq.cu:1059-1064)
 };
 const TypeInfo* type_info(int type) {
-    static const TypeInfo q6{256, 210, {208, -1}, strata::dequantize_q6_K};
-    static const TypeInfo q5{256, 176, {0, 2}, strata::dequantize_q5_K};
-    static const TypeInfo q4{256, 144, {0, 2}, strata::dequantize_q4_K};
-    static const TypeInfo iq4xs{256, 136, {0, -1}, strata::dequantize_iq4_xs};
-    static const TypeInfo iq4nl{32, 18, {0, -1}, strata::dequantize_iq4_nl};
-    static const TypeInfo q8{32, 34, {0, -1}, strata::dequantize_q8_0};
+    static const TypeInfo q6{256, 210, {208, -1}, strata::dequantize_q6_K, 256, 4};
+    static const TypeInfo q5{256, 176, {0, 2}, strata::dequantize_q5_K, 256, 8};
+    static const TypeInfo q4{256, 144, {0, 2}, strata::dequantize_q4_K, 256, 8};
+    static const TypeInfo iq4xs{256, 136, {0, -1}, strata::dequantize_iq4_xs, 256, 16};
+    static const TypeInfo iq4nl{32, 18, {0, -1}, strata::dequantize_iq4_nl, 32, 64};
+    static const TypeInfo q8{32, 34, {0, -1}, strata::dequantize_q8_0, 32, 32};
     switch (type) {
         case 14: return &q6;
         case 13: return &q5;
@@ -351,6 +354,59 @@ void xmx_gemv_f16(sycl::queue& q, sycl::half* wt, sycl::half* x, float* y, int n
     });
 }
 
+// ---------------------------------------------------------------- section 6: the same bytes without the dot
+// D2y (card t_ba006576).  The shipped kernel's own grid -- one work-group per ROWS rows of the matrix, 128
+// threads, the same row-to-group mapping the shipped rule picks from n_in -- reading the row's bytes flat, with
+// no dot, no activation and no reduction.  It prices the pack's OWN access pattern as pure traffic, which is
+// what separates "the bytes are slow" from "the arithmetic on them is slow".  BPT is the bytes one thread reads
+// per pass (4 = one int, 16 = one vec4); the 16 B form needs a 16 B aligned row length, so it is only run where
+// row_bytes % 16 == 0 (the caller decides).  The sink store is unconditional: a load the compiler can drop is
+// how a "read" kernel reports a rate the card does not have.
+template <int BPT>
+void flat_read(sycl::queue& q, const uint8_t* w, float* sink, int n_rows, std::size_t row_bytes,
+               int rows_per_block) {
+    const std::size_t threads = 128;
+    const std::size_t blocks = (std::size_t(n_rows) + rows_per_block - 1) / rows_per_block;
+    q.submit([&](sycl::handler& h) {
+        h.parallel_for(sycl::nd_range<1>(sycl::range<1>(blocks * threads), sycl::range<1>(threads)),
+                       [=](sycl::nd_item<1> it) {
+            const std::size_t row0 = (std::size_t)it.get_group(0) * rows_per_block;
+            const std::size_t lid = it.get_local_id(0);
+            uint32_t acc = 0;
+            for (int i = 0; i < rows_per_block; ++i) {
+                const std::size_t row = row0 + (std::size_t)i;
+                if (row >= (std::size_t)n_rows) break;
+                const uint8_t* base = w + row * row_bytes;
+                for (std::size_t off = lid * BPT; off + BPT <= row_bytes; off += threads * BPT) {
+                    if constexpr (BPT == 4) {
+                        acc ^= *reinterpret_cast<const uint32_t*>(base + off);
+                    } else {
+                        const sycl::vec<uint32_t, 4> v = *reinterpret_cast<const sycl::vec<uint32_t, 4>*>(base + off);
+                        acc ^= v.x() ^ v.y() ^ v.z() ^ v.w();
+                    }
+                }
+            }
+            sink[it.get_global_id(0) & ((1u << 18) - 1)] = (float)acc;
+        });
+    });
+}
+
+// Bit for bit, not "close": the port's rule is that a variant either stays bitwise equal to the shipped kernel
+// (like this one, whose per-thread kbx sequence and reduction tree are untouched) or states its own tolerance.
+bool bitwise_equal(const std::vector<float>& a, const std::vector<float>& b, std::size_t* first_diff) {
+    if (a.size() != b.size()) {
+        if (first_diff != nullptr) *first_diff = 0;
+        return false;
+    }
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        if (std::memcmp(&a[i], &b[i], sizeof(float)) != 0) {
+            if (first_diff != nullptr) *first_diff = i;
+            return false;
+        }
+    }
+    return true;
+}
+
 // ---------------------------------------------------------------- timing one call
 struct Stat {
     double min_us = 0, med_us = 0, batch_us = 0;
@@ -445,6 +501,7 @@ int main(int argc, char** argv) {
     const char* filter = nullptr;
     bool quick = false;
     bool skip_bw = false;
+    bool variants = false;
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--reps") == 0 && i + 1 < argc) reps = std::atoi(argv[++i]);
         else if (std::strcmp(argv[i], "--t") == 0 && i + 1 < argc) {
@@ -454,6 +511,7 @@ int main(int argc, char** argv) {
         } else if (std::strcmp(argv[i], "--case") == 0 && i + 1 < argc) filter = argv[++i];
         else if (std::strcmp(argv[i], "--quick") == 0) quick = true;
         else if (std::strcmp(argv[i], "--skip-bw") == 0) skip_bw = true;
+        else if (std::strcmp(argv[i], "--variants") == 0) variants = true;
     }
     if (reps < 1) reps = 1;
     if (n_t < 1) { n_t = 1; t_list[0] = 4; }
@@ -816,6 +874,147 @@ int main(int argc, char** argv) {
     }
     std::printf("   the census's own 51267.3 us is the check on the shipped row above: this table's per-call\n"
                 "   times x the census's own launch counts (the geometries' counts sum to 301)\n");
+
+    // ---------------------------------------------------------------- 6. the variants, priced (D2y, card t_ba006576)
+    if (variants) {
+        const int T = t_list[0];
+        const int rows_force[4] = {2, 4, 8, 16};
+        std::printf("\n== 6. D2y: the pack's own bytes read flat, and the exact layout's rows per work-group forced ==\n");
+        std::printf("   T = %d.  flat4 / flat16: section 6's kernels -- the shipped grid and the shipped row-to-group\n"
+                    "   mapping, reading the SAME bytes with no dot, no activation and no reduction, at 4 and at 16 bytes\n"
+                    "   per thread per pass (16 only where the row length is a multiple of 16).  rN: the shipped exact\n"
+                    "   kernel with ROWS forced to N (native_mmvq_set_exact_rows, OFF by default).  gen: the generic\n"
+                    "   multi-column layout.  eq: bit for bit against the shipped kernel's own y over all %d x n_out\n"
+                    "   outputs.\n", T, T);
+        std::printf("%-22s %13s %7s %8s %6s %8s %6s %8s %6s %7s %7s %7s %7s %7s  %s\n", "case", "weight B", "floor",
+                    "ship us", "GB/s", "flat4", "GB/s", "flat16", "GB/s", "r2 us", "r4 us", "r8 us", "r16 us",
+                    "gen us", "eq (bit for bit)");
+        float* dsink = sycl::malloc_device<float>(1u << 18, q);
+        double sw_bytes = 0, sw_floor = 0, sw_ship = 0, sw_flat4 = 0, sw_flat16 = 0, sw_gen = 0;
+        double sw_r[4] = {0, 0, 0, 0};
+        std::vector<std::string> eq_notes;
+        for (const Case& c : CASES) {
+            if (filter != nullptr && std::strstr(c.name, filter) == nullptr) continue;
+            const TypeInfo* ti = type_info(c.type);
+            if (ti == nullptr || !strata::kernels::native_mmvq_supported(c.type)) continue;
+            const std::size_t wbytes = (std::size_t)c.n_out * (c.n_in / ti->block_elems) * ti->block_bytes;
+            const std::size_t row_bytes = wbytes / (std::size_t)c.n_out;
+            const int rpb = (c.n_in / ti->div < ti->bpi) ? 4 : 1;   // the shipped rule's ROWS for this case
+            const double floor = (double)wbytes / (bw_gbs * 1e9) * 1e6;
+
+            std::vector<uint8_t> hw(wbytes);
+            fill_blocks(hw, c, *ti, 1234u + (unsigned)c.type * 97u + (unsigned)c.n_in + (unsigned)c.n_out);
+            void* dw = nullptr;
+            if (!ck(cudaMalloc(&dw, wbytes), "malloc w")) return 1;
+            if (!ck(cudaMemcpy(dw, hw.data(), wbytes, cudaMemcpyHostToDevice), "copy w")) return 1;
+            std::vector<float> hx((std::size_t)T * c.n_in);
+            std::mt19937 rng(77u + (unsigned)c.type);
+            std::normal_distribution<float> nd(0.f, 1.f);
+            for (auto& v : hx) v = nd(rng);
+            float* xf = nullptr;
+            void* xq = nullptr;
+            float* dy = nullptr;
+            if (!ck(cudaMalloc(&xf, hx.size() * 4), "malloc x")) return 1;
+            if (!ck(cudaMalloc(&xq, strata::kernels::native_q8_1_bytes(c.n_in, T)), "malloc xq")) return 1;
+            if (!ck(cudaMalloc(&dy, (std::size_t)T * c.n_out * 4), "malloc y")) return 1;
+            if (!ck(cudaMemcpy(xf, hx.data(), hx.size() * 4, cudaMemcpyHostToDevice), "copy x")) return 1;
+            strata::kernels::native_quantize_q8_1(xf, xq, c.n_in, T, s);
+            if (!ck(cudaStreamSynchronize(s), "quantize")) return 1;
+
+            const std::size_t n_out_all = (std::size_t)T * c.n_out;
+            std::vector<float> y_ship(n_out_all), y_var(n_out_all);
+            std::size_t at = 0;
+            strata::kernels::native_mmvq_set_multi_exact(true);
+            strata::kernels::native_mmvq_set_exact_rows(0);
+            const Stat sh = time_calls(s, reps, [&] {
+                strata::kernels::native_mmvq(c.type, dw, xq, dy, c.n_in, c.n_out, T, s);
+            });
+            cudaMemcpy(y_ship.data(), dy, n_out_all * 4, cudaMemcpyDeviceToHost);
+
+            strata::kernels::native_mmvq_set_multi_exact(false);
+            const Stat gn = time_calls(s, reps, [&] {
+                strata::kernels::native_mmvq(c.type, dw, xq, dy, c.n_in, c.n_out, T, s);
+            });
+            cudaMemcpy(y_var.data(), dy, n_out_all * 4, cudaMemcpyDeviceToHost);
+            strata::kernels::native_mmvq_set_multi_exact(true);
+            const bool gen_eq = bitwise_equal(y_ship, y_var, &at);
+            if (!gen_eq)
+                eq_notes.push_back(std::string(c.name) + ": generic layout differs at output " + std::to_string(at) +
+                                   " of " + std::to_string(n_out_all) + " (" + std::to_string(y_ship[at]) + " vs " +
+                                   std::to_string(y_var[at]) + ")");
+
+            double r_us[4] = {0, 0, 0, 0};
+            char r_eq[4];
+            for (int k = 0; k < 4; ++k) {
+                strata::kernels::native_mmvq_set_exact_rows(rows_force[k]);
+                const Stat st = time_calls(s, reps, [&] {
+                    strata::kernels::native_mmvq(c.type, dw, xq, dy, c.n_in, c.n_out, T, s);
+                });
+                r_us[k] = st.batch_us;
+                cudaMemcpy(y_var.data(), dy, n_out_all * 4, cudaMemcpyDeviceToHost);
+                r_eq[k] = bitwise_equal(y_ship, y_var, &at) ? 'Y' : 'n';
+                if (r_eq[k] == 'n')
+                    eq_notes.push_back(std::string(c.name) + ": rows " + std::to_string(rows_force[k]) +
+                                       " differs at output " + std::to_string(at) + " of " +
+                                       std::to_string(n_out_all) + " (" + std::to_string(y_ship[at]) + " vs " +
+                                       std::to_string(y_var[at]) + ")");
+            }
+            strata::kernels::native_mmvq_set_exact_rows(0);
+
+            const Stat f4 = time_calls(s, reps, [&] {
+                flat_read<4>(q, static_cast<const uint8_t*>(dw), dsink, c.n_out, row_bytes, rpb);
+            });
+            Stat f16;
+            if (row_bytes % 16 == 0)
+                f16 = time_calls(s, reps, [&] {
+                    flat_read<16>(q, static_cast<const uint8_t*>(dw), dsink, c.n_out, row_bytes, rpb);
+                });
+
+            const double ship_g = wbytes / (sh.batch_us * 1e-6) / 1e9;
+            const double f4_g = wbytes / (f4.batch_us * 1e-6) / 1e9;
+            const double f16_g = f16.batch_us > 0 ? wbytes / (f16.batch_us * 1e-6) / 1e9 : 0.0;
+            char eqs[64];
+            std::snprintf(eqs, sizeof eqs, "r2:%c r4:%c r8:%c r16:%c gen:%c", r_eq[0], r_eq[1], r_eq[2], r_eq[3],
+                          gen_eq ? 'Y' : 'n');
+            std::printf("%-22s %13zu %7.1f %8.1f %6.1f %8.1f %6.1f %8.1f %6.1f %7.1f %7.1f %7.1f %7.1f %7.1f  %s\n",
+                        c.name, wbytes, floor, sh.batch_us, ship_g, f4.batch_us, f4_g, f16.batch_us, f16_g,
+                        r_us[0], r_us[1], r_us[2], r_us[3], gn.batch_us, eqs);
+            sw_bytes += c.count * (double)wbytes;
+            sw_floor += c.count * floor;
+            sw_ship += c.count * sh.batch_us;
+            sw_flat4 += c.count * f4.batch_us;
+            sw_flat16 += c.count * f16.batch_us;
+            sw_gen += c.count * gn.batch_us;
+            for (int k = 0; k < 4; ++k) sw_r[k] += c.count * r_us[k];
+
+            cudaFree(dw);
+            cudaFree(xf);
+            cudaFree(xq);
+            cudaFree(dy);
+        }
+        sycl::free(dsink, q);
+        std::printf("\n   %-34s %10s %9s %12s %10s %s\n", "variant", "window us", "GB/s", "vs shipped", "of floor",
+                    "bit for bit");
+        const char* vnames[10] = {"shipped layout (the rule in n_in)", "flat4  (same bytes, no dot)",
+                                  "flat16 (same bytes, 16 B/thread)", "exact rows = 2", "exact rows = 4",
+                                  "exact rows = 8", "exact rows = 16", "generic layout (multi_exact off)",
+                                  "the pack's bandwidth floor", ""};
+        const double vtot[10] = {sw_ship, sw_flat4, sw_flat16, sw_r[0], sw_r[1], sw_r[2], sw_r[3], sw_gen, sw_floor,
+                                 0};
+        for (int i = 0; i < 9; ++i) {
+            if (vtot[i] <= 0) continue;
+            const char* eqv = "yes (rows 2/4/8/16, by construction)";
+            if (i == 0) eqv = "the reference";
+            else if (i == 7) eqv = "no (a different reduction grouping)";
+            else if (i == 1 || i == 2 || i == 8) eqv = "not applicable";
+            std::printf("   %-34s %10.1f %9.1f %11.2fx %9.2fx  %s\n", vnames[i], vtot[i],
+                        sw_bytes / (vtot[i] * 1e-6) / 1e9, sw_ship / vtot[i], sw_floor / vtot[i], eqv);
+        }
+        if (!eq_notes.empty()) {
+            std::printf("\n   bit-for-bit notes (every other variant matched the shipped kernel exactly):\n");
+            for (const std::string& n : eq_notes) std::printf("     %s\n", n.c_str());
+        }
+    }
 
     std::printf("\nbyte-table check (this file's own block sizes vs native_mmvq_weight_bytes): %s\n",
                 byte_check.empty() ? "every case MATCHES" : "MISMATCHES:");

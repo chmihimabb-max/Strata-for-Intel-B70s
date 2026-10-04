@@ -1,0 +1,586 @@
+D2y (card t_ba006576) -- every number in one file, with its source
+generated 2026-10-03T23:54:58-06:00; the raw runs are d2y/D2Y-BENCH.txt, D2Y-BENCH-2.txt, D2Y-BASE.txt and the
+reader outputs D2Y-TABLE.txt, D2Y-TABLE-2.txt, D2Y-MARGINAL.txt; nothing here is retyped by hand.
+
+======================================================================================================
+1. the machine, and the binary each run used (each raw file carries its own md5 in its header)
+======================================================================================================
+###### d2y machine state at 2026-10-03T23:52:49-06:00
+### /dev/dri
+total 0
+drwxr-xr-x 2 root root        140 Oct  1 09:16 by-path
+crw-rw----+1 root video  226,   0 Oct  1 09:16 card0
+crw-rw----+1 root video  226,   1 Oct  1 09:16 card1
+crw-rw----+1 root render 226, 128 Oct  1 09:16 renderD128
+crw-rw----+1 root render 226, 129 Oct  1 09:16 renderD129
+### render nodes and their device ids
+/sys/class/drm/card0 vendor=0x8086 device=0xe223
+/sys/class/drm/card0-DP-1 vendor= device=
+/sys/class/drm/card0-DP-2 vendor= device=
+/sys/class/drm/card0-DP-3 vendor= device=
+/sys/class/drm/card0-DP-4 vendor= device=
+/sys/class/drm/card0-HDMI-A-1 vendor= device=
+/sys/class/drm/card0-HDMI-A-2 vendor= device=
+/sys/class/drm/card0-HDMI-A-3 vendor= device=
+/sys/class/drm/card0-HDMI-A-4 vendor= device=
+/sys/class/drm/card1 vendor=0x8086 device=0xe223
+/sys/class/drm/card1-DP-5 vendor= device=
+/sys/class/drm/card1-DP-6 vendor= device=
+/sys/class/drm/card1-DP-7 vendor= device=
+/sys/class/drm/card1-DP-8 vendor= device=
+/sys/class/drm/card1-HDMI-A-5 vendor= device=
+/sys/class/drm/card1-HDMI-A-6 vendor= device=
+/sys/class/drm/card1-HDMI-A-7 vendor= device=
+/sys/class/drm/card1-HDMI-A-8 vendor= device=
+### /proc/driver/nvidia (absent on this box)
+ls: cannot access '/proc/driver/nvidia': No such file or directory
+### load, memory
+ 23:52:49 up 2 days, 14:36,  1 user,  load average: 2.35, 1.60, 1.10
+               total        used        free      shared  buff/cache   available
+Mem:             123           7          50           0          66         115
+### anything of mine still running (engine, server, bench, container)
+5832 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+### the bench binary this card measured with
+-rwxrwxr-x 1 michael michael 34254536 Oct  3 23:51 /home/michael/strata-xpu/strata/build-sycl/mmvq_xmx_price
+-rwxrwxr-x 1 michael michael 50820208 Oct  3 23:52 /home/michael/strata-xpu/strata/build-sycl/strata
+159c3b1878590839de95f7938e14988f  /home/michael/strata-xpu/strata/build-sycl/mmvq_xmx_price
+
+======================================================================================================
+2. the bench's own header, section 1 verdict and section 2 bandwidth (run 1)
+======================================================================================================
+###### d2y bench 2026-10-03T23:44:10-06:00
+###### binary: /home/michael/strata-xpu/strata/build-sycl/mmvq_xmx_price md5 159c3b1878590839de95f7938e14988f
+###### ZE_AFFINITY_MASK=0 (card 0 only; see d2y/machine.txt for which cards were free)
+###### command: ZE_AFFINITY_MASK=0 build-sycl/mmvq_xmx_price --reps 20 --t 4 --variants
+
+device: Intel(R) Graphics [0xe223] (SM 12.0)
+sycl device: Intel(R) Graphics [0xe223], driver 1.15.37833+4, max work-group 1024
+reps 20, ncols 4
+
+== 1. the device's own joint_matrix shapes (probe21 re-run at this HEAD, not inherited) ==
+  f16  16x16x16  (A row_major, B row_major)              REFUSED: The program was built for 1 devices
+Build program log for 'Intel(R) Graphics [0xe223]':
+  VERDICT on this driver (1.15.37833+4):
+    f16 16x16x16 / bf16 16x16x16 (the shapes probe21 recorded as RUNNING): DOES NOT BUILD
+    f16  8x16x16 (the only tile that builds for a GEMV-shaped kernel): RUNS
+    the int8 8x32x16 / 16x32x16 dot (the shape this card was proposed for): REFUSED by the driver in every layout tried
+  driver text: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=16, Cols=32 is not supported on this device
+
+== 2. the card's streaming rate, measured here (event-timed on the same stream as the kernels below) ==
+   read-only over      8 MiB [memset-filled]: event    0.007 ms ->  1258.2 GB/s | wall/burst    0.005 ms ->  1758.1 GB/s
+   read-only over    256 MiB [memset-filled]: event    0.203 ms ->  1323.6 GB/s | wall/burst    0.201 ms ->  1338.1 GB/s
+   read-only over   1024 MiB [memset-filled]: event    0.794 ms ->  1352.2 GB/s | wall/burst    0.793 ms ->  1354.7 GB/s
+   read-only over   1024 MiB [hash-filled, incompressible]: 1.879 ms ->   571.5 GB/s   <- the floor below uses this
+        (wall/burst cross-check: 1.876 ms -> 572.4 GB/s)
+   the memset-filled read above is 2.37x the incompressible rate: the driver compresses uniform pages, so a constant-filled
+   buffer is not a bandwidth measurement
+   write-only memset of   1024 MiB (constant, compressible): event    0.773 ms ->  1389.2 GB/s
+   device->device copy of    256 MiB x3: 0.591 ms -> 2725.0 GB/s of traffic (read+write)
+   (the floor below uses the read-only number: a GEMV reads the weights and writes n_out outputs)
+
+== 3. per (type, shape, ncols): the shipped kernel, the generic layout, the f16 XMX prototype
+
+======================================================================================================
+3. the new section 6, run 1 and run 2 (the same binary, 4 minutes apart, same command)
+======================================================================================================
+== 6. D2y: the pack's own bytes read flat, and the exact layout's rows per work-group forced ==
+   T = 4.  flat4 / flat16: section 6's kernels -- the shipped grid and the shipped row-to-group
+   mapping, reading the SAME bytes with no dot, no activation and no reduction, at 4 and at 16 bytes
+   per thread per pass (16 only where the row length is a multiple of 16).  rN: the shipped exact
+   kernel with ROWS forced to N (native_mmvq_set_exact_rows, OFF by default).  gen: the generic
+   multi-column layout.  eq: bit for bit against the shipped kernel's own y over all 4 x n_out
+   outputs.
+case                        weight B   floor  ship us   GB/s    flat4   GB/s   flat16   GB/s   r2 us   r4 us   r8 us  r16 us  gen us  eq (bit for bit)
+Q6_K 2560x10240             21504000    37.6    412.6   52.1     21.7  989.4      0.0    0.0   346.7   608.1   930.9   984.6   375.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x12288             25804800    45.2    371.4   69.5     25.9  996.5      0.0    0.0   374.3   523.0   804.2  1139.7   370.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x6144              12902400    22.6    190.2   67.8     10.3 1246.7      0.0    0.0   197.1   274.4   426.3   547.7   196.8  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x640                1344000     2.4     40.0   33.6      2.4  556.1      0.0    0.0    33.5    49.5   100.0   169.7    32.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x512                1075200     1.9     25.4   42.4      2.4  442.1      0.0    0.0    28.0    43.4    84.1   163.3    28.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 6144x2560              12902400    22.6    168.1   76.8      8.3 1557.0      5.4 2398.1   199.1   304.1   370.3   509.5   198.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x248320-head      521472000   912.4   8831.9   59.0    884.7  589.5      0.0    0.0  8415.7 10354.6 14646.0 19763.9  8532.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x10240             18022400    31.5    247.4   72.9     16.9 1066.0     12.4 1457.6   321.6   574.7   858.5  1192.6   260.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x12288             21626880    37.8    294.9   73.3     18.2 1189.8     12.0 1808.5   312.4   546.8   579.2  1343.3   307.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x6144              10813440    18.9    155.3   69.6      9.2 1175.6      6.2 1733.0   165.7   240.6   305.1   635.2   165.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x640                1126400     2.0     32.8   34.3      2.3  482.7      2.4  467.1    29.5    47.0    87.0   227.2    29.5  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x512                 901120     1.6     22.2   40.5      2.4  379.4      2.3  399.6    25.8    44.7    84.4   206.3    26.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 6144x2560              10813440    18.9    113.3   95.4      7.4 1469.3      4.5 2394.7   128.5   215.3   185.3   542.6   129.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x10240             14745600    25.8    248.0   59.4     13.3 1106.4      8.8 1668.3   345.2   604.0   811.2  1200.5   255.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x12288             17694720    31.0    295.5   59.9     17.5 1012.6     12.1 1467.6   305.9   439.4   580.8  1374.5   301.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x6144               8847360    15.5    155.3   57.0      8.5 1042.1      5.8 1537.3   163.6   235.3   306.8   643.1   163.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x640                 921600     1.6     33.1   27.8      2.3  392.3      2.3  406.8    29.0    46.1    82.4   232.8    29.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 6144x2560               8847360    15.5    113.5   78.0      6.4 1385.5      4.0 2214.7   128.0   209.9   191.0   553.6   128.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x10240           13926400    24.4    346.5   40.2     10.4 1341.6      6.4 2170.4   406.1   594.9   768.7   982.3   290.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x12288           16711680    29.2    407.2   41.0     12.1 1378.3      7.2 2306.7   345.9   407.2   603.2   912.6   346.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x6144             8355840    14.6    218.0   38.3      6.7 1244.6      4.4 1898.6   180.4   217.9   313.5   424.9   181.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x640               870400     1.5     37.6   23.1      2.6  332.9      2.3  376.4    27.1    37.7    78.8   141.6    27.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x512               696320     1.2     34.4   20.2      2.6  268.5      2.3  301.8    23.4    34.5    68.7   125.0    23.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_NL 640x2560               921600     1.6    133.6    6.9      2.4  382.2      0.0    0.0    86.8   134.5   116.2   179.2    86.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q8_0 640x2560                1740800     3.0     79.7   21.8      8.8  197.0      0.0    0.0    63.0    96.0   154.9   370.6    63.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+
+   variant                             window us      GB/s   vs shipped   of floor bit for bit
+   shipped layout (the rule in n_in)     50494.2      52.3        1.00x      0.09x  the reference
+   flat4  (same bytes, no dot)            2939.0     897.7       17.18x      1.57x  not applicable
+   flat16 (same bytes, 16 B/thread)        759.3    3475.0       66.50x      6.08x  not applicable
+   exact rows = 2                        48066.2      54.9        1.05x      0.10x  yes (rows 2/4/8/16, by construction)
+   exact rows = 4                        72299.2      36.5        0.70x      0.06x  yes (rows 2/4/8/16, by construction)
+   exact rows = 8                       100039.5      26.4        0.50x      0.05x  yes (rows 2/4/8/16, by construction)
+   exact rows = 16                      147207.7      17.9        0.34x      0.03x  yes (rows 2/4/8/16, by construction)
+   generic layout (multi_exact off)      47739.4      55.3        1.06x      0.10x  no (a different reduction grouping)
+   the pack's bandwidth floor             4616.5     571.5       10.94x      1.00x  not applicable
+
+byte-table check (this file's own block sizes vs native_mmvq_weight_bytes): every case MATCHES
+----------------------------------- run 2 -----------------------------------
+== 6. D2y: the pack's own bytes read flat, and the exact layout's rows per work-group forced ==
+   T = 4.  flat4 / flat16: section 6's kernels -- the shipped grid and the shipped row-to-group
+   mapping, reading the SAME bytes with no dot, no activation and no reduction, at 4 and at 16 bytes
+   per thread per pass (16 only where the row length is a multiple of 16).  rN: the shipped exact
+   kernel with ROWS forced to N (native_mmvq_set_exact_rows, OFF by default).  gen: the generic
+   multi-column layout.  eq: bit for bit against the shipped kernel's own y over all 4 x n_out
+   outputs.
+case                        weight B   floor  ship us   GB/s    flat4   GB/s   flat16   GB/s   r2 us   r4 us   r8 us  r16 us  gen us  eq (bit for bit)
+Q6_K 2560x10240             21504000    37.6    311.3   69.1     21.7  990.4      0.0    0.0   315.9   438.1   674.3   952.6   312.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x12288             25804800    45.2    371.1   69.5     25.9  995.3      0.0    0.0   374.8   522.6   804.1  1138.8   370.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x6144              12902400    22.6    190.1   67.9     10.3 1255.6      0.0    0.0   196.6   270.8   424.8   550.0   195.8  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x640                1344000     2.4     39.9   33.7      2.4  549.0      0.0    0.0    32.6    50.5    99.1   170.5    32.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x512                1075200     1.9     25.3   42.6      2.4  453.7      0.0    0.0    27.9    43.4    82.7   164.3    28.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 6144x2560              12902400    22.6    168.0   76.8      8.3 1555.1      5.3 2414.5   197.0   302.3   366.0   505.4   197.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x248320-head      521472000   912.4   8829.1   59.1    884.7  589.4      0.0    0.0  8406.2 10357.5 14643.0 19779.3  8528.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x10240             18022400    31.5    247.5   72.8     16.9 1063.4     12.3 1467.5   261.2   373.2   483.6  1109.3   260.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x12288             21626880    37.8    294.3   73.5     18.2 1191.2     11.9 1816.4   311.6   438.8   586.0  1344.0   308.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x6144              10813440    18.9    155.0   69.8      9.2 1179.0      6.2 1735.9   165.5   240.1   304.6   637.0   165.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x640                1126400     2.0     32.2   34.9      2.3  481.7      2.3  483.8    29.2    47.1    86.8   227.4    29.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x512                 901120     1.6     21.9   41.2      2.3  386.2      2.2  406.1    25.7    44.5    83.6   206.7    25.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 6144x2560              10813440    18.9    113.3   95.5      7.4 1467.3      4.5 2405.8   129.0   214.7   186.0   535.5   128.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x10240             14745600    25.8    247.8   59.5     13.3 1110.7      8.8 1673.3   257.8   373.7   489.3  1263.7   256.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x12288             17694720    31.0    295.4   59.9     17.5 1010.5     12.0 1468.8   305.7   437.7   586.6  1371.6   300.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x6144               8847360    15.5    155.5   56.9      8.4 1051.2      5.8 1537.3   163.7   235.5   305.8   642.5   163.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x640                 921600     1.6     32.7   28.2      2.4  390.6      2.3  397.6    29.0    46.0    82.0   232.3    29.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 6144x2560               8847360    15.5    112.8   78.4      6.3 1395.8      4.0 2209.0   128.4   210.5   190.8   549.0   128.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x10240           13926400    24.4    346.5   40.2     10.4 1332.9      6.4 2189.9   290.1   346.8   503.6   751.6   290.8  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x12288           16711680    29.2    408.0   41.0     12.1 1378.3      7.3 2300.1   347.1   407.0   600.2   910.3   345.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x6144             8355840    14.6    217.7   38.4      6.7 1242.7      4.4 1880.8   180.8   217.9   314.1   423.6   180.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x640               870400     1.5     37.6   23.1      2.6  333.6      2.3  379.8    27.1    37.7    78.3   141.6    27.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x512               696320     1.2     34.4   20.2      2.7  261.1      2.4  291.3    23.3    34.5    68.8   125.0    23.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_NL 640x2560               921600     1.6    134.1    6.9      2.5  370.2      0.0    0.0    86.7   134.2   116.1   178.8    86.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q8_0 640x2560                1740800     3.0     79.5   21.9      3.2  540.8      0.0    0.0    63.3    79.3    94.1   126.6    63.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+
+   variant                             window us      GB/s   vs shipped   of floor bit for bit
+   shipped layout (the rule in n_in)     48252.6      54.7        1.00x      0.10x  the reference
+   flat4  (same bytes, no dot)            2935.4     898.8       16.44x      1.57x  not applicable
+   flat16 (same bytes, 16 B/thread)        756.9    3485.6       63.75x      6.10x  not applicable
+   exact rows = 2                        46255.5      57.0        1.04x      0.10x  yes (rows 2/4/8/16, by construction)
+   exact rows = 4                        65134.5      40.5        0.74x      0.07x  yes (rows 2/4/8/16, by construction)
+   exact rows = 8                        89142.8      29.6        0.54x      0.05x  yes (rows 2/4/8/16, by construction)
+   exact rows = 16                      144917.9      18.2        0.33x      0.03x  yes (rows 2/4/8/16, by construction)
+   generic layout (multi_exact off)      46245.6      57.1        1.04x      0.10x  no (a different reduction grouping)
+   the pack's bandwidth floor             4616.5     571.5       10.45x      1.00x  not applicable
+
+byte-table check (this file's own block sizes vs native_mmvq_weight_bytes): every case MATCHES
+
+======================================================================================================
+4. the extended reader on run 1: the per-shape/per-variant table, the window roll-up and the
+   inert control against the pre-edit binary (d2y/D2Y-BASE.txt)
+======================================================================================================
+D2y section 6: the pack's own bytes read flat, and the exact layout's rows per work-group forced
+======================================================================================================================
+   flat4 / flat16 = the shipped grid and row-to-group mapping reading the same bytes with NO dot, no
+   activation and no reduction, at 4 and 16 bytes per thread per pass; rN = the shipped exact kernel with
+   ROWS forced to N (native_mmvq_set_exact_rows, default 0 = the shipped rule); gen = the generic
+   multi-column layout.  eq = bit for bit against the shipped kernel's own y, all ncols x n_out outputs.
+
+case                        weight B floor us  ship us   GB/s    flat4   GB/s     x   flat16  r2 us  r4 us  r8 us r16 us gen us  eq
+Q6_K 2560x10240             21504000     37.6    412.6   52.1     21.7  989.4  19.0      0.0  346.7  608.1  930.9  984.6  375.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x12288             25804800     45.2    371.4   69.5     25.9  996.5  14.3      0.0  374.3  523.0  804.2 1139.7  370.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x6144              12902400     22.6    190.2   67.8     10.3 1246.7  18.5      0.0  197.1  274.4  426.3  547.7  196.8  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x640                1344000      2.4     40.0   33.6      2.4  556.1  16.7      0.0   33.5   49.5  100.0  169.7   32.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x512                1075200      1.9     25.4   42.4      2.4  442.1  10.6      0.0   28.0   43.4   84.1  163.3   28.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 6144x2560              12902400     22.6    168.1   76.8      8.3 1557.0  20.3      5.4  199.1  304.1  370.3  509.5  198.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x248320-head      521472000    912.4   8831.9   59.0    884.7  589.5  10.0      0.0 8415.7 10354.6 14646.0 19763.9 8532.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x10240             18022400     31.5    247.4   72.9     16.9 1066.0  14.6     12.4  321.6  574.7  858.5 1192.6  260.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x12288             21626880     37.8    294.9   73.3     18.2 1189.8  16.2     12.0  312.4  546.8  579.2 1343.3  307.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x6144              10813440     18.9    155.3   69.6      9.2 1175.6  16.9      6.2  165.7  240.6  305.1  635.2  165.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x640                1126400      2.0     32.8   34.3      2.3  482.7  14.3      2.4   29.5   47.0   87.0  227.2   29.5  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x512                 901120      1.6     22.2   40.5      2.4  379.4   9.2      2.3   25.8   44.7   84.4  206.3   26.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 6144x2560              10813440     18.9    113.3   95.4      7.4 1469.3  15.3      4.5  128.5  215.3  185.3  542.6  129.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x10240             14745600     25.8    248.0   59.4     13.3 1106.4  18.6      8.8  345.2  604.0  811.2 1200.5  255.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x12288             17694720     31.0    295.5   59.9     17.5 1012.6  16.9     12.1  305.9  439.4  580.8 1374.5  301.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x6144               8847360     15.5    155.3   57.0      8.5 1042.1  18.3      5.8  163.6  235.3  306.8  643.1  163.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x640                 921600      1.6     33.1   27.8      2.3  392.3  14.4      2.3   29.0   46.1   82.4  232.8   29.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 6144x2560               8847360     15.5    113.5   78.0      6.4 1385.5  17.7      4.0  128.0  209.9  191.0  553.6  128.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x10240           13926400     24.4    346.5   40.2     10.4 1341.6  33.3      6.4  406.1  594.9  768.7  982.3  290.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x12288           16711680     29.2    407.2   41.0     12.1 1378.3  33.7      7.2  345.9  407.2  603.2  912.6  346.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x6144             8355840     14.6    218.0   38.3      6.7 1244.6  32.5      4.4  180.4  217.9  313.5  424.9  181.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x640               870400      1.5     37.6   23.1      2.6  332.9  14.5      2.3   27.1   37.7   78.8  141.6   27.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x512               696320      1.2     34.4   20.2      2.6  268.5  13.2      2.3   23.4   34.5   68.7  125.0   23.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_NL 640x2560               921600      1.6    133.6    6.9      2.4  382.2  55.7      0.0   86.8  134.5  116.2  179.2   86.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q8_0 640x2560                1740800      3.0     79.7   21.8      8.8  197.0   9.1      0.0   63.0   96.0  154.9  370.6   63.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+----------------------------------------------------------------------------------------------------------------------
+WINDOW (301 calls)        2638423040   4617.3  50493.6   52.3   2934.4  899.1  17.2    761.2 48064.8 72301.4 100043.7 147208.3 47738.7  
+
+   variant                             window us      GB/s  vs shipped  of floor bit for bit
+   shipped layout (the rule in n_in)     50493.6      52.3        1.00x      0.09x  the reference
+   flat4: same bytes, no dot              2934.4     899.1       17.21x      1.57x  not applicable (it computes nothing)
+   flat16: same bytes, 16 B/thread         761.2    3466.1       66.33x      6.07x  not applicable (it computes nothing)
+   exact rows = 2                        48064.8      54.9        1.05x      0.10x  yes
+   exact rows = 4                        72301.4      36.5        0.70x      0.06x  yes
+   exact rows = 8                       100043.7      26.4        0.50x      0.05x  yes
+   exact rows = 16                      147208.3      17.9        0.34x      0.03x  yes
+   generic layout (multi_exact off)      47738.7      55.3        1.06x      0.10x  yes at ncols = 4 here (measured), but see D2a
+   the pack's bandwidth floor             4617.3     571.4       10.94x      1.00x  not applicable (it computes nothing)
+
+   the DRAM-sized case is the one that measures the ACCESS PATTERN rather than L2: Q6_K 2560x248320-head is 497 MiB, and a
+   no-dot read of it on the shipped grid runs at 589.5 GB/s against this bench's measured card rate of
+   571.5 GB/s -- the same bytes, the same grid, the same 4 B per thread.  Every smaller case is re-read
+   `reps` times from L2 by both kernels, so its flat4 GB/s is an L2 rate and only the ship/flat4 ratio is
+   comparable; the window row above is therefore a floor-on-the-floor, not a DRAM number.
+
+   the rows sweep, per case where it is not the shipped rule's own ROWS (x = shipped us / variant us):
+   case                       r2 x     r4 x     r8 x    r16 x
+   Q6_K 2560x10240            1.19     0.68     0.44     0.42
+   Q6_K 2560x12288            0.99     0.71     0.46     0.33
+   Q6_K 2560x6144             0.96     0.69     0.45     0.35
+   Q6_K 2560x640              1.19     0.81     0.40     0.24
+   Q6_K 2560x512              0.91     0.59     0.30     0.16
+   Q6_K 6144x2560             0.84     0.55     0.45     0.33
+   Q6_K 2560x248320-head      1.05     0.85     0.60     0.45
+   Q5_K 2560x10240            0.77     0.43     0.29     0.21
+   Q5_K 2560x12288            0.94     0.54     0.51     0.22
+   Q5_K 2560x6144             0.94     0.65     0.51     0.24
+   Q5_K 2560x640              1.11     0.70     0.38     0.14
+   Q5_K 2560x512              0.86     0.50     0.26     0.11
+   Q5_K 6144x2560             0.88     0.53     0.61     0.21
+   Q4_K 2560x10240            0.72     0.41     0.31     0.21
+   Q4_K 2560x12288            0.97     0.67     0.51     0.21
+   Q4_K 2560x6144             0.95     0.66     0.51     0.24
+   Q4_K 2560x640              1.14     0.72     0.40     0.14
+   Q4_K 6144x2560             0.89     0.54     0.59     0.21
+   IQ4_XS 2560x10240          0.85     0.58     0.45     0.35
+   IQ4_XS 2560x12288          1.18     1.00     0.68     0.45
+   IQ4_XS 2560x6144           1.21     1.00     0.70     0.51
+   IQ4_XS 2560x640            1.39     1.00     0.48     0.27
+   IQ4_XS 2560x512            1.47     1.00     0.50     0.28
+   IQ4_NL 640x2560            1.54     0.99     1.15     0.75
+   Q8_0 640x2560              1.27     0.83     0.51     0.22
+
+   the per-type roll-up at ncols = 4 (us = cnt x per-call, x = shipped / variant):
+the inert control: the shipped layout's own numbers from d2y/D2Y-BASE.txt against this run
+======================================================================================================================
+   case                   ncols   earlier us  this run us    delta
+   Q6_K 2560x10240           4        398.3        393.7   -1.15%
+   Q6_K 2560x12288           4        373.7        384.4   +2.86%
+   Q6_K 2560x6144            4        190.5        190.3   -0.10%
+   Q6_K 2560x640             4         39.9         39.9   +0.00%
+   Q6_K 2560x512             4         25.5         25.5   +0.00%
+   Q6_K 6144x2560            4        167.8        168.4   +0.36%
+   Q6_K 2560x248320-head     4       8837.7       8821.5   -0.18%
+   Q5_K 2560x10240           4        318.8        382.1  +19.86%
+   Q5_K 2560x12288           4        314.0        568.9  +81.18%
+   Q5_K 2560x6144            4        154.6        155.3   +0.45%
+   Q5_K 2560x640             4         32.4         32.9   +1.54%
+   Q5_K 2560x512             4         22.1         22.2   +0.45%
+   Q5_K 6144x2560            4        112.1        112.4   +0.27%
+   Q4_K 2560x10240           4        352.4        382.2   +8.46%
+   Q4_K 2560x12288           4        310.5        567.0  +82.61%
+   Q4_K 2560x6144            4        155.0        156.7   +1.10%
+   Q4_K 2560x640             4         32.9         33.1   +0.61%
+   Q4_K 6144x2560            4        113.3        113.1   -0.18%
+   IQ4_XS 2560x10240         4        347.6        583.7  +67.92%
+   IQ4_XS 2560x12288         4        409.6        779.3  +90.26%
+   IQ4_XS 2560x6144          4        217.3        218.9   +0.74%
+   IQ4_XS 2560x640           4         37.7         37.6   -0.27%
+   IQ4_XS 2560x512           4         34.5         34.4   -0.29%
+   IQ4_NL 640x2560           4        227.3        134.3  -40.92%
+   Q8_0 640x2560             4        121.6        103.7  -14.72%
+
+   25 rows, largest single-case delta 90.26%: the engine's shipped path (knob at 0) is the same kernel it
+
+======================================================================================================
+5. the reader on run 2, and its inert control against run 1 (same binary: this is the rig's spread)
+======================================================================================================
+D2y section 6: the pack's own bytes read flat, and the exact layout's rows per work-group forced
+======================================================================================================================
+   flat4 / flat16 = the shipped grid and row-to-group mapping reading the same bytes with NO dot, no
+   activation and no reduction, at 4 and 16 bytes per thread per pass; rN = the shipped exact kernel with
+   ROWS forced to N (native_mmvq_set_exact_rows, default 0 = the shipped rule); gen = the generic
+   multi-column layout.  eq = bit for bit against the shipped kernel's own y, all ncols x n_out outputs.
+
+case                        weight B floor us  ship us   GB/s    flat4   GB/s     x   flat16  r2 us  r4 us  r8 us r16 us gen us  eq
+Q6_K 2560x10240             21504000     37.6    311.3   69.1     21.7  990.4  14.3      0.0  315.9  438.1  674.3  952.6  312.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x12288             25804800     45.2    371.1   69.5     25.9  995.3  14.3      0.0  374.8  522.6  804.1 1138.8  370.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x6144              12902400     22.6    190.1   67.9     10.3 1255.6  18.5      0.0  196.6  270.8  424.8  550.0  195.8  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x640                1344000      2.4     39.9   33.7      2.4  549.0  16.6      0.0   32.6   50.5   99.1  170.5   32.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x512                1075200      1.9     25.3   42.6      2.4  453.7  10.5      0.0   27.9   43.4   82.7  164.3   28.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 6144x2560              12902400     22.6    168.0   76.8      8.3 1555.1  20.2      5.3  197.0  302.3  366.0  505.4  197.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q6_K 2560x248320-head      521472000    912.4   8829.1   59.1    884.7  589.4  10.0      0.0 8406.2 10357.5 14643.0 19779.3 8528.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x10240             18022400     31.5    247.5   72.8     16.9 1063.4  14.6     12.3  261.2  373.2  483.6 1109.3  260.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x12288             21626880     37.8    294.3   73.5     18.2 1191.2  16.2     11.9  311.6  438.8  586.0 1344.0  308.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x6144              10813440     18.9    155.0   69.8      9.2 1179.0  16.8      6.2  165.5  240.1  304.6  637.0  165.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x640                1126400      2.0     32.2   34.9      2.3  481.7  14.0      2.3   29.2   47.1   86.8  227.4   29.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 2560x512                 901120      1.6     21.9   41.2      2.3  386.2   9.5      2.2   25.7   44.5   83.6  206.7   25.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q5_K 6144x2560              10813440     18.9    113.3   95.5      7.4 1467.3  15.3      4.5  129.0  214.7  186.0  535.5  128.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x10240             14745600     25.8    247.8   59.5     13.3 1110.7  18.6      8.8  257.8  373.7  489.3 1263.7  256.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x12288             17694720     31.0    295.4   59.9     17.5 1010.5  16.9     12.0  305.7  437.7  586.6 1371.6  300.9  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x6144               8847360     15.5    155.5   56.9      8.4 1051.2  18.5      5.8  163.7  235.5  305.8  642.5  163.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 2560x640                 921600      1.6     32.7   28.2      2.4  390.6  13.6      2.3   29.0   46.0   82.0  232.3   29.0  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q4_K 6144x2560               8847360     15.5    112.8   78.4      6.3 1395.8  17.9      4.0  128.4  210.5  190.8  549.0  128.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x10240           13926400     24.4    346.5   40.2     10.4 1332.9  33.3      6.4  290.1  346.8  503.6  751.6  290.8  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x12288           16711680     29.2    408.0   41.0     12.1 1378.3  33.7      7.3  347.1  407.0  600.2  910.3  345.6  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x6144             8355840     14.6    217.7   38.4      6.7 1242.7  32.5      4.4  180.8  217.9  314.1  423.6  180.3  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x640               870400      1.5     37.6   23.1      2.6  333.6  14.5      2.3   27.1   37.7   78.3  141.6   27.1  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_XS 2560x512               696320      1.2     34.4   20.2      2.7  261.1  12.7      2.4   23.3   34.5   68.8  125.0   23.4  r2:Y r4:Y r8:Y r16:Y gen:Y
+IQ4_NL 640x2560               921600      1.6    134.1    6.9      2.5  370.2  53.6      0.0   86.7  134.2  116.1  178.8   86.7  r2:Y r4:Y r8:Y r16:Y gen:Y
+Q8_0 640x2560                1740800      3.0     79.5   21.9      3.2  540.8  24.8      0.0   63.3   79.3   94.1  126.6   63.2  r2:Y r4:Y r8:Y r16:Y gen:Y
+----------------------------------------------------------------------------------------------------------------------
+WINDOW (301 calls)        2638423040   4617.3  48250.8   54.7   2935.0  899.0  16.4    754.8 46252.6 65134.8 89142.8 144918.9 46246.5  
+
+   variant                             window us      GB/s  vs shipped  of floor bit for bit
+   shipped layout (the rule in n_in)     48250.8      54.7        1.00x      0.10x  the reference
+   flat4: same bytes, no dot              2935.0     899.0       16.44x      1.57x  not applicable (it computes nothing)
+   flat16: same bytes, 16 B/thread         754.8    3495.5       63.93x      6.12x  not applicable (it computes nothing)
+   exact rows = 2                        46252.6      57.0        1.04x      0.10x  yes
+   exact rows = 4                        65134.8      40.5        0.74x      0.07x  yes
+   exact rows = 8                        89142.8      29.6        0.54x      0.05x  yes
+   exact rows = 16                      144918.9      18.2        0.33x      0.03x  yes
+   generic layout (multi_exact off)      46246.5      57.1        1.04x      0.10x  yes at ncols = 4 here (measured), but see D2a
+   the pack's bandwidth floor             4617.3     571.4       10.45x      1.00x  not applicable (it computes nothing)
+
+   the DRAM-sized case is the one that measures the ACCESS PATTERN rather than L2: Q6_K 2560x248320-head is 497 MiB, and a
+   no-dot read of it on the shipped grid runs at 589.4 GB/s against this bench's measured card rate of
+   571.5 GB/s -- the same bytes, the same grid, the same 4 B per thread.  Every smaller case is re-read
+   `reps` times from L2 by both kernels, so its flat4 GB/s is an L2 rate and only the ship/flat4 ratio is
+   comparable; the window row above is therefore a floor-on-the-floor, not a DRAM number.
+
+   the rows sweep, per case where it is not the shipped rule's own ROWS (x = shipped us / variant us):
+   case                       r2 x     r4 x     r8 x    r16 x
+   Q6_K 2560x10240            0.99     0.71     0.46     0.33
+   Q6_K 2560x12288            0.99     0.71     0.46     0.33
+   Q6_K 2560x6144             0.97     0.70     0.45     0.35
+   Q6_K 2560x640              1.22     0.79     0.40     0.23
+   Q6_K 2560x512              0.91     0.58     0.31     0.15
+   Q6_K 6144x2560             0.85     0.56     0.46     0.33
+   Q6_K 2560x248320-head      1.05     0.85     0.60     0.45
+   Q5_K 2560x10240            0.95     0.66     0.51     0.22
+   Q5_K 2560x12288            0.94     0.67     0.50     0.22
+   Q5_K 2560x6144             0.94     0.65     0.51     0.24
+   Q5_K 2560x640              1.10     0.68     0.37     0.14
+   Q5_K 2560x512              0.85     0.49     0.26     0.11
+   Q5_K 6144x2560             0.88     0.53     0.61     0.21
+   Q4_K 2560x10240            0.96     0.66     0.51     0.20
+   Q4_K 2560x12288            0.97     0.67     0.50     0.22
+   Q4_K 2560x6144             0.95     0.66     0.51     0.24
+   Q4_K 2560x640              1.13     0.71     0.40     0.14
+   Q4_K 6144x2560             0.88     0.54     0.59     0.21
+   IQ4_XS 2560x10240          1.19     1.00     0.69     0.46
+   IQ4_XS 2560x12288          1.18     1.00     0.68     0.45
+   IQ4_XS 2560x6144           1.20     1.00     0.69     0.51
+   IQ4_XS 2560x640            1.39     1.00     0.48     0.27
+   IQ4_XS 2560x512            1.48     1.00     0.50     0.28
+   IQ4_NL 640x2560            1.55     1.00     1.16     0.75
+   Q8_0 640x2560              1.26     1.00     0.84     0.63
+
+   the per-type roll-up at ncols = 4 (us = cnt x per-call, x = shipped / variant):
+the inert control: the shipped layout's own numbers from d2y/D2Y-BENCH.txt against this run
+======================================================================================================================
+   case                   ncols   earlier us  this run us    delta
+   Q6_K 2560x10240           4        393.7        402.2   +2.16%
+   Q6_K 2560x12288           4        384.4        448.6  +16.70%
+   Q6_K 2560x6144            4        190.3        191.6   +0.68%
+   Q6_K 2560x640             4         39.9         39.6   -0.75%
+   Q6_K 2560x512             4         25.5         25.2   -1.18%
+   Q6_K 6144x2560            4        168.4        168.0   -0.24%
+   Q6_K 2560x248320-head     4       8821.5       8818.5   -0.03%
+   Q5_K 2560x10240           4        382.1        313.3  -18.01%
+   Q5_K 2560x12288           4        568.9        370.9  -34.80%
+   Q5_K 2560x6144            4        155.3        155.0   -0.19%
+   Q5_K 2560x640             4         32.9         32.5   -1.22%
+   Q5_K 2560x512             4         22.2         22.1   -0.45%
+   Q5_K 6144x2560            4        112.4        112.9   +0.44%
+   Q4_K 2560x10240           4        382.2        320.2  -16.22%
+   Q4_K 2560x12288           4        567.0        378.6  -33.23%
+   Q4_K 2560x6144            4        156.7        155.2   -0.96%
+   Q4_K 2560x640             4         33.1         33.2   +0.30%
+   Q4_K 6144x2560            4        113.1        112.4   -0.62%
+   IQ4_XS 2560x10240         4        583.7        437.0  -25.13%
+   IQ4_XS 2560x12288         4        779.3        492.4  -36.82%
+   IQ4_XS 2560x6144          4        218.9        217.3   -0.73%
+   IQ4_XS 2560x640           4         37.6         37.6   +0.00%
+   IQ4_XS 2560x512           4         34.4         34.3   -0.29%
+   IQ4_NL 640x2560           4        134.3        134.2   -0.07%
+   Q8_0 640x2560             4        103.7         79.3  -23.53%
+
+   25 rows, largest single-case delta 36.82%: the engine's shipped path (knob at 0) is the same kernel it
+
+======================================================================================================
+6. the per-column probe: the shipped kernel at ncols 2, 4 and 6 (d2y/D2Y-MARGINAL.txt)
+======================================================================================================
+the shipped kernel against its own column count: which part of it scales with the columns
+======================================================================================================================
+   ncols       window us         GB/s   vs ncols=2
+   2             35289.2         74.8         1.00x
+   4             55613.2         47.4         1.58x
+   6             69676.8         37.9         1.97x
+
+
+======================================================================================================
+7. the launch geometry (host arithmetic, d2y/attribute.py -> d2y/D2Y-ATTRIB.txt)
+======================================================================================================
+the traits the shapes are made of
+type       DIV    T   BPI   blk B    el/blk el/thr  kqs span   x B/apply
+IQ4_NL      32    2    64      18        32     16      2048          10
+IQ4_XS     256    8    16     136       256     32      4096          34
+Q4_K       256   16     8     144       256     16      2048          12
+Q5_K       256   16     8     176       256     16      2048          12
+Q6_K       256   32     4     210       256      8      1024          12
+Q8_0        32    4    32      34        32      8      1024          10
+
+   el/thr = elements one thread covers per kbx iteration; kqs span = elements one work-group's
+   128 threads reach in one iteration (one paged pass over the row's blocks)
+
+======================================================================================================================================================
+the shipped rule, per geometry (ROWS = WARPS when n_in/DIV < BPI, else 1)
+======================================================================================================================================================
+case                    cnt   DIV   ROWS blocks act/128  it/blk  wB/block  wB/act.thr   thr/wB    part B      x/wB   app/blk
+Q6_K 2560x10240          22   256      1  10240   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q6_K 2560x12288           5   256      1  12288   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q6_K 2560x6144           14   256      1   6144   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q6_K 2560x640            26   256      1    640   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q6_K 2560x512            21   256      1    512   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q6_K 6144x2560           40   256      1   2560   128/128     768      5040        39.4    0.025      1536      7.31      3072
+Q6_K 2560x248320-head     1   256      1 248320   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q5_K 2560x10240          10   256      1  10240   128/128     160      1760        13.8    0.073      1536      4.36       640
+Q5_K 2560x12288           3   256      1  12288   128/128     160      1760        13.8    0.073      1536      4.36       640
+Q5_K 2560x6144            4   256      1   6144   128/128     160      1760        13.8    0.073      1536      4.36       640
+Q5_K 2560x640            12   256      1    640   128/128     160      1760        13.8    0.073      1536      4.36       640
+Q5_K 2560x512             2   256      1    512   128/128     160      1760        13.8    0.073      1536      4.36       640
+Q5_K 6144x2560            4   256      1   2560   128/128     384      4224        33.0    0.030      1536      4.36      1536
+Q4_K 2560x10240           2   256      1  10240   128/128     160      1440        11.2    0.089      1536      5.33       640
+Q4_K 2560x12288           1   256      1  12288   128/128     160      1440        11.2    0.089      1536      5.33       640
+Q4_K 2560x6144           10   256      1   6144   128/128     160      1440        11.2    0.089      1536      5.33       640
+Q4_K 2560x640            30   256      1    640   128/128     160      1440        11.2    0.089      1536      5.33       640
+Q4_K 6144x2560            4   256      1   2560   128/128     384      3456        27.0    0.037      1536      5.33      1536
+IQ4_XS 2560x10240         2   256      4   2560    80/128      80      5440        68.0    0.024      6144      2.00       320
+IQ4_XS 2560x12288         3   256      4   3072    80/128      80      5440        68.0    0.024      6144      2.00       320
+IQ4_XS 2560x6144          8   256      4   1536    80/128      80      5440        68.0    0.024      6144      2.00       320
+IQ4_XS 2560x640          28   256      4    160    80/128      80      5440        68.0    0.024      6144      2.00       320
+IQ4_XS 2560x512           1   256      4    128    80/128      80      5440        68.0    0.024      6144      2.00       320
+IQ4_NL 640x2560          47    32      4    640    40/128      40      1440        36.0    0.089      6144      1.11       160
+Q8_0 640x2560             1    32      4    640    80/128      80      2720        34.0    0.047      6144      1.18       320
+------------------------------------------------------------------------------------------------------------------------------------------------------
+the window: 301 calls, 1119232 work-groups, 2638423040 B of weights, 1374.1M applies (one apply = one thread's dot over one block slice, x 4 columns), 2004615168 B of __shared__ partial arrays (0.76x the weights)
+
+   the seven geometries the rule sends down the ROWS = WARPS path (n_in/DIV < BPI):
+     IQ4_XS 2560x10240       2 launches,  2560 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  5440 B/block
+     IQ4_XS 2560x12288       3 launches,  3072 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  5440 B/block
+     IQ4_XS 2560x6144        8 launches,  1536 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  5440 B/block
+     IQ4_XS 2560x640        28 launches,   160 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  5440 B/block
+     IQ4_XS 2560x512         1 launches,   128 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  5440 B/block
+     IQ4_NL 640x2560        47 launches,   640 blocks, only  40/128 threads work (31.2%), 1.0 iteration(s) each,  1440 B/block
+     Q8_0 640x2560           1 launches,   640 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  2720 B/block
+
+   the 18 geometries on the ROWS = 1 path (211 of the 301 launches): one work-group per row, 128 threads, 2.7 kbx iterations per thread on average, 2539 B of weights per work-group
+
+======================================================================================================================================================
+what D2y's knob changes: the exact layout's ROWS forced (native_mmvq_set_exact_rows)
+======================================================================================================================================================
+case                         r2       r4       r8      r16  shipped   note
+Q6_K 2560x10240            5120     2560     1280      640   
+Q6_K 2560x12288            6144     3072     1536      768   
+Q6_K 2560x6144             3072     1536      768      384   
+Q6_K 2560x640               320      160       80       40   
+Q6_K 2560x512               256      128       64       32   
+Q6_K 6144x2560             1280      640      320      160   
+Q6_K 2560x248320-head    124160    62080    31040    15520   
+Q5_K 2560x10240            5120     2560     1280      640   
+Q5_K 2560x12288            6144     3072     1536      768   
+Q5_K 2560x6144             3072     1536      768      384   
+Q5_K 2560x640               320      160       80       40   
+
+======================================================================================================
+8. the engine's own tests, with this card's knob and with the edit stashed at HEAD
+======================================================================================================
+2/5 Test #14: bf16_gemv_parity .................   Passed    1.36 sec
+3/5 Test #16: quantize_act_parity ..............***Failed    1.29 sec
+quantize_act: 303338 failures over 5 Q8_0 + 4 Q8_K distributions
+4/5 Test #18: mmvq_multi_parity ................   Passed    1.48 sec
+5/5 Test #19: iq_multi_parity ..................***Failed    2.02 sec
+iq_multi_parity: 36 failures
+60% tests passed, 2 tests failed out of 5
+The following tests FAILED:
+--- with the D2y engine edit stashed (native_mmvq.cu/.hpp at HEAD) ---
+33% tests passed, 2 tests failed out of 3
+The following tests FAILED:
+
+======================================================================================================
+9. the engine-side diff this card adds (price-only knob, default 0 = the shipped rule)
+======================================================================================================
+diff --git a/include/strata/kernels/native_mmvq.hpp b/include/strata/kernels/native_mmvq.hpp
+index 6abba25..f6481c5 100644
+--- a/include/strata/kernels/native_mmvq.hpp
++++ b/include/strata/kernels/native_mmvq.hpp
+@@ -32,6 +32,13 @@ std::size_t native_q8_1_bytes(int n_in, int ncols = 1);
+ void native_mmvq_set_multi_exact(bool exact);
+ bool native_mmvq_multi_exact();
+ 
++// D2y (card t_ba006576) pricing arm: force the exact multi-column layout's rows per work-group (2, 4, 8 or 16)
++// instead of the rule it picks from n_in.  0 restores the shipped rule and is the default, so a process that
++// never calls this runs the shipped kernel bit for bit.  Every ROWS keeps each column bitwise equal to a
++// single-column call.  Set before graph capture; captured graphs keep the kernels they captured.
++void native_mmvq_set_exact_rows(int rows);
++int native_mmvq_exact_rows();
++
+ // One quantization may serve multiple weight matrices sharing the same input.
+ // Q8_1 stores FP16 scale and FP16 warp sum of the ORIGINAL float inputs; it does
+ // not reconstruct that sum from the quantized integers.
+diff --git a/src/kernels/cuda/native_mmvq.cu b/src/kernels/cuda/native_mmvq.cu
+index 89d2631..cfa45ac 100644
+--- a/src/kernels/cuda/native_mmvq.cu
++++ b/src/kernels/cuda/native_mmvq.cu
+@@ -999,6 +999,15 @@ struct SmallTraits {
+ // equal to ncols = 1 only to float rounding (the cross-warp reduction groups partial sums differently).
+ bool g_multi_exact = true;   // until the upstream layout is timed on an idle GPU (plan rule: default only what is measured)
+ 
++// D2y (card t_ba006576): the exact layout picks ROWS from `n_in` -- 1 normally, WARPS when the row is shorter
++// than one block-per-iteration count.  This knob FORCES a ROWS so the shape-specialised variant (`more rows per
++// block`) can be priced against the shipped one.  0 is the shipped rule and the default: an engine run that
++// never calls the setter is the shipped kernel, bit for bit, and every shipped number in
++// bench/micro/mmvq_xmx_price.cpp is taken with it at 0.  Any ROWS keeps every column bitwise equal to a
++// single-column call: a thread's kbx sequence, its accumulation order and the warp/cross-warp reduction tree
++// are unchanged -- only which rows a work-group covers changes.
++int g_exact_rows = 0;
++
+ template<typename F, int NCOLS, int NW, int ROWS>
+ __launch_bounds__(NW * WARP, 1)
+ __global__ void native_mmvq_multi_kernel(const typename F::Block* __restrict__ w,
+@@ -1056,6 +1065,19 @@ void launch_multi_n(const void* weights, const void* x_q8_1, float* y, int n_in,
+         return;
+     }
+     const dim3 threads(WARP, WARPS);
++    if (g_exact_rows > 0) {
++        // D2y pricing arm: the shipped rule below is a runtime choice between ROWS = 1 and ROWS = WARPS; this
++        // forces any of the four it can take (2, 4, 8, 16) with everything else identical.
++        const unsigned rows = unsigned(g_exact_rows);
++        const unsigned blocks = unsigned((std::size_t(n_out) + rows - 1) / rows);
++        switch (rows) {
++            case 2: native_mmvq_multi_kernel<F, NCOLS, WARPS, 2><<<blocks, threads, 0, s>>>(w, x, y, n_in, n_out); return;
++            case 4: native_mmvq_multi_kernel<F, NCOLS, WARPS, 4><<<blocks, threads, 0, s>>>(w, x, y, n_in, n_out); return;
++            case 8: native_mmvq_multi_kernel<F, NCOLS, WARPS, 8><<<blocks, threads, 0, s>>>(w, x, y, n_in, n_out); return;
++            case 16: native_mmvq_multi_kernel<F, NCOLS, WARPS, 16><<<blocks, threads, 0, s>>>(w, x, y, n_in, n_out); return;
++            default: throw std::invalid_argument("native MMVQ exact ROWS supports 2, 4, 8 or 16");
++        }
++    }
+     if (n_in / F::DIV < F::BPI) {
+         const unsigned blocks = unsigned((std::size_t(n_out) + WARPS - 1) / WARPS);
+         native_mmvq_multi_kernel<F, NCOLS, WARPS, WARPS><<<blocks, threads, 0, s>>>(w, x, y, n_in, n_out);
+@@ -1253,6 +1275,12 @@ void native_mmvq_warmup(void* stream) {
+ void native_mmvq_set_multi_exact(bool exact) { g_multi_exact = exact; }
+ bool native_mmvq_multi_exact() { return g_multi_exact; }
+ 
++// D2y (card t_ba006576) pricing arm.  0 (the default) is the shipped rule; 2/4/8/16 force ROWS in the exact
++// multi-column layout.  Nothing in the engine sets this: it exists so a caller can price the variant against
++// the shipped kernel on the same shapes, and it restores 0 on the next call from anyone who wants the default.
++void native_mmvq_set_exact_rows(int rows) { g_exact_rows = rows; }
++int native_mmvq_exact_rows() { return g_exact_rows; }
++
+ std::size_t native_q8_1_bytes(int n_in, int ncols) {
+     validate_shape(n_in, ncols);
+     return std::size_t(ncols) * std::size_t(n_in / Q8K) * sizeof(Q81Block);

@@ -1,0 +1,35 @@
+D2y (t_ba006576): the 8.8% is the arithmetic, not the bytes - and the rows knob makes it worse
+
+The card asked for a kernel that reads the pack's own bytes at the card's rate, on
+D2x's evidence that the shipped dense MMVQ is 11.36x above weight_bytes/571.6 GB/s.
+Measured: the bytes are not the problem.
+
+  * a new bench section (--variants) reads the same bytes, on the shipped grid and
+    row-to-group mapping, with no dot, no activation and no reduction: 2.9 ms of a
+    301-call window against the shipped 48.3-50.5 ms (16.4-17.2x), and on the one
+    DRAM-sized matrix in the window (497 MiB) 884.7 us = 589.4 GB/s against this
+    card's independently measured 571.5 GB/s, versus the shipped 8.83 ms on the same
+    bytes and the same grid: 10.0x, in both runs;
+  * the arithmetic is where it goes: __dp4a is four multiplies plus shifts and sign
+    fixups per lane on this device (sycl_compat/intrinsics.hpp:64-80), 8 calls per 32
+    elements in q6_q8_dot_impl; the window issues 1.1-7.3 activation bytes per weight
+    byte; and the __shared__ partial arrays total 2.00 GB against 2.64 GB of weights
+    (0.76x).  ncols 2/4/6 costs 8.6 ms per extra column against 18.1 ms at zero
+    columns: 62% of the family at ncols = 4 is per-column work.
+  * the shape-specialised variant the card proposed is monotonically worse: ROWS 4
+    (the shipped small-K path), 8 and 16 give 0.70-0.74x, 0.50-0.54x and 0.33-0.34x
+    of the shipped layout.  The only reproducible win is the other direction, on the
+    three small-K families:  IQ4_NL 640x2560 at ROWS = 2 is 86.8/86.7 us against
+    133.6/134.1 (1.54x/1.55x) and Q8_0 640x2560 1.26x, both bitwise equal, worth
+    1.04-1.05x on the window (~1.8% of a T=4 window) - priced, not wired.
+  * the generic layout is 1.04-1.06x and bitwise equal on all 25 geometries at
+    ncols = 4 in both runs; D2x's f16 8x16x16 prototype re-measures at 2.93-3.04x and
+    is still the only large win, capped at 4.21x by its 2 bytes/element.
+
+Engine: one price-only knob, native_mmvq_set_exact_rows (default 0 = the shipped
+rule, and the only caller in the tree is the microbench).  mmvq_multi_parity passes;
+quantize_act_parity and iq_multi_parity fail identically with this edit stashed at
+HEAD, so they are pre-existing.  build-sycl/strata rebuilt: 3dbea776ac8bf94414c199bdae05877c.
+
+d2y/ carries the status, the tables, both raw runs, the pre-edit control run, the
+geometry script, the tests and the machine state.

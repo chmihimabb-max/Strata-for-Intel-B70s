@@ -1,0 +1,39 @@
+###### d2y machine state at 2026-10-03T23:52:49-06:00
+### /dev/dri
+total 0
+drwxr-xr-x 2 root root        140 Oct  1 09:16 by-path
+crw-rw----+1 root video  226,   0 Oct  1 09:16 card0
+crw-rw----+1 root video  226,   1 Oct  1 09:16 card1
+crw-rw----+1 root render 226, 128 Oct  1 09:16 renderD128
+crw-rw----+1 root render 226, 129 Oct  1 09:16 renderD129
+### render nodes and their device ids
+/sys/class/drm/card0 vendor=0x8086 device=0xe223
+/sys/class/drm/card0-DP-1 vendor= device=
+/sys/class/drm/card0-DP-2 vendor= device=
+/sys/class/drm/card0-DP-3 vendor= device=
+/sys/class/drm/card0-DP-4 vendor= device=
+/sys/class/drm/card0-HDMI-A-1 vendor= device=
+/sys/class/drm/card0-HDMI-A-2 vendor= device=
+/sys/class/drm/card0-HDMI-A-3 vendor= device=
+/sys/class/drm/card0-HDMI-A-4 vendor= device=
+/sys/class/drm/card1 vendor=0x8086 device=0xe223
+/sys/class/drm/card1-DP-5 vendor= device=
+/sys/class/drm/card1-DP-6 vendor= device=
+/sys/class/drm/card1-DP-7 vendor= device=
+/sys/class/drm/card1-DP-8 vendor= device=
+/sys/class/drm/card1-HDMI-A-5 vendor= device=
+/sys/class/drm/card1-HDMI-A-6 vendor= device=
+/sys/class/drm/card1-HDMI-A-7 vendor= device=
+/sys/class/drm/card1-HDMI-A-8 vendor= device=
+### /proc/driver/nvidia (absent on this box)
+ls: cannot access '/proc/driver/nvidia': No such file or directory
+### load, memory
+ 23:52:49 up 2 days, 14:36,  1 user,  load average: 2.35, 1.60, 1.10
+               total        used        free      shared  buff/cache   available
+Mem:             123           7          50           0          66         115
+### anything of mine still running (engine, server, bench, container)
+5832 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+### the bench binary this card measured with
+-rwxrwxr-x 1 michael michael 34254536 Oct  3 23:51 /home/michael/strata-xpu/strata/build-sycl/mmvq_xmx_price
+-rwxrwxr-x 1 michael michael 50820208 Oct  3 23:52 /home/michael/strata-xpu/strata/build-sycl/strata
+159c3b1878590839de95f7938e14988f  /home/michael/strata-xpu/strata/build-sycl/mmvq_xmx_price

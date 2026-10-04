@@ -1,0 +1,169 @@
+###### d2y bench 2026-10-03T23:40:02-06:00
+###### binary: /home/michael/strata-xpu/strata/build-sycl/mmvq_xmx_price md5 42de31996d62c7e250a8e275f82866de
+###### ZE_AFFINITY_MASK=0 (card 0 only; see d2y/machine.txt for which cards were free)
+###### command: ZE_AFFINITY_MASK=0 build-sycl/mmvq_xmx_price --reps 20 --t 2,4,6
+
+device: Intel(R) Graphics [0xe223] (SM 12.0)
+sycl device: Intel(R) Graphics [0xe223], driver 1.15.37833+4, max work-group 1024
+reps 20, ncols 2 4 6
+
+== 1. the device's own joint_matrix shapes (probe21 re-run at this HEAD, not inherited) ==
+  f16  16x16x16  (A row_major, B row_major)              REFUSED: The program was built for 1 devices
+Build program log for 'Intel(R) Graphics [0xe223]':
+
+error: undefined reference to `__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_RowMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32'
+in function: '__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_RowMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32' called by kernel: 'typeinfo name for bool (anonymous namespace)::probe_tile<sycl::_V1::detail::half_impl::half, sycl::_V1::detail::half_impl::half, float, 16, 16, 16, (sycl::_V1::ext::oneapi::experimental::matrix::layout)0, (sycl::_V1::ext::oneapi::experimental::matrix::layout)0>(sycl::_V1::queue&, char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*)::'lambda'(sycl::_V1::nd_item<1>)'
+
+error: backend compiler failed build.
+
+  f16  16x16x16  (A col_major, B row_major)              REFUSED: The program was built for 1 devices
+Build program log for 'Intel(R) Graphics [0xe223]':
+
+error: undefined reference to `__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_ColumnMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32'
+in function: '__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_ColumnMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32' called by kernel: 'typeinfo name for bool (anonymous namespace)::probe_tile<sycl::_V1::detail::half_impl::half, sycl::_V1::detail::half_impl::half, float, 16, 16, 16, (sycl::_V1::ext::oneapi::experimental::matrix::layout)1, (sycl::_V1::ext::oneapi::experimental::matrix::layout)0>(sycl::_V1::queue&, char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*)::'lambda'(sycl::_V1::nd_item<1>)'
+
+error: backend compiler failed build.
+
+  f16  16x16x16  (A intel_packed, B intel_packed)        REFUSED: The program was built for 1 devices
+Build program log for 'Intel(R) Graphics [0xe223]':
+
+error: undefined reference to `__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_SG16_16x16_i16_8_global_v8i8_pi32_i32'
+in function: '__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_SG16_16x16_i16_8_global_v8i8_pi32_i32' called by kernel: 'typeinfo name for bool (anonymous namespace)::probe_tile<sycl::_V1::detail::half_impl::half, sycl::_V1::detail::half_impl::half, float, 16, 16, 16, (sycl::_V1::ext::oneapi::experimental::matrix::layout)2, (sycl::_V1::ext::oneapi::experimental::matrix::layout)2>(sycl::_V1::queue&, char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*)::'lambda'(sycl::_V1::nd_item<1>)'
+
+error: backend compiler failed build.
+
+  f16   8x16x16  (A row_major, B row_major)              RUNS
+  f16   8x16x16  (A col_major, B row_major)              RUNS
+  bf16 16x16x16  (A row_major, B row_major)              REFUSED: The program was built for 1 devices
+Build program log for 'Intel(R) Graphics [0xe223]':
+
+error: undefined reference to `__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_RowMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32'
+in function: '__builtin_spriv_OpJointMatrixLoadINTEL_PackedA_RowMajor_SG16_16x16_i16_8_global_v8i8_pi32_i32' called by kernel: 'typeinfo name for bool (anonymous namespace)::probe_tile<sycl::_V1::ext::oneapi::bfloat16, sycl::_V1::ext::oneapi::bfloat16, float, 16, 16, 16, (sycl::_V1::ext::oneapi::experimental::matrix::layout)0, (sycl::_V1::ext::oneapi::experimental::matrix::layout)0>(sycl::_V1::queue&, char const*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*)::'lambda'(sycl::_V1::nd_item<1>)'
+
+error: backend compiler failed build.
+
+  bf16  8x16x16  (A row_major, B row_major)              RUNS
+  int8  8x32x16  (A row_major, B row_major)              REFUSED: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=8, Cols=32 is not supported on this device
+  int8  8x32x16  (A row_major, B col_major)              REFUSED: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=8, Cols=32 is not supported on this device
+  int8  8x32x16  (A row_major, B intel_packed)           REFUSED: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=8, Cols=32 is not supported on this device
+  int8 16x32x16  (A row_major, B row_major)              REFUSED: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=16, Cols=32 is not supported on this device
+
+  VERDICT on this driver (1.15.37833+4):
+    f16 16x16x16 / bf16 16x16x16 (the shapes probe21 recorded as RUNNING): DOES NOT BUILD
+    f16  8x16x16 (the only tile that builds for a GEMV-shaped kernel): RUNS
+    the int8 8x32x16 / 16x32x16 dot (the shape this card was proposed for): REFUSED by the driver in every layout tried
+  driver text: joint_matrix with parameters matrix_type::sint32, use::accumulator, Rows=16, Cols=32 is not supported on this device
+
+== 2. the card's streaming rate, measured here (event-timed on the same stream as the kernels below) ==
+   read-only over      8 MiB [memset-filled]: event    0.007 ms ->  1220.2 GB/s | wall/burst    0.005 ms ->  1727.3 GB/s
+   read-only over    256 MiB [memset-filled]: event    0.203 ms ->  1323.6 GB/s | wall/burst    0.201 ms ->  1336.6 GB/s
+   read-only over   1024 MiB [memset-filled]: event    0.794 ms ->  1352.2 GB/s | wall/burst    0.793 ms ->  1354.6 GB/s
+   read-only over   1024 MiB [hash-filled, incompressible]: 1.879 ms ->   571.6 GB/s   <- the floor below uses this
+        (wall/burst cross-check: 1.877 ms -> 572.2 GB/s)
+   the memset-filled read above is 2.37x the incompressible rate: the driver compresses uniform pages, so a constant-filled
+   buffer is not a bandwidth measurement
+   write-only memset of   1024 MiB (constant, compressible): event    0.773 ms ->  1389.8 GB/s
+   device->device copy of    256 MiB x3: 0.591 ms -> 2724.6 GB/s of traffic (read+write)
+   (the floor below uses the read-only number: a GEMV reads the weights and writes n_out outputs)
+
+== 3. per (type, shape, ncols): the shipped kernel, the generic layout, the f16 XMX prototype
+   (floor = this card's measured 571.6 GB/s on the pack's own weight bytes; prototype GB/s is on f16 bytes;
+    us/call is the IN-STREAM price - `reps` launches back to back / reps - which is what the census measures)
+case                    T   cnt      weight B  floor us    ex us  ex GB/s   gen us gen GB/s   f16 us f16 GB/s   dq ms ex 1call
+Q6_K 2560x10240         2    22      21504000      37.6    274.7     78.3    272.4     78.9    104.1    503.4    32.1    277.2
+Q6_K 2560x10240         4    22      21504000      37.6    398.3     54.0    376.4     57.1    101.5    516.5    32.1    415.8
+Q6_K 2560x10240         6    22      21504000      37.6    393.3     54.7    378.0     56.9    103.6    506.1    32.1    397.1
+Q6_K 2560x12288         2     5      25804800      45.1    290.1     89.0    296.5     87.0    121.9    516.2    39.5    307.5
+Q6_K 2560x12288         4     5      25804800      45.1    373.7     69.1    372.9     69.2    122.8    512.3    39.5    377.3
+Q6_K 2560x12288         6     5      25804800      45.1    480.2     53.7    459.6     56.2    123.8    508.2    39.5    477.5
+Q6_K 2560x6144          2    14      12902400      22.6    128.8    100.2    141.4     91.2     55.6    566.3    18.9    133.0
+Q6_K 2560x6144          4    14      12902400      22.6    190.5     67.7    195.5     66.0     56.0    562.1    18.9    194.9
+Q6_K 2560x6144          6    14      12902400      22.6    242.6     53.2    233.6     55.2     57.3    549.0    18.9    244.1
+Q6_K 2560x640           2    26       1344000       2.4     28.9     46.6     24.8     54.1     19.8    165.1     1.8     32.4
+Q6_K 2560x640           4    26       1344000       2.4     39.9     33.7     32.1     41.9     19.8    165.2     1.8     43.8
+Q6_K 2560x640           6    26       1344000       2.4     50.0     26.9     45.3     29.7     20.0    164.1     1.8     54.1
+Q6_K 2560x512           2    21       1075200       1.9     18.9     57.0     20.8     51.7     19.6    133.4     1.5     22.9
+Q6_K 2560x512           4    21       1075200       1.9     25.5     42.2     27.7     38.8     19.8    132.7     1.5     30.0
+Q6_K 2560x512           6    21       1075200       1.9     32.3     33.3     40.9     26.3     19.9    132.0     1.5     36.5
+Q6_K 6144x2560          2    40      12902400      22.6    124.8    103.4    143.5     89.9    118.3    265.8    18.8    129.5
+Q6_K 6144x2560          4    40      12902400      22.6    167.8     76.9    198.2     65.1    118.5    265.5    18.8    172.4
+Q6_K 6144x2560          6    40      12902400      22.6    212.7     60.7    306.6     42.1    122.1    257.6    18.8    216.5
+Q6_K 2560x248320-head   2     1     521472000     912.3   6093.0     85.6   6093.6     85.6   2379.2    534.4   461.1   5860.3
+Q6_K 2560x248320-head   4     1     521472000     912.3   8837.7     59.0   8406.8     62.0   2300.3    552.7   461.1   8639.7
+Q6_K 2560x248320-head   6     1     521472000     912.3  11116.3     46.9  10017.1     52.1   2326.5    546.5   461.1  10957.9
+Q5_K 2560x10240         2    10      18022400      31.5    198.9     90.6    202.9     88.8    104.3    502.7    26.5    202.8
+Q5_K 2560x10240         4    10      18022400      31.5    318.8     56.5    270.0     66.8    101.6    516.2    26.5    325.9
+Q5_K 2560x10240         6    10      18022400      31.5    377.5     47.7    318.7     56.6    103.5    506.6    26.5    382.5
+Q5_K 2560x12288         2     3      21626880      37.8    211.3    102.4    193.9    111.5    124.0    507.5    31.8    214.6
+Q5_K 2560x12288         4     3      21626880      37.8    314.0     68.9    310.1     69.7    123.3    510.4    31.8    333.3
+Q5_K 2560x12288         6     3      21626880      37.8    470.0     46.0    383.7     56.4    125.9    499.8    31.8    469.0
+Q5_K 2560x6144          2     4      10813440      18.9     90.1    120.0     93.5    115.7     55.5    567.0    15.8     93.9
+Q5_K 2560x6144          4     4      10813440      18.9    154.6     69.9    164.9     65.6     55.5    567.1    15.8    159.7
+Q5_K 2560x6144          6     4      10813440      18.9    235.1     46.0    193.0     56.0     56.9    553.2    15.8    239.2
+Q5_K 2560x640           2    12       1126400       2.0     19.1     58.9     18.7     60.2     19.8    165.5     1.4     23.3
+Q5_K 2560x640           4    12       1126400       2.0     32.4     34.7     29.1     38.7     19.9    165.0     1.4     36.8
+Q5_K 2560x640           6    12       1126400       2.0     47.7     23.6     43.9     25.7     20.0    163.8     1.4     51.1
+Q5_K 2560x512           2     2        901120       1.6     12.7     70.9     15.0     60.1     19.6    133.4     1.1     16.9
+Q5_K 2560x512           4     2        901120       1.6     22.1     40.8     26.0     34.7     19.7    133.4     1.1     26.1
+Q5_K 2560x512           6     2        901120       1.6     29.7     30.3     41.4     21.7     19.9    131.7     1.1     33.9
+Q5_K 6144x2560          2     4      10813440      18.9     69.2    156.3     73.5    147.1    117.6    267.5    15.8     73.3
+Q5_K 6144x2560          4     4      10813440      18.9    112.1     96.5    128.0     84.5    120.3    261.4    15.8    116.9
+Q5_K 6144x2560          6     4      10813440      18.9    160.2     67.5    216.1     50.0    122.8    256.1    15.8    164.2
+Q4_K 2560x10240         2     2      14745600      25.8    191.7     76.9    227.3     64.9    105.4    497.3    26.3    195.9
+Q4_K 2560x10240         4     2      14745600      25.8    352.4     41.8    255.0     57.8    101.4    517.2    26.3    356.8
+Q4_K 2560x10240         6     2      14745600      25.8    375.0     39.3    323.5     45.6    102.7    510.5    26.3    379.4
+Q4_K 2560x12288         2     1      17694720      31.0    235.3     75.2    214.1     82.6    125.1    503.0    31.6    238.2
+Q4_K 2560x12288         4     1      17694720      31.0    310.5     57.0    300.3     58.9    123.0    511.4    31.6    376.9
+Q4_K 2560x12288         6     1      17694720      31.0    451.5     39.2    391.1     45.2    123.5    509.3    31.6    451.0
+Q4_K 2560x6144          2    10       8847360      15.5     88.5     99.9     93.4     94.7     55.4    567.5    16.6     93.1
+Q4_K 2560x6144          4    10       8847360      15.5    155.0     57.1    163.4     54.1     55.5    566.4    16.6    159.8
+Q4_K 2560x6144          6    10       8847360      15.5    235.1     37.6    196.0     45.1     56.9    553.2    16.6    239.4
+Q4_K 2560x640           2    30        921600       1.6     18.9     48.6     16.9     54.4     19.8    165.5     1.4     23.2
+Q4_K 2560x640           4    30        921600       1.6     32.9     28.1     28.8     32.0     19.8    165.5     1.4     36.8
+Q4_K 2560x640           6    30        921600       1.6     48.4     19.0     45.1     20.4     20.0    164.0     1.4     51.9
+Q4_K 6144x2560          2     4       8847360      15.5     66.7    132.6     73.6    120.2    117.7    267.3    16.4     71.5
+Q4_K 6144x2560          4     4       8847360      15.5    113.3     78.1    128.0     69.1    119.9    262.3    16.4    115.5
+Q4_K 6144x2560          6     4       8847360      15.5    159.7     55.4    220.4     40.1    120.0    262.2    16.4    167.8
+IQ4_XS 2560x10240       2     2      13926400      24.4    397.7     35.0    551.6     25.2    109.8    477.3    30.7    402.1
+IQ4_XS 2560x10240       4     2      13926400      24.4    347.6     40.1    290.8     47.9    101.5    516.6    30.7    352.8
+IQ4_XS 2560x10240       6     2      13926400      24.4    509.1     27.4    342.3     40.7    102.1    513.7    30.7    513.3
+IQ4_XS 2560x12288       2     3      16711680      29.2    344.0     48.6    303.2     55.1    124.8    504.2    37.0    347.3
+IQ4_XS 2560x12288       4     3      16711680      29.2    409.6     40.8    346.9     48.2    123.7    508.5    37.0    412.1
+IQ4_XS 2560x12288       6     3      16711680      29.2    613.6     27.2    412.6     40.5    124.0    507.5    37.0    621.0
+IQ4_XS 2560x6144        2     8       8355840      14.6    134.4     62.1    127.3     65.6     55.5    566.9    18.3    138.3
+IQ4_XS 2560x6144        4     8       8355840      14.6    217.3     38.5    182.0     45.9     55.6    565.6    18.3    221.2
+IQ4_XS 2560x6144        6     8       8355840      14.6    324.3     25.8    203.8     41.0     56.1    560.9    18.3    329.5
+IQ4_XS 2560x640         2    28        870400       1.5     27.6     31.5     19.7     44.2     19.7    166.1     1.8     30.6
+IQ4_XS 2560x640         4    28        870400       1.5     37.7     23.1     27.0     32.3     19.8    165.6     1.8     40.7
+IQ4_XS 2560x640         6    28        870400       1.5     52.4     16.6     40.0     21.7     20.0    164.0     1.8     55.6
+IQ4_XS 2560x512         2     1        696320       1.2     25.6     27.2     17.3     40.2     19.7    133.2     1.5     28.8
+IQ4_XS 2560x512         4     1        696320       1.2     34.5     20.2     23.4     29.8     19.7    133.2     1.5     37.7
+IQ4_XS 2560x512         6     1        696320       1.2     47.6     14.6     37.9     18.4     19.9    132.0     1.5     50.8
+IQ4_NL 640x2560         2    47        921600       1.6     88.4     10.4     78.2     11.8     10.9    301.6     1.8     94.6
+IQ4_NL 640x2560         4    47        921600       1.6    227.3      4.1    135.7      6.8     10.1    325.8     1.8    231.6
+IQ4_NL 640x2560         6    47        921600       1.6    286.4      3.2    106.7      8.6      6.6    494.2     1.8    297.3
+Q8_0 640x2560           2     1       1740800       3.0     50.8     34.3     38.2     45.6      7.1    460.9     1.5     55.1
+Q8_0 640x2560           4     1       1740800       3.0    121.6     14.3     66.9     26.0      6.9    474.1     1.5     91.1
+Q8_0 640x2560           6     1       1740800       3.0    153.9     11.3     99.2     17.5      7.0    467.1     1.5    157.7
+
+== 4. accuracy (any variant that changes the numerics states its own tolerance) ==
+  parity, Q6_K 2560x10240 ncols=4, rows {0, 5120, 10176} + 64 (192 x 4 outputs), fp64 reference = the same dequantized weights . the same f32 activations:
+    (1) the f16 encoding alone      (f16(w).x  vs w.x)     : max 5.500e-01  rel_rms 2.081e-04
+    (2) shipped kernel vs ref       (Q8_1 activations)    : max 1.579e+01  rel_rms 5.650e-03
+    (3) f16 XMX kernel vs ref       (f16 activations)     : max 1.073e+00  rel_rms 2.951e-04
+    (4) f16 XMX kernel vs f16(w).f16(x), its own encoding : max 5.166e-04  rel_rms 1.158e-07   <- the kernel's own arithmetic
+    (5) f16 XMX kernel vs shipped kernel                  : max 1.551e+01  rel_rms 5.670e-03
+
+== 5. what a whole T=2 window's 301 dense calls would cost ==
+   the census (d2-hist-4096) measures this family at 301 launches / 51267.3 us of device time / 40.9% of the window
+   weight bytes per window: 2638423040 (2516.2 MiB); card read-only rate 571.6 GB/s
+   shipped layout (multi_exact)         35291.3 us   35.29 ms   28.2% of the window  vs shipped    +0.0%  vs the pack's floor  7.65x
+   generic layout (multi_exact off)     35624.2 us   35.62 ms   28.4% of the window  vs shipped    +0.9%  vs the pack's floor  7.72x
+   f16 XMX prototype (as written)       18186.0 us   18.19 ms   14.5% of the window  vs shipped   -48.5%  vs the pack's floor  3.94x
+   the pack's own bandwidth floor        4616.0 us    4.62 ms    3.7% of the window  vs shipped   -86.9%  vs the pack's floor  1.00x
+   the prototype's own bandwidth floor   12405.9 us   12.41 ms    9.9% of the window  vs shipped   -64.8%  vs the pack's floor  2.69x
+   the census's own 51267.3 us is the check on the shipped row above: this table's per-call
+   times x the census's own launch counts (the geometries' counts sum to 301)
+
+byte-table check (this file's own block sizes vs native_mmvq_weight_bytes): every case MATCHES
+###### exit=0 at 2026-10-03T23:40:13-06:00

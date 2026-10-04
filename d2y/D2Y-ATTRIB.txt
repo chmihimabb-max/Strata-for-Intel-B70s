@@ -1,0 +1,153 @@
+D2y -- the launch geometry of every layout the shipped dense MMVQ can take
+host arithmetic from src/kernels/cuda/native_mmvq.cu at HEAD + d2/D2-TYPES.txt; no measurement here
+ncols = 4, WARPS = 4, WARP = 32; the exact layout is NW = WARPS warps in every case
+
+the traits the shapes are made of
+type       DIV    T   BPI   blk B    el/blk el/thr  kqs span   x B/apply
+IQ4_NL      32    2    64      18        32     16      2048          10
+IQ4_XS     256    8    16     136       256     32      4096          34
+Q4_K       256   16     8     144       256     16      2048          12
+Q5_K       256   16     8     176       256     16      2048          12
+Q6_K       256   32     4     210       256      8      1024          12
+Q8_0        32    4    32      34        32      8      1024          10
+
+   el/thr = elements one thread covers per kbx iteration; kqs span = elements one work-group's
+   128 threads reach in one iteration (one paged pass over the row's blocks)
+
+======================================================================================================================================================
+the shipped rule, per geometry (ROWS = WARPS when n_in/DIV < BPI, else 1)
+======================================================================================================================================================
+case                    cnt   DIV   ROWS blocks act/128  it/blk  wB/block  wB/act.thr   thr/wB    part B      x/wB   app/blk
+Q6_K 2560x10240          22   256      1  10240   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q6_K 2560x12288           5   256      1  12288   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q6_K 2560x6144           14   256      1   6144   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q6_K 2560x640            26   256      1    640   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q6_K 2560x512            21   256      1    512   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q6_K 6144x2560           40   256      1   2560   128/128     768      5040        39.4    0.025      1536      7.31      3072
+Q6_K 2560x248320-head     1   256      1 248320   128/128     320      2100        16.4    0.061      1536      7.31      1280
+Q5_K 2560x10240          10   256      1  10240   128/128     160      1760        13.8    0.073      1536      4.36       640
+Q5_K 2560x12288           3   256      1  12288   128/128     160      1760        13.8    0.073      1536      4.36       640
+Q5_K 2560x6144            4   256      1   6144   128/128     160      1760        13.8    0.073      1536      4.36       640
+Q5_K 2560x640            12   256      1    640   128/128     160      1760        13.8    0.073      1536      4.36       640
+Q5_K 2560x512             2   256      1    512   128/128     160      1760        13.8    0.073      1536      4.36       640
+Q5_K 6144x2560            4   256      1   2560   128/128     384      4224        33.0    0.030      1536      4.36      1536
+Q4_K 2560x10240           2   256      1  10240   128/128     160      1440        11.2    0.089      1536      5.33       640
+Q4_K 2560x12288           1   256      1  12288   128/128     160      1440        11.2    0.089      1536      5.33       640
+Q4_K 2560x6144           10   256      1   6144   128/128     160      1440        11.2    0.089      1536      5.33       640
+Q4_K 2560x640            30   256      1    640   128/128     160      1440        11.2    0.089      1536      5.33       640
+Q4_K 6144x2560            4   256      1   2560   128/128     384      3456        27.0    0.037      1536      5.33      1536
+IQ4_XS 2560x10240         2   256      4   2560    80/128      80      5440        68.0    0.024      6144      2.00       320
+IQ4_XS 2560x12288         3   256      4   3072    80/128      80      5440        68.0    0.024      6144      2.00       320
+IQ4_XS 2560x6144          8   256      4   1536    80/128      80      5440        68.0    0.024      6144      2.00       320
+IQ4_XS 2560x640          28   256      4    160    80/128      80      5440        68.0    0.024      6144      2.00       320
+IQ4_XS 2560x512           1   256      4    128    80/128      80      5440        68.0    0.024      6144      2.00       320
+IQ4_NL 640x2560          47    32      4    640    40/128      40      1440        36.0    0.089      6144      1.11       160
+Q8_0 640x2560             1    32      4    640    80/128      80      2720        34.0    0.047      6144      1.18       320
+------------------------------------------------------------------------------------------------------------------------------------------------------
+the window: 301 calls, 1119232 work-groups, 2638423040 B of weights, 1374.1M applies (one apply = one thread's dot over one block slice, x 4 columns), 2004615168 B of __shared__ partial arrays (0.76x the weights)
+
+   the seven geometries the rule sends down the ROWS = WARPS path (n_in/DIV < BPI):
+     IQ4_XS 2560x10240       2 launches,  2560 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  5440 B/block
+     IQ4_XS 2560x12288       3 launches,  3072 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  5440 B/block
+     IQ4_XS 2560x6144        8 launches,  1536 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  5440 B/block
+     IQ4_XS 2560x640        28 launches,   160 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  5440 B/block
+     IQ4_XS 2560x512         1 launches,   128 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  5440 B/block
+     IQ4_NL 640x2560        47 launches,   640 blocks, only  40/128 threads work (31.2%), 1.0 iteration(s) each,  1440 B/block
+     Q8_0 640x2560           1 launches,   640 blocks, only  80/128 threads work (62.5%), 1.0 iteration(s) each,  2720 B/block
+
+   the 18 geometries on the ROWS = 1 path (211 of the 301 launches): one work-group per row, 128 threads, 2.7 kbx iterations per thread on average, 2539 B of weights per work-group
+
+======================================================================================================================================================
+what D2y's knob changes: the exact layout's ROWS forced (native_mmvq_set_exact_rows)
+======================================================================================================================================================
+case                         r2       r4       r8      r16  shipped   note
+Q6_K 2560x10240            5120     2560     1280      640   
+Q6_K 2560x12288            6144     3072     1536      768   
+Q6_K 2560x6144             3072     1536      768      384   
+Q6_K 2560x640               320      160       80       40   
+Q6_K 2560x512               256      128       64       32   
+Q6_K 6144x2560             1280      640      320      160   
+Q6_K 2560x248320-head    124160    62080    31040    15520   
+Q5_K 2560x10240            5120     2560     1280      640   
+Q5_K 2560x12288            6144     3072     1536      768   
+Q5_K 2560x6144             3072     1536      768      384   
+Q5_K 2560x640               320      160       80       40   
+Q5_K 2560x512               256      128       64       32   
+Q5_K 6144x2560             1280      640      320      160   
+Q4_K 2560x10240            5120     2560     1280      640   
+Q4_K 2560x12288            6144     3072     1536      768   
+Q4_K 2560x6144             3072     1536      768      384   
+Q4_K 2560x640               320      160       80       40   
+Q4_K 6144x2560             1280      640      320      160   
+IQ4_XS 2560x10240          5120     2560     1280      640   shipped path is r4 (same kernel)
+IQ4_XS 2560x12288          6144     3072     1536      768   shipped path is r4 (same kernel)
+IQ4_XS 2560x6144           3072     1536      768      384   shipped path is r4 (same kernel)
+IQ4_XS 2560x640             320      160       80       40   shipped path is r4 (same kernel)
+IQ4_XS 2560x512             256      128       64       32   shipped path is r4 (same kernel)
+IQ4_NL 640x2560            1280      640      320      160   shipped path is r4 (same kernel)
+Q8_0 640x2560              1280      640      320      160   shipped path is r4 (same kernel)
+
+   blocks only: the knob changes which rows a work-group covers.  A thread's kbx sequence, its
+   accumulation order and the warp/cross-warp reduction tree are identical for every ROWS, so every
+   rN column is bitwise equal to the shipped kernel -- the bench's section 6 checks that on the GPU.
+
+======================================================================================================================================================
+the same three layouts against the floor, per work-group (the card's step 1 in one table)
+======================================================================================================================================================
+case                   layout                        blocks    act  iters  wB/blk    wB/act   thr/wB   out/blk
+Q6_K 2560x10240        exact, ROWS = the rule         10240    128    2.5    2100      16.4    0.061         4
+Q6_K 2560x10240        generic, ROWS = 2, NW = 4       5120    128    2.5    4200      32.8    0.030         8
+Q6_K 2560x12288        exact, ROWS = the rule         12288    128    2.5    2100      16.4    0.061         4
+Q6_K 2560x12288        generic, ROWS = 2, NW = 4       6144    128    2.5    4200      32.8    0.030         8
+Q6_K 2560x6144         exact, ROWS = the rule          6144    128    2.5    2100      16.4    0.061         4
+Q6_K 2560x6144         generic, ROWS = 2, NW = 4       3072    128    2.5    4200      32.8    0.030         8
+Q6_K 2560x640          exact, ROWS = the rule           640    128    2.5    2100      16.4    0.061         4
+Q6_K 2560x640          generic, ROWS = 2, NW = 4        320    128    2.5    4200      32.8    0.030         8
+Q6_K 2560x512          exact, ROWS = the rule           512    128    2.5    2100      16.4    0.061         4
+Q6_K 2560x512          generic, ROWS = 2, NW = 4        256    128    2.5    4200      32.8    0.030         8
+Q6_K 6144x2560         exact, ROWS = the rule          2560    128    6.0    5040      39.4    0.025         4
+Q6_K 6144x2560         generic, ROWS = 2, NW = 4       1280    128    6.0   10080      78.8    0.013         8
+Q6_K 2560x248320-head  exact, ROWS = the rule        248320    128    2.5    2100      16.4    0.061         4
+Q6_K 2560x248320-head  generic, ROWS = 2, NW = 4     124160    128    2.5    4200      32.8    0.030         8
+Q5_K 2560x10240        exact, ROWS = the rule         10240    128    1.2    1760      13.8    0.073         4
+Q5_K 2560x10240        generic, ROWS = 2, NW = 4       5120    128    1.2    3520      27.5    0.036         8
+Q5_K 2560x12288        exact, ROWS = the rule         12288    128    1.2    1760      13.8    0.073         4
+Q5_K 2560x12288        generic, ROWS = 2, NW = 4       6144    128    1.2    3520      27.5    0.036         8
+Q5_K 2560x6144         exact, ROWS = the rule          6144    128    1.2    1760      13.8    0.073         4
+Q5_K 2560x6144         generic, ROWS = 2, NW = 4       3072    128    1.2    3520      27.5    0.036         8
+Q5_K 2560x640          exact, ROWS = the rule           640    128    1.2    1760      13.8    0.073         4
+Q5_K 2560x640          generic, ROWS = 2, NW = 4        320    128    1.2    3520      27.5    0.036         8
+Q5_K 2560x512          exact, ROWS = the rule           512    128    1.2    1760      13.8    0.073         4
+Q5_K 2560x512          generic, ROWS = 2, NW = 4        256    128    1.2    3520      27.5    0.036         8
+Q5_K 6144x2560         exact, ROWS = the rule          2560    128    3.0    4224      33.0    0.030         4
+Q5_K 6144x2560         generic, ROWS = 2, NW = 4       1280    128    3.0    8448      66.0    0.015         8
+Q4_K 2560x10240        exact, ROWS = the rule         10240    128    1.2    1440      11.2    0.089         4
+Q4_K 2560x10240        generic, ROWS = 2, NW = 4       5120    128    1.2    2880      22.5    0.044         8
+Q4_K 2560x12288        exact, ROWS = the rule         12288    128    1.2    1440      11.2    0.089         4
+Q4_K 2560x12288        generic, ROWS = 2, NW = 4       6144    128    1.2    2880      22.5    0.044         8
+Q4_K 2560x6144         exact, ROWS = the rule          6144    128    1.2    1440      11.2    0.089         4
+Q4_K 2560x6144         generic, ROWS = 2, NW = 4       3072    128    1.2    2880      22.5    0.044         8
+Q4_K 2560x640          exact, ROWS = the rule           640    128    1.2    1440      11.2    0.089         4
+Q4_K 2560x640          generic, ROWS = 2, NW = 4        320    128    1.2    2880      22.5    0.044         8
+Q4_K 6144x2560         exact, ROWS = the rule          2560    128    3.0    3456      27.0    0.037         4
+Q4_K 6144x2560         generic, ROWS = 2, NW = 4       1280    128    3.0    6912      54.0    0.019         8
+IQ4_XS 2560x10240      exact, ROWS = the rule          2560     80    1.0    5440      68.0    0.024        16
+IQ4_XS 2560x10240      generic, ROWS = 2, NW = 4       5120     80    1.0    2720      34.0    0.047         8
+IQ4_XS 2560x12288      exact, ROWS = the rule          3072     80    1.0    5440      68.0    0.024        16
+IQ4_XS 2560x12288      generic, ROWS = 2, NW = 4       6144     80    1.0    2720      34.0    0.047         8
+IQ4_XS 2560x6144       exact, ROWS = the rule          1536     80    1.0    5440      68.0    0.024        16
+IQ4_XS 2560x6144       generic, ROWS = 2, NW = 4       3072     80    1.0    2720      34.0    0.047         8
+IQ4_XS 2560x640        exact, ROWS = the rule           160     80    1.0    5440      68.0    0.024        16
+IQ4_XS 2560x640        generic, ROWS = 2, NW = 4        320     80    1.0    2720      34.0    0.047         8
+IQ4_XS 2560x512        exact, ROWS = the rule           128     80    1.0    5440      68.0    0.024        16
+IQ4_XS 2560x512        generic, ROWS = 2, NW = 4        256     80    1.0    2720      34.0    0.047         8
+IQ4_NL 640x2560        exact, ROWS = the rule           640     40    1.0    1440      36.0    0.089        16
+IQ4_NL 640x2560        generic, ROWS = 2, NW = 4       1280     40    1.0     720      18.0    0.178         8
+Q8_0 640x2560          exact, ROWS = the rule           640     80    1.0    2720      34.0    0.047        16
+Q8_0 640x2560          generic, ROWS = 2, NW = 4       1280     80    1.0    1360      17.0    0.094         8
+
+   act = working threads per 128-thread block (the rest only store partials); iters = the kbx loop,
+   per working thread; wB/act = the weight bytes one working thread reads in the whole call -- for the
+   small-n_in shapes this is a few hundred bytes, which is why a call costs a fixed per-block price
+   rather than a per-byte one.  out/blk = outputs one work-group owns, i.e. the work the block-level
+   reduction (partial store + cross-warp add + warp butterfly) is spread over.

@@ -1,0 +1,73 @@
+###### d2y: the same three tests with the D2y engine edit STASHED (2026-10-03T23:49:57-06:00)
+Saved working directory and index state WIP on sycl-xpu: 8a08450 D2x (t_85e61269): the evidence pass - one file with every number, and the copies the board carries
+###### git stash rc=0  (diff should be empty below)
+###### rebuild
+[ 10%] Built target strata_core
+[ 97%] Built target strata_kernels
+[100%] Linking CXX executable iq_multi_parity
+[100%] Built target iq_multi_parity
+[ 10%] Built target strata_core
+[ 97%] Built target strata_kernels
+[100%] Linking CXX executable mmvq_multi_parity
+[100%] Built target mmvq_multi_parity
+IQ2_XS  /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_XXS /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_XXS /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_XXS /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_S   /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_S   /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ3_S   /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_S   /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_S   /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ2_S   /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ4_XS  /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ4_XS  /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ4_XS  /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ1_M   /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ1_M   /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+IQ1_M   /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+Q2_0    /IQ4_NL   2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+Q2_0    /Q2_0     2560 x  640  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+Q2_0    /IQ4_XS   1024 x  512  native_expert_grouped, 9 groups, 35 entries: bitwise equal to the old kernels
+iq_multi_parity: 27 failures
+
+
+33% tests passed, 2 tests failed out of 3
+
+Total Test time (real) =   5.35 sec
+
+The following tests FAILED:
+	 16 - quantize_act_parity (Failed)
+	 19 - iq_multi_parity (Failed)
+Errors while running CTest
+###### restoring the D2y edit
+On branch sycl-xpu
+Your branch is ahead of 'b70s/main' by 39 commits.
+  (use "git push" to publish your local commits)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   bench/micro/mmvq_xmx_price.cpp
+	modified:   d2x/xmx_price.py
+	modified:   include/strata/kernels/native_mmvq.hpp
+	modified:   src/kernels/cuda/native_mmvq.cu
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	d2y/
+	i3/
+	scripts/
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Dropped refs/stash@{0} (dbead948e554cb641107711d353535e7a1de58c8)
+###### git stash pop rc=0
+[100%] Built target strata_kernels
+[100%] Built target mmvq_xmx_price
+[ 11%] Built target strata_core
+[100%] Built target strata_kernels
+[100%] Built target quantize_act_parity
+[ 10%] Built target strata_core
+[ 97%] Built target strata_kernels
+[100%] Built target iq_multi_parity
+###### done at 2026-10-03T23:51:29-06:00
