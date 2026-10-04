@@ -36,11 +36,12 @@ side by side), `d3/d3_stall.sh` (the #267 stall rig, P1b's shape), `d3/d3_eviden
    window's rows (`src/core/verify.cpp:1019-1022`; 12 launches per window = the model's 12 QSA layers, no factor of
    T), and the scores kernel that runs is upstream's `block_scores_multi_kernel` (commit `a20f3b5`, default on,
    `STRATA_SCORES_MULTI=0` = the old per-query grid), which reads each key block **once for all of the window's
-   queries** (`src/kernels/cuda/qsa_select.cu:600-646`).  Priced, with the ids guard: **+1.0% decode at 4K, −0.2%
-   at 32K, +0.5% at 128K** for the shipping shared form against the old grid (§4) — i.e. the sharing is real but it
-   is not where the depth cost lives, because the sweep is latency-bound (§5.4).  The per-row scores themselves are
-   not duplicated work: each row has its own query and its own position, so the rows are a genuine T×B score
-   matrix, not the same B scores three times.
+   queries** (`src/kernels/cuda/qsa_select.cu:600-646`).  Priced, with the ids guard: the old per-query grid costs
+   **+1.0% / +0.2% at 4K / 32K and saves 0.5% at 128K**, i.e. the shipped shared form is worth ~1% at 4K, is a wash
+   at 32K and is marginally negative at depth (§4) — the sharing is real but it is not where the depth cost lives,
+   because the sweep is latency-bound (§5.4).  The per-row scores themselves are not duplicated work: each row has
+   its own query and its own position, so the rows are a genuine T×B score matrix, not the same B scores three
+   times.
 3. **The top-k's dispatch differs between the record and every published decode arm — measured, not inferred, from
    the census's own launcher symbol**: the record's `--max-context 262144` takes the **memory-keyed** kernel
    (`qsa_block_topk_ref`) and the arm-CTX configs of D1/D2 (and of this card's first three arms) take the

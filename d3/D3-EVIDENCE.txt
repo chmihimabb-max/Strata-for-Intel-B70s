@@ -1,5 +1,5 @@
-############ D3 (t_87aa2963) raw evidence   2026-10-03T21:10:16-06:00
-repo: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context   branch sycl-xpu
+############ D3 (t_87aa2963) raw evidence   2026-10-03T21:10:34-06:00
+repo: 1f5417c D3 (t_87aa2963): the E-6 sign flip on the graph path, the clean 128K top-k pair, the ids table, and the assembled evidence   branch sycl-xpu
 
 ############ 1. the arm table (d3/d3_report.py)
 tag                    lever                    spec   gr path                 ctx  win  avgT  tok/win  ms/win dec tok/s pre tok/s   acc/off  rate ids md5
@@ -1075,5 +1075,5 @@ port 8099 free
                      michael   14495 F.... nautilus
                      michael   37892 F.... gnome-text-edit
                      michael   38552 F.... missioncenter
-1.99 14.38 17.64 1/1652 1334190
+1.70 13.71 17.36 1/1653 1334745
 build-sycl/strata md5 e841fd061fec873c2f24e785973a2ebe
