@@ -1,0 +1,39 @@
+D2x (t_85e61269): the answer - the shipped MMVQ is 11.4x above this card's bandwidth floor, the int8 XMX it was proposed for is refused, and the f16 tile that builds buys 2.94x
+
+Card t_85e61269 (titled "D2c") asked what the decode path's dense projection MMVQ - D2's corrected census
+puts it at 301 launches / 51.27 ms / 40.9% of a T=4 window - could gain from the device's matrix unit, and
+named int8 XMX (joint_matrix int8 8x32x16 -> int32) as the shape to try.  The measurement is in
+d2x/D2X-BENCH.txt (the run), d2x/D2X-TABLE.txt (the tables) and d2x/STATUS-D2X.md (the write-up), with the
+bench committed as bench/micro/mmvq_xmx_price.cpp.
+
+  * The premise is FALSE for the dot product it names.  Re-measured at HEAD on driver 1.15.37833+4: the
+    driver refuses int8 8x32x16 and 16x32x16 (matrix_type::sint32, use::accumulator - the same text
+    probe21 recorded), and the f16/bf16 16x16x16 tiles probe21 recorded as RUNNING no longer BUILD at all
+    (undefined reference to the PackedA joint_matrix load builtin the compiler emits for them), so
+    sycl_xmx.hpp's gate now takes its REFUSED branch for the engine's own probe.  Only f16/bf16 8x16x16
+    builds, and that is what the prototype uses.
+
+  * The shipped MMVQ is NOT at its bandwidth floor.  This card's measured read rate is 571.6 GB/s (the
+    incompressible number: a memset-filled buffer reads at 1352 GB/s because the driver compresses uniform
+    pages - a trap worth naming).  The 301 calls move 2 638 423 040 B = 4.62 ms at that rate, against the
+    census's 51.27 ms: the family runs at 50.3 GB/s, 8.8% of the card, 11.36x above its floor.  Per shape
+    the shipped kernel ranges 6.9-95.6 GB/s, so its cost is shape-dominated, not bytes-dominated.
+
+  * The only buildable XMX shape buys 2.94x.  An f16 8x16x16 prototype (real dequantized weights, 8x16
+    tiles, k split across 4 sub-groups, 32 rows per work-group, activation tile cache-resident) prices the
+    301 calls at 17.84 ms against the shipped 52.42 ms (ncols = 4) and 18.03 against 65.12 ms (ncols = 6,
+    3.61x): 131.7-565.7 GB/s, i.e. 88-99% of the card's rate on the big shapes, 20.5x faster on the worst
+    shipped shape (IQ4_NL 640x2560).  Accuracy: its own arithmetic is 1.158e-07 rel_rms against an fp64 dot
+    of its own encoding; the f16 encoding costs 2.1e-04, ~19x less than the shipped path's Q8_1 activation
+    error (5.65e-03) on the same input.
+
+  * The ceiling is the bytes, not the unit.  f16 is 2.69x the pack's bytes (12.41 ms floor), so the matrix
+    unit caps at 4.23x; int8 (1 B/element, 6.20 ms) would cap at 8.45x and cannot be built here; and the
+    same speedup on the PACK'S OWN bytes caps at 11.36x.  The bar a variant must clear is its own bytes per
+    element x the shipped kernel's rate on that shape: 23 of the 25 geometries clear it with the f16
+    prototype, the two that do not being Q5_K/Q4_K 6144x2560 at 0.94x.  The 11.36x is the lever worth
+    having, and this prototype shows a kernel of this class reaches 88-99% of the card's rate.
+
+The bench's own check: its shipped-layout column x the census's launch counts = 52 418.4 us against the
+census's 51 267.3 us (+2.2%, +1.2% in an identical re-run), per type 0.86-1.14x.  One B70
+(ZE_AFFINITY_MASK=0); both cards free; nothing left running; no engine source, no config, no test changed.

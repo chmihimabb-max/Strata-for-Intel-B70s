@@ -1,0 +1,31 @@
+== D2x machine state 2026-10-03T23:35:08-06:00 ==
+-- uptime / load
+ 23:35:08 up 2 days, 14:18,  1 user,  load average: 0.35, 0.58, 0.88
+-- cards (sycl-ls)
+[level_zero:gpu][level_zero:0] Intel(R) oneAPI Unified Runtime over Level-Zero V2, Intel(R) Graphics [0xe223] 20.2.0 [1.15.37833+4]
+[level_zero:gpu][level_zero:1] Intel(R) oneAPI Unified Runtime over Level-Zero V2, Intel(R) Graphics [0xe223] 20.2.0 [1.15.37833+4]
+[opencl:cpu][opencl:0] Intel(R) OpenCL, Intel(R) Core(TM) Ultra 7 265KF OpenCL 3.0 (Build 0) [2026.21.7.0.24_160000]
+-- who holds the render nodes (fuser -v)
+                     USER        PID ACCESS COMMAND
+/dev/dri/renderD128: michael    4359 F.... gnome-shell
+                     michael    4867 F...m Xwayland
+                     michael    5200 F...m ibus-x11
+                     michael    5201 F...m mutter-x11-fram
+                     michael   12379 F...m ptyxis
+                     michael   12722 F...m firefox
+                     michael   14495 F...m nautilus
+                     michael   37892 F...m gnome-text-edit
+                     michael   38552 F...m missioncenter
+/dev/dri/renderD129: michael   12379 F.... ptyxis
+                     michael   14495 F.... nautilus
+                     michael   37892 F.... gnome-text-edit
+                     michael   38552 F.... missioncenter
+-- containers
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+-- engine processes (build-sycl/strata, serve.server)
+   none
+-- port 8099
+   8099 free
+-- this run's own binary
+-rwxrwxr-x 1 michael michael 19392696 Oct  3 23:34 /home/michael/strata-xpu/strata/build-sycl/mmvq_xmx_price
+42de31996d62c7e250a8e275f82866de  /home/michael/strata-xpu/strata/build-sycl/mmvq_xmx_price

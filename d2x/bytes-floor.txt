@@ -1,0 +1,53 @@
+== the dense native MMVQ set of the IQ3_S pack (Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf) ==
+   gguf tensors: 1223, of which the dense set carries 301 weights (the 10 dispatched classes + the head)
+
+type         n          bytes        MiB   census n note
+Q6_K       129     1877836800     1790.8        129 
+Q5_K        35      346931200      330.9         35 
+Q4_K        47      198696960      189.5         47 
+IQ4_XS      42      169902080      162.0         42 
+IQ4_NL      47       43315200       41.3         47 
+Q8_0         1        1740800        1.7          1 
+TOTAL      301     2638423040     2516.2        301
+
+== shapes (n_in x n_out : how many tensors) ==
+  Q6_K     2560x512:21, 2560x640:26, 2560x6144:14, 2560x10240:22, 2560x12288:5, 2560x248320:1, 6144x2560:40
+  Q5_K     2560x512:2, 2560x640:12, 2560x6144:4, 2560x10240:10, 2560x12288:3, 6144x2560:4
+  Q4_K     2560x640:30, 2560x6144:10, 2560x10240:2, 2560x12288:1, 6144x2560:4
+  IQ4_XS   2560x512:1, 2560x640:28, 2560x6144:8, 2560x10240:2, 2560x12288:3
+  IQ4_NL   640x2560:47
+  Q8_0     640x2560:1
+
+== the window's achieved bandwidth per type (census us for these launches) ==
+type     launches          bytes    census us      GB/s   us/launch
+Q6_K          129     1877836800      30718.5      61.1       238.1
+Q5_K           35      346931200       5131.1      67.6       146.6
+Q4_K           47      198696960       4171.1      47.6        88.7
+IQ4_XS         42      169902080       4940.6      34.4       117.6
+IQ4_NL         47       43315200       6213.2       7.0       132.2
+Q8_0            1        1740800         92.8      18.8        92.8
+TOTAL         301     2638423040      51267.3      51.5
+
+== the floor: bytes the weights force, at a given peak bandwidth ==
+   weight bytes per window: 2638423040 (2516.2 MiB)
+      150 GB/s -> floor  17.589 ms  (census 51.267 ms =   2.91x the floor, i.e. 34.3% of the floor)
+      200 GB/s -> floor  13.192 ms  (census 51.267 ms =   3.89x the floor, i.e. 25.7% of the floor)
+      300 GB/s -> floor   8.795 ms  (census 51.267 ms =   5.83x the floor, i.e. 17.2% of the floor)
+      350 GB/s -> floor   7.538 ms  (census 51.267 ms =   6.80x the floor, i.e. 14.7% of the floor)
+      400 GB/s -> floor   6.596 ms  (census 51.267 ms =   7.77x the floor, i.e. 12.9% of the floor)
+      450 GB/s -> floor   5.863 ms  (census 51.267 ms =   8.74x the floor, i.e. 11.4% of the floor)
+      512 GB/s -> floor   5.153 ms  (census 51.267 ms =   9.95x the floor, i.e. 10.1% of the floor)
+
+== the same for what an XMX-usable weight representation would cost ==
+   the pack's blocks (as shipped)     2638423040 B  =  1.00x the pack's bytes
+        floor at 450 GB/s:   5.863 ms (pack:   5.863 ms), ++0.000 ms per window
+   int8, 1 byte/element             3545497600 B  =  1.34x the pack's bytes
+        floor at 450 GB/s:   7.879 ms (pack:   5.863 ms), ++2.016 ms per window
+   fp8 e4m3, 1 byte/element         3545497600 B  =  1.34x the pack's bytes
+        floor at 450 GB/s:   7.879 ms (pack:   5.863 ms), ++2.016 ms per window
+   bf16, 2 bytes/element            7090995200 B  =  2.69x the pack's bytes
+        floor at 450 GB/s:  15.758 ms (pack:   5.863 ms), ++9.895 ms per window
+   f16, 2 bytes/element             7090995200 B  =  2.69x the pack's bytes
+        floor at 450 GB/s:  15.758 ms (pack:   5.863 ms), ++9.895 ms per window
+   tf32/f32, 4 bytes/element       14181990400 B  =  5.38x the pack's bytes
+        floor at 450 GB/s:  31.516 ms (pack:   5.863 ms), ++25.652 ms per window
