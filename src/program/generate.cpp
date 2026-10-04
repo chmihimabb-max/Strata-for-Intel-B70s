@@ -37,6 +37,7 @@
 #include "strata/kernels/verify_kernels.hpp"
 #include "strata/kernels/shared_expert.hpp"
 #include "strata/kernels/native_moe.hpp"
+#include "strata/kernels/native_mmvq.hpp"   // D2: native_mmvq_set_multi_exact (the multi-column layout switch)
 #include "strata/kernels/native_gdn.hpp"
 #include "strata/kernels/native_router.hpp"
 #include "strata/kernels/native_qsa.hpp"
@@ -1940,6 +1941,18 @@ int main(int argc, char** argv) {
     strata::kernels::ple_set_native_bf16(o.native_bf16_extra);
     strata::kernels::shared_expert_set_native_bf16(o.native_bf16_extra);
     strata::kernels::native_moe_combine_set_enabled(o.native_moe_combine);
+    // D2 (card t_0416a0c0): the multi-column MMVQ's two layouts as an A/B switch, because the 300 dense native
+    // projections are 40.1% of a decode window's device time and the layout is the one thing about them that was
+    // never measured.  The DEFAULT is the shipped one (`native_mmvq.hpp`: "the ncols == 1 layout, every column
+    // bitwise equal to a single-column call"); with STRATA_MMVQ_MULTI_GENERIC=1 the kernel takes llama.cpp's own
+    // generic multi-column table instead (the header on the other one: "speed not yet measured").  Set here
+    // because a captured graph keeps the kernels it captured.
+    if (const char* mmvq_mg = std::getenv("STRATA_MMVQ_MULTI_GENERIC"); mmvq_mg != nullptr && mmvq_mg[0] == '1') {
+        strata::kernels::native_mmvq_set_multi_exact(false);
+        std::fprintf(stderr, "strata mmvq: STRATA_MMVQ_MULTI_GENERIC=1 - the multi-column projections take "
+                             "llama.cpp's generic multi-column layout (bitwise-equal to the single-column call NO "
+                             "longer holds)\n");
+    }
     strata::kernels::native_gdn_set_enabled(o.native_gdn);
     strata::kernels::native_router_set_enabled(o.native_router);
     strata::kernels::native_qsa_set_enabled(o.native_qsa);

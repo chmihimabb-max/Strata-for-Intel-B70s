@@ -1,0 +1,155 @@
+strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+strata generate: PCIe probe: 26.5 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
+strata generate: native pack: /run/media/michael/2208B12208B0F63F/strata-iq3s/pack experts (largest blob 2.66 MB), token embedding IQ4_XS in mapped host memory (322 MiB)
+strata generate: 1466 MiB of weights loaded from /run/media/michael/2208B12208B0F63F/strata-iq3s/pack (302 canonical tensors skipped: served natively)
+strata generate: 300 native projection matrices, 2018.88 MiB of weights
+strata mmvq: STRATA_MMVQ_MULTI_GENERIC=1 - the multi-column projections take llama.cpp's generic multi-column layout (bitwise-equal to the single-column call NO longer holds)
+strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+strata generate: layer split: CUDA1 PCIe probe 13.4 GB/s -> pcie_frac 0.28
+strata generate: layer split: CUDA1 holds its weights; 28.34 GiB free (its session follows the split search)
+strata generate: profile /home/michael/strata-xpu/strata/data/expert-profile.bin: 24576 ranked pairs, built for 24576 slots
+strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.83 GiB free before its session carve
+strata generate: layer split auto: CUDA1 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.59 GiB free before its session carve
+strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
+strata generate: PLE on, table 320001536 rows of /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf
+strata generate: layer split: CUDA1 holds its weights, session [23, 48) and the head; 27.76 GiB free
+strata mtp: draft layer loaded, 795 MiB of VRAM (experts 675, dense 111), files read in 0.40 s (1952 MiB/s)
+strata generate: GPU 0: Intel(R) Graphics [0xe223], compute capability 12.0
+strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+strata generate: expert cache auto: 27.42 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10783 slots
+strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+strata generate: the GPU computes the experts in the cache; it rounds differently from the CPU,
+                 so a reply can differ slightly from a run without the cache (same quality:
+                 bench/results/2026-09-27-cache-parity).
+                 PROFILE, ranked by routing frequency, no eviction.
+strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+strata generate: layer split: CUDA1 runs layers 23-47, expert cache 12800 slots (25.63 GiB), 12800 of its 12800 profiled pairs; slot 0 verified
+strata generate: layer split: CUDA0 runs layers 0-22
+strata generate: routing-aware prefetch of the file tier on (the next layer's router)
+strata generate: R4 hit path ON - resident experts are computed on the GPU
+strata generate: 19 expert-pool workers + the host thread
+strata generate: session is up (engine 0.1.34)
+strata generate: token graph hit path: 24576 resident experts, decided on the device
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+strata serve: prompt chunk auto: 8192 tokens
+strata serve:   CUDA0 keeps its own prompt buffers (3.66 GiB of 6.22 GiB free): no loan
+strata serve:   CUDA1 prompt path borrows 1823 of its 12800 slots (3.66 GiB)
+strata hc: CUDA1: the hyper-connection read runs as staged (the norm per token and stream, the down projection's activations staged ahead by cp.async); checked bit for bit against the plain read on this card (STRATA_HC_SPLIT=1 or 0 for the earlier ones)
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata serve: layer split: layers 0-22 (CUDA0), 23-47 (CUDA1), one hand-off per window
+strata hc: CUDA0: the hyper-connection read runs as staged (the norm per token and stream, the down projection's activations staged ahead by cp.async); checked bit for bit against the plain read on this card (STRATA_HC_SPLIT=1 or 0 for the earlier ones)
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata mtp: draft head over 106299 tokens (212.9 MiB)
+strata serve: 2509 MiB of VRAM free with everything loaded
+qsa_block_scores: no TF32 tc path on this backend (the device refuses tf32 joint_matrix); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3) -> warp kernel
+qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata submit: stage window T=1 pos0=3831 layers 0..22 (23): submitted 78 (kernel 0 memset 0 memcpy 72 barrier 5 event 0 hostfn 0 graph 1) + recorded 0; 3.4 per layer; GPU-reach wait 30.23 ms
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata submit: stage window T=1 pos0=3831 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 24.65 ms
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata submit: stage window T=4 pos0=3832 layers 0..22 (23): submitted 92 (kernel 0 memset 0 memcpy 72 barrier 19 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 122.57 ms
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata submit: stage window T=4 pos0=3832 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 82.29 ms
+strata submit: stage window T=4 pos0=3836 layers 0..22 (23): submitted 85 (kernel 0 memset 0 memcpy 72 barrier 12 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 228.10 ms
+strata submit: stage window T=4 pos0=3836 layers 23..47 (25): submitted 87 (kernel 0 memset 0 memcpy 78 barrier 8 event 0 hostfn 0 graph 1) + recorded 0; 3.5 per layer; GPU-reach wait 130.55 ms
+strata submit: stage window T=1 pos0=3838 layers 0..22 (23): submitted 74 (kernel 0 memset 0 memcpy 72 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 298.76 ms
+strata submit: stage window T=1 pos0=3838 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 155.59 ms
+strata submit: stage window T=4 pos0=3839 layers 0..22 (23): submitted 84 (kernel 0 memset 0 memcpy 72 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 370.59 ms
+strata submit: stage window T=4 pos0=3839 layers 23..47 (25): submitted 90 (kernel 0 memset 0 memcpy 78 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 205.55 ms
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata submit: stage window T=2 pos0=3840 layers 0..22 (23): submitted 87 (kernel 0 memset 0 memcpy 72 barrier 14 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 473.35 ms
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata submit: stage window T=2 pos0=3840 layers 23..47 (25): submitted 94 (kernel 0 memset 0 memcpy 78 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 253.75 ms
+strata submit: stage window T=4 pos0=3842 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 572.70 ms
+strata submit: stage window T=4 pos0=3842 layers 23..47 (25): submitted 88 (kernel 0 memset 0 memcpy 78 barrier 9 event 0 hostfn 0 graph 1) + recorded 0; 3.5 per layer; GPU-reach wait 303.38 ms
+strata submit: stage window T=4 pos0=3846 layers 0..22 (23): submitted 80 (kernel 0 memset 0 memcpy 72 barrier 7 event 0 hostfn 0 graph 1) + recorded 0; 3.5 per layer; GPU-reach wait 668.26 ms
+strata submit: stage window T=4 pos0=3846 layers 23..47 (25): submitted 91 (kernel 0 memset 0 memcpy 78 barrier 12 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 353.39 ms
+strata submit: stage window T=4 pos0=3850 layers 0..22 (23): submitted 86 (kernel 0 memset 0 memcpy 72 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 765.06 ms
+strata submit: stage window T=4 pos0=3850 layers 23..47 (25): submitted 90 (kernel 0 memset 0 memcpy 78 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 403.73 ms
+strata submit: stage window T=4 pos0=3854 layers 0..22 (23): submitted 86 (kernel 0 memset 0 memcpy 72 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 862.44 ms
+strata submit: stage window T=4 pos0=3854 layers 23..47 (25): submitted 91 (kernel 0 memset 0 memcpy 78 barrier 12 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 454.66 ms
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata submit: stage window T=3 pos0=3858 layers 0..22 (23): submitted 87 (kernel 0 memset 0 memcpy 72 barrier 14 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 973.89 ms
+strata verify: captured the 3-token window (upload no error, sync no error)
+strata submit: stage window T=3 pos0=3858 layers 23..47 (25): submitted 92 (kernel 0 memset 0 memcpy 78 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 503.28 ms
+strata submit: stage window T=4 pos0=3860 layers 0..22 (23): submitted 83 (kernel 0 memset 0 memcpy 72 barrier 10 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 1069.51 ms
+strata submit: stage window T=4 pos0=3860 layers 23..47 (25): submitted 92 (kernel 0 memset 0 memcpy 78 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 554.37 ms
+strata submit: stage window T=4 pos0=3861 layers 0..22 (23): submitted 83 (kernel 0 memset 0 memcpy 72 barrier 10 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 1166.56 ms
+strata submit: stage window T=4 pos0=3861 layers 23..47 (25): submitted 90 (kernel 0 memset 0 memcpy 78 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 604.94 ms
+strata submit: stage window T=4 pos0=3862 layers 0..22 (23): submitted 82 (kernel 0 memset 0 memcpy 72 barrier 9 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 1263.34 ms
+strata submit: stage window T=4 pos0=3862 layers 23..47 (25): submitted 88 (kernel 0 memset 0 memcpy 78 barrier 9 event 0 hostfn 0 graph 1) + recorded 0; 3.5 per layer; GPU-reach wait 654.70 ms
+strata submit: stage window T=4 pos0=3866 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 1359.98 ms
+strata submit: stage window T=4 pos0=3866 layers 23..47 (25): submitted 92 (kernel 0 memset 0 memcpy 78 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 705.15 ms
+strata submit: stage window T=4 pos0=3870 layers 0..22 (23): submitted 86 (kernel 0 memset 0 memcpy 72 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 1457.78 ms
+strata submit: stage window T=4 pos0=3870 layers 23..47 (25): submitted 94 (kernel 0 memset 0 memcpy 78 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 756.58 ms
+strata verify: captured the 6-token window (upload no error, sync no error)
+strata submit: stage window T=6 pos0=3871 layers 0..22 (23): submitted 108 (kernel 0 memset 0 memcpy 72 barrier 35 event 0 hostfn 0 graph 1) + recorded 0; 4.7 per layer; GPU-reach wait 1596.67 ms
+strata verify: captured the 6-token window (upload no error, sync no error)
+strata submit: stage window T=6 pos0=3871 layers 23..47 (25): submitted 105 (kernel 0 memset 0 memcpy 78 barrier 26 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 834.19 ms
+strata submit: stage window T=4 pos0=3877 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 1725.76 ms
+strata submit: stage window T=4 pos0=3877 layers 23..47 (25): submitted 95 (kernel 0 memset 0 memcpy 78 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 885.48 ms
+strata submit: stage window T=4 pos0=3881 layers 0..22 (23): submitted 87 (kernel 0 memset 0 memcpy 72 barrier 14 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 1824.13 ms
+strata submit: stage window T=4 pos0=3881 layers 23..47 (25): submitted 92 (kernel 0 memset 0 memcpy 78 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 936.29 ms
+strata submit: stage window T=4 pos0=3885 layers 0..22 (23): submitted 85 (kernel 0 memset 0 memcpy 72 barrier 12 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 1921.25 ms
+strata submit: stage window T=4 pos0=3885 layers 23..47 (25): submitted 98 (kernel 0 memset 0 memcpy 78 barrier 19 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 988.05 ms
+strata submit: stage window T=4 pos0=3889 layers 0..22 (23): submitted 84 (kernel 0 memset 0 memcpy 72 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 2018.87 ms
+strata submit: stage window T=4 pos0=3889 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 1039.87 ms
+strata submit: stage window T=4 pos0=3893 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2118.45 ms
+strata submit: stage window T=4 pos0=3893 layers 23..47 (25): submitted 95 (kernel 0 memset 0 memcpy 78 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 1091.23 ms
+strata submit: stage window T=4 pos0=3897 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2217.40 ms
+strata submit: stage window T=4 pos0=3897 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 1142.92 ms
+strata submit: stage window T=4 pos0=3901 layers 0..22 (23): submitted 90 (kernel 0 memset 0 memcpy 72 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2317.76 ms
+strata submit: stage window T=4 pos0=3901 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 1195.02 ms
+strata submit: stage window T=4 pos0=3904 layers 0..22 (23): submitted 84 (kernel 0 memset 0 memcpy 72 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 2416.38 ms
+strata submit: stage window T=4 pos0=3904 layers 23..47 (25): submitted 86 (kernel 0 memset 0 memcpy 78 barrier 7 event 0 hostfn 0 graph 1) + recorded 0; 3.4 per layer; GPU-reach wait 1244.63 ms
+strata submit: stage window T=2 pos0=3908 layers 0..22 (23): submitted 74 (kernel 0 memset 0 memcpy 72 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 2496.24 ms
+strata submit: stage window T=2 pos0=3908 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 1277.39 ms
+strata submit: stage window T=4 pos0=3910 layers 0..22 (23): submitted 83 (kernel 0 memset 0 memcpy 72 barrier 10 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 2575.30 ms
+strata submit: stage window T=4 pos0=3910 layers 23..47 (25): submitted 87 (kernel 0 memset 0 memcpy 78 barrier 8 event 0 hostfn 0 graph 1) + recorded 0; 3.5 per layer; GPU-reach wait 1326.57 ms
+strata submit: stage window T=4 pos0=3914 layers 0..22 (23): submitted 84 (kernel 0 memset 0 memcpy 72 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 2671.14 ms
+strata submit: stage window T=4 pos0=3914 layers 23..47 (25): submitted 87 (kernel 0 memset 0 memcpy 78 barrier 8 event 0 hostfn 0 graph 1) + recorded 0; 3.5 per layer; GPU-reach wait 1376.34 ms
+strata submit: stage window T=4 pos0=3915 layers 0..22 (23): submitted 87 (kernel 0 memset 0 memcpy 72 barrier 14 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2768.57 ms
+strata submit: stage window T=4 pos0=3915 layers 23..47 (25): submitted 95 (kernel 0 memset 0 memcpy 78 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 1427.49 ms
+strata submit: stage window T=4 pos0=3919 layers 0..22 (23): submitted 84 (kernel 0 memset 0 memcpy 72 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 2865.89 ms
+strata submit: stage window T=4 pos0=3919 layers 23..47 (25): submitted 89 (kernel 0 memset 0 memcpy 78 barrier 10 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 1476.79 ms
+strata submit: stage window T=4 pos0=3920 layers 0..22 (23): submitted 84 (kernel 0 memset 0 memcpy 72 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 2961.32 ms
+strata submit: stage window T=4 pos0=3920 layers 23..47 (25): submitted 88 (kernel 0 memset 0 memcpy 78 barrier 9 event 0 hostfn 0 graph 1) + recorded 0; 3.5 per layer; GPU-reach wait 1525.55 ms
+strata submit: stage window T=4 pos0=3924 layers 0..22 (23): submitted 85 (kernel 0 memset 0 memcpy 72 barrier 12 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 3057.17 ms
+strata submit: stage window T=4 pos0=3924 layers 23..47 (25): submitted 89 (kernel 0 memset 0 memcpy 78 barrier 10 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 1575.62 ms
+strata submit: stage window T=3 pos0=3925 layers 0..22 (23): submitted 75 (kernel 0 memset 0 memcpy 72 barrier 2 event 0 hostfn 0 graph 1) + recorded 0; 3.3 per layer; GPU-reach wait 3146.12 ms
+strata submit: stage window T=3 pos0=3925 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 1617.76 ms
+strata submit: stage window T=3 pos0=3928 layers 0..22 (23): submitted 75 (kernel 0 memset 0 memcpy 72 barrier 2 event 0 hostfn 0 graph 1) + recorded 0; 3.3 per layer; GPU-reach wait 3227.19 ms
+strata submit: stage window T=3 pos0=3928 layers 23..47 (25): submitted 81 (kernel 0 memset 0 memcpy 78 barrier 2 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 1659.49 ms
+strata submit: stage window T=4 pos0=3929 layers 0..22 (23): submitted 85 (kernel 0 memset 0 memcpy 72 barrier 12 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 3315.56 ms
+strata submit: stage window T=4 pos0=3929 layers 23..47 (25): submitted 87 (kernel 0 memset 0 memcpy 78 barrier 8 event 0 hostfn 0 graph 1) + recorded 0; 3.5 per layer; GPU-reach wait 1708.69 ms
+strata submit: stage window T=4 pos0=3932 layers 0..22 (23): submitted 85 (kernel 0 memset 0 memcpy 72 barrier 12 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 3411.54 ms
+strata submit: stage window T=4 pos0=3932 layers 23..47 (25): submitted 94 (kernel 0 memset 0 memcpy 78 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 1759.99 ms
+strata submit: stage window T=4 pos0=3934 layers 0..22 (23): submitted 85 (kernel 0 memset 0 memcpy 72 barrier 12 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 3510.34 ms
+strata submit: stage window T=4 pos0=3934 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 1811.79 ms
+strata submit: stage window T=4 pos0=3938 layers 0..22 (23): submitted 83 (kernel 0 memset 0 memcpy 72 barrier 10 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 3610.47 ms
+strata submit: stage window T=4 pos0=3938 layers 23..47 (25): submitted 92 (kernel 0 memset 0 memcpy 78 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 1862.46 ms
+strata submit: stage window T=4 pos0=3942 layers 0..22 (23): submitted 84 (kernel 0 memset 0 memcpy 72 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 3707.75 ms
+strata submit: stage window T=4 pos0=3942 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 1914.63 ms
+strata submit: stage window T=2 pos0=3945 layers 0..22 (23): submitted 74 (kernel 0 memset 0 memcpy 72 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 3790.34 ms
+strata submit: stage window T=2 pos0=3945 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 1946.61 ms
+strata submit: stage window T=2 pos0=3947 layers 0..22 (23): submitted 74 (kernel 0 memset 0 memcpy 72 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 3852.09 ms
+strata submit: stage window T=2 pos0=3947 layers 23..47 (25): submitted 80 (kernel 0 memset 0 memcpy 78 barrier 1 event 0 hostfn 0 graph 1) + recorded 0; 3.2 per layer; GPU-reach wait 1978.73 ms
+strata submit: stage window T=4 pos0=3949 layers 0..22 (23): submitted 83 (kernel 0 memset 0 memcpy 72 barrier 10 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 3930.73 ms
+strata submit: stage window T=4 pos0=3949 layers 23..47 (25): submitted 90 (kernel 0 memset 0 memcpy 78 barrier 11 event 0 hostfn 0 graph 1) + recorded 0; 3.6 per layer; GPU-reach wait 2028.50 ms
+strata submit: stage window T=4 pos0=3953 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4028.11 ms
+strata submit: stage window T=4 pos0=3953 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2080.36 ms
+strata submit: stage window T=4 pos0=3957 layers 0..22 (23): submitted 85 (kernel 0 memset 0 memcpy 72 barrier 12 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 4127.50 ms
+strata submit: stage window T=4 pos0=3957 layers 23..47 (25): submitted 95 (kernel 0 memset 0 memcpy 78 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2131.44 ms
+strata submit: stage window T=4 pos0=3961 layers 0..22 (23): submitted 81 (kernel 0 memset 0 memcpy 72 barrier 8 event 0 hostfn 0 graph 1) + recorded 0; 3.5 per layer; GPU-reach wait 4224.43 ms
+strata submit: stage window T=4 pos0=3961 layers 23..47 (25): submitted 99 (kernel 0 memset 0 memcpy 78 barrier 20 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 2183.39 ms
+strata submit: stage window T=6 pos0=3965 layers 0..22 (23): submitted 97 (kernel 0 memset 0 memcpy 72 barrier 24 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 4341.47 ms
+strata submit: stage window T=6 pos0=3965 layers 23..47 (25): submitted 105 (kernel 0 memset 0 memcpy 78 barrier 26 event 0 hostfn 0 graph 1) + recorded 0; 4.2 per layer; GPU-reach wait 2255.35 ms
+strata decode timing: 46 windows, avg T 3.72, 2.98 tokens/window, 191.79 ms/window = verify 177.54 (GPU-reach wait 95.94 + per-layer host 1.04 [plan 0.31 actq 0.25 jobs 0.24 CPU 0.00] + stage 1.29 + tail 11.98) + commit/emit 1.96 + draft 12.29; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 37.17, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15700 ms (244.1 tok/s), 137 generated in 8822 ms (15.5 tok/s), drafts accepted 91 of 125, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (82080 hits / 82080 lookups)
+strata serve: expert tiers: GPU 82080 hits this request; since the start RAM 0 blobs, files 0 blobs 54327.8 MB read (the GGUF in place)
+strata serve: suffix drafts: 10 windows, 29 of 34 drafts accepted
+== d1_drive fed: QUIT

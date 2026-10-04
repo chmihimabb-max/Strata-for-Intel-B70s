@@ -1,0 +1,25 @@
+D2 (t_0416a0c0): the multi-column MMVQ's layout switch, the corrected census, and every arm
+
+The engine change is ONE added switch, default OFF, so the shipped path is bit-for-bit
+what it was: `STRATA_MMVQ_MULTI_GENERIC=1` makes the 300 dense native projections take
+llama.cpp's generic multi-column table instead of the shipped ncols == 1 layout
+(`native_mmvq_set_multi_exact(false)`), set once before any capture.  It exists because
+that family is 40.9% of a decode window's device time and the two layouts had never been
+compared in the engine.  Measured (d2/runs/d2-mg-4096-warm, d2-mg-32768): the generic
+layout is slower at 4K, ~5% faster at 32K, and MOVES the greedy ids at both lengths - a
+correctness change, so it is not shipped and the default stays.  The rebaseline arm on
+the new binary reproduces the old binary's 4K arm exactly (125.93 vs 125.14 ms/window,
+ids 66bf952d...), which is the control that says the switch is inert when unset.
+
+`d2/d2_census.py` is the attribution D1's `d1_families.py` got wrong: `launch_multi_n`
+is native_mmvq.cu:1046, the DENSE per-tensor multi-column MMVQ (one launch per weight
+matrix; the window has exactly 300 of them plus the head, which the engine itself prints
+as "300 native projection matrices"), NOT the experts' mat-vec.  The experts are
+launch_gu/launch_down (iq_kernels.cu:1438/1447) through native_expert_grouped.  Corrected
+4K census: dense MMVQ 40.9%, expert down 14.2%, expert gate+up 12.4%, flag handshake
+10.7%, mixer read (fused GR) 9.9%, copies 3.1%, bf16 projections 2.6%, QSA 2.6%.
+
+Raw output for every arm is committed under d2/runs/<tag>/ (the engine's own err.txt,
+the request's out.txt = the greedy ids, log.txt with the binary's md5, timeline.txt).
+`d2/config-before-d2.json` is the config of record as D2 found it (md5 4ece57018c7e...);
+the file itself now carries --spec-min-p 0.7.

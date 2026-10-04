@@ -1,0 +1,60 @@
+== d2/runs/d2-hist-4096/hist.txt
+   window 2: 3810 counted submissions, 125.4 ms of device time, wall 71.5 ms (stage slices summed)
+   family                                           count          us   %count    %time
+   dense native MMVQ (one launch per weight matrix)     301     51267.5     7.9%    40.9%
+   routed experts: down                                96     17774.9     2.5%    14.2%
+   routed experts: gate+up                             96     15559.3     2.5%    12.4%
+   flag handshake (device side)                       192     13395.3     5.0%    10.7%
+   mixer read (fused GR / hyper-connection)           288     12404.6     7.6%     9.9%
+   copies / mapped staging                           1449      3904.7    38.0%     3.1%
+   bf16-weight projection (llama.cpp mmvf, FMA dot)     136      3258.1     3.6%     2.6%
+   QSA attention / indexer / norms                    228      3245.0     6.0%     2.6%
+   GDN recurrence / shared expert                     252      1824.5     6.6%     1.5%
+   routed experts: epilogue (swiglu/quantize)         241       879.0     6.3%     0.7%
+   routing / combine                                  144       877.8     3.8%     0.7%
+   routed experts: indexing                           192       514.0     5.0%     0.4%
+   other                                              195       468.6     5.1%     0.4%
+   -- the two projection families, by weight type --
+   dense native MMVQ (one launch per weight matrix) Q6_K          129    30718.5   24.5%
+   routed experts: down                           IQ4_NL         78    14853.1   11.8%
+   dense native MMVQ (one launch per weight matrix) IQ4_NL         47     6213.2    5.0%
+   routed experts: gate+up                        IQ2_S          40     6060.9    4.8%
+   routed experts: gate+up                        IQ3_XXS        34     5624.6    4.5%
+   dense native MMVQ (one launch per weight matrix) Q5_K           35     5131.1    4.1%
+   dense native MMVQ (one launch per weight matrix) IQ4_XS         42     4940.6    3.9%
+   dense native MMVQ (one launch per weight matrix) Q4_K           47     4171.1    3.3%
+   routed experts: gate+up                        IQ3_S          20     3256.2    2.6%
+   routed experts: down                           Q2_0           18     2921.8    2.3%
+   routed experts: gate+up                        IQ4_XS          2      617.5    0.5%
+   dense native MMVQ (one launch per weight matrix) Q8_0            1       92.8    0.1%
+
+== d2/runs/d2-hist-32768/hist.txt
+   window 2: 3810 counted submissions, 127.0 ms of device time, wall 74.2 ms (stage slices summed)
+   family                                           count          us   %count    %time
+   dense native MMVQ (one launch per weight matrix)     301     51287.2     7.9%    40.4%
+   routed experts: down                                96     17500.7     2.5%    13.8%
+   routed experts: gate+up                             96     15391.4     2.5%    12.1%
+   flag handshake (device side)                       192     14057.8     5.0%    11.1%
+   mixer read (fused GR / hyper-connection)           288     12370.3     7.6%     9.7%
+   QSA attention / indexer / norms                    228      4575.1     6.0%     3.6%
+   copies / mapped staging                           1449      3931.2    38.0%     3.1%
+   bf16-weight projection (llama.cpp mmvf, FMA dot)     136      3269.0     3.6%     2.6%
+   GDN recurrence / shared expert                     252      1819.0     6.6%     1.4%
+   routing / combine                                  144       891.6     3.8%     0.7%
+   routed experts: epilogue (swiglu/quantize)         241       878.8     6.3%     0.7%
+   routed experts: indexing                           192       522.4     5.0%     0.4%
+   other                                              195       467.9     5.1%     0.4%
+   -- the two projection families, by weight type --
+   dense native MMVQ (one launch per weight matrix) Q6_K          129    30762.6   24.2%
+   routed experts: down                           IQ4_NL         78    14654.5   11.5%
+   dense native MMVQ (one launch per weight matrix) IQ4_NL         47     6214.8    4.9%
+   routed experts: gate+up                        IQ2_S          40     6004.8    4.7%
+   routed experts: gate+up                        IQ3_XXS        34     5550.9    4.4%
+   dense native MMVQ (one launch per weight matrix) Q5_K           35     5091.2    4.0%
+   dense native MMVQ (one launch per weight matrix) IQ4_XS         42     4947.0    3.9%
+   dense native MMVQ (one launch per weight matrix) Q4_K           47     4177.4    3.3%
+   routed experts: gate+up                        IQ3_S          20     3202.0    2.5%
+   routed experts: down                           Q2_0           18     2846.2    2.2%
+   routed experts: gate+up                        IQ4_XS          2      633.6    0.5%
+   dense native MMVQ (one launch per weight matrix) Q8_0            1       94.2    0.1%
+

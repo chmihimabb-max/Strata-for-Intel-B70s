@@ -1,0 +1,69 @@
+D1 arm d2-hist-32768   2026-10-03T19:13:11-06:00
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=0 hist=1/2
+onecard=<none> profile=0 extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 3da0feb D2 (t_0416a0c0): the arm rig, the tensor census, and task 0's first arms
+engine binary: 2026-10-03 18:51:43.038428447 -0600  35970200 bytes  md5 e79b2ad632d37d32786228b660d35b29
+-- device check BEFORE the run --
+   no engine of ours
+   no server of ours
+                     USER        PID ACCESS COMMAND
+/dev/dri/renderD128: michael    4359 F.... gnome-shell
+                     michael    4867 F...m Xwayland
+                     michael    5200 F...m ibus-x11
+                     michael    5201 F...m mutter-x11-fram
+                     michael   12379 F...m ptyxis
+                     michael   12722 F...m firefox
+                     michael   14495 F...m nautilus
+                     michael   37892 F...m gnome-text-edit
+                     michael   38552 F...m missioncenter
+/dev/dri/renderD129: michael   12379 F.... ptyxis
+                     michael   14495 F.... nautilus
+                     michael   37892 F.... gnome-text-edit
+                     michael   38552 F.... missioncenter
+4.58 10.38 13.10 1/1681 1279729
+ 
+:: initializing oneAPI environment ...
+   d2_run_arm.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+== the exact command ==
+cd /home/michael/strata-xpu/strata/d2/runs/d2-hist-32768 && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.5 --max-context 32768 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --layer-split auto --kv-resident 32768   (stdin from /home/michael/strata-xpu/strata/d2/runs/d2-hist-32768/stdin.fifo)
+ask: 139834 B, ids 32256
+== drive pid 1280021; waiting for 'everything loaded' ==
+== loaded=1 after 30s (2026-10-03T19:13:43-06:00) ==
+== ask fed at 2026-10-03T19:13:43-06:00 (epoch_ms 1791076423427) ==
+== the ask finished=1 after 103770 ms (2026-10-03T19:15:27-06:00) ==
+engine exited 0 at epoch 1791076528.124345
+== engine exit 0, wall 140 s (ask wall 103770 ms) ==
+== the graph path's own banner ==
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+== the engine's numbers ==
+strata serve: prompt chunk auto: 8192 tokens
+strata decode timing: 87 windows, avg T 3.51, 2.94 tokens/window, 130.60 ms/window = verify 115.29 (GPU-reach wait 90.77 + per-layer host 1.06 [plan 0.30 actq 0.23 jobs 0.25 CPU 0.00] + stage 1.36 + tail 12.30) + commit/emit 2.05 + draft 13.25; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.06, PCIe 0.00
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91917 ms (350.9 tok/s), 256 generated in 11362 ms (22.5 tok/s), drafts accepted 172 of 218, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (146400 hits / 146400 lookups)
+== submit lines ==
+strata submit: stage window T=6 pos0=32507 layers 0..22 (23): submitted 2067 (kernel 1245 memset 0 memcpy 798 barrier 24 event 0 hostfn 0 graph 0) + recorded 0; 89.9 per layer; GPU-reach wait 7721.68 ms
+strata submit: stage window T=6 pos0=32507 layers 23..47 (25): submitted 2465 (kernel 1353 memset 0 memcpy 1086 barrier 26 event 0 hostfn 0 graph 0) + recorded 0; 98.6 per layer; GPU-reach wait 4021.06 ms
+strata submit: stage window T=4 pos0=32510 layers 0..22 (23): submitted 1768 (kernel 1197 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 76.9 per layer; GPU-reach wait 7846.81 ms
+strata submit: stage window T=4 pos0=32510 layers 23..47 (25): submitted 2072 (kernel 1307 memset 0 memcpy 750 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 82.9 per layer; GPU-reach wait 4071.52 ms
+== the request ==
+DONE 256 32256 91917.4 11361.9 length 172 218 0 146400 146400 0 0 0.0
+PP lines: 4  last: PP 32255 32256 89353 361.0
+T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+== the launch-site histogram lines written ==
+218 /home/michael/strata-xpu/strata/d2/runs/d2-hist-32768/hist.txt
+HW	win=1 stage T=1 pos0=32255 layers 0..22 n=23 wall=65.28ms	submissions 1318	sites 53
+H	win=1 stage T=1 pos0=32255 layers 0..22 n=23 wall=65.28ms	4	241.04	strata::kernels::(anonymous namespace)::launch_gu<21>(strata::sycl_compat::dim3, strata::sycl_compat::stream_t*, unsigned long long const*, int const*, int const*, int const*, block_q8_1 const*, strata::kernels::NativeExpertLayout const&, float*, float*)#2
+H	win=1 stage T=1 pos0=32255 layers 0..22 n=23 wall=65.28ms	5	13.33	strata::kernels::native_qsa_gate_apply(float const*, float const*, float*, int, int, void*)#1

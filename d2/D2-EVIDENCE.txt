@@ -1,0 +1,125 @@
+# D2 (t_0416a0c0) raw evidence -- generated 2026-10-03T18:55:38-06:00
+## HEAD
+3da0feb D2 (t_0416a0c0): the arm rig, the tensor census, and task 0's first arms
+3e0a390 S4 (t_30d9ccfb): the write-up, the raw evidence, and the closure/4K probes
+e41fa26 S4 (t_30d9ccfb): a split's mid-prompt checkpoint part is copied on ITS stage's device
+2c78930 S4 (t_30d9ccfb): the served-path rig - one resident serve.server, one real chat completion per arm
+## the engine binary the arms ran (md5 per arm is in each arm's own log)
+e79b2ad632d37d32786228b660d35b29  /home/michael/strata-xpu/strata/build-sycl/strata
+
+## 1. every arm, one row, read out of that arm's own logs (d2/d2_report.py)
+tag                    lever                    spec   gr path                 ctx  win  avgT  tok/win  ms/win dec tok/s pre tok/s   acc/off  rate ids md5
+d2-minp05-131072       -                           4 <unset=default> closure(no banner)  131072    -     -        -       -         -        -       -/-     - -
+d2-minp05-32768        -                           4 <unset=default> graph(default)     32768   87  3.46     2.94  124.58     23.62   350.60   172/214 0.804 d87373e84417dab60732a95eb47666a6
+d2-minp05-4096         -                           4 <unset=default> graph(default)      4096   51  3.59     2.88  125.14     23.03   252.03    96/132 0.727 66bf952d445e330c974c49e4f220b4b1
+d2-minp07-32768        -                           4 <unset=default> graph(default)     32768   92  3.01     2.78  114.13     24.38   351.73   164/185 0.886 d87373e84417dab60732a95eb47666a6
+d2-minp07-4096         -                           4 <unset=default> graph(default)      4096   54  3.04     2.72  113.07     24.08   252.77    93/110 0.845 66bf952d445e330c974c49e4f220b4b1
+
+## 2. the raw engine lines, arm by arm (decode timing, the request's own line, the banners, ids)
+=============================== d2-minp05-131072
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+engine binary: 2026-10-03 18:51:43.038428447 -0600  35970200 bytes  md5 e79b2ad632d37d32786228b660d35b29
+strata serve: prompt chunk auto: 8192 tokens
+strata generate: 1466 MiB of weights loaded from /run/media/michael/2208B12208B0F63F/strata-iq3s/pack (302 canonical tensors skipped: served natively)
+strata generate: 300 native projection matrices, 2018.88 MiB of weights
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+   T lines: 0  md5 d41d8cd98f00b204e9800998ecf8427e
+=============================== d2-minp05-32768
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+engine binary: 2026-10-03 18:34:22.670801073 -0600  35970200 bytes  md5 e79b2ad632d37d32786228b660d35b29
+== the graph path's own banner ==
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+strata decode timing: 87 windows, avg T 3.46, 2.94 tokens/window, 124.58 ms/window = verify 109.28 (GPU-reach wait 92.84 + per-layer host 1.00 [plan 0.30 actq 0.23 jobs 0.22 CPU 0.00] + stage 1.49 + tail 12.11) + commit/emit 1.90 + draft 13.39; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 34.60, PCIe 0.00
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 92002 ms (350.6 tok/s), 256 generated in 10839 ms (23.6 tok/s), drafts accepted 172 of 214, 0 checkpoints
+strata generate: 1466 MiB of weights loaded from /run/media/michael/2208B12208B0F63F/strata-iq3s/pack (302 canonical tensors skipped: served natively)
+strata generate: 300 native projection matrices, 2018.88 MiB of weights
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+DONE 256 32256 92001.8 10838.7 length 172 214 0 144480 144480 0 0 0.0
+   T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+== engine exit 0, wall 140 s (ask wall 103211 ms) ==
+=============================== d2-minp05-4096
+spec=4 spec-min-p=0.5 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+engine binary: 2026-10-03 18:34:22.670801073 -0600  35970200 bytes  md5 e79b2ad632d37d32786228b660d35b29
+== the graph path's own banner ==
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+strata decode timing: 51 windows, avg T 3.59, 2.88 tokens/window, 125.14 ms/window = verify 111.56 (GPU-reach wait 93.55 + per-layer host 1.03 [plan 0.30 actq 0.24 jobs 0.22 CPU 0.00] + stage 1.32 + tail 12.44) + commit/emit 1.89 + draft 11.70; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 35.88, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15205 ms (252.0 tok/s), 147 generated in 6382 ms (23.0 tok/s), drafts accepted 96 of 132, 0 checkpoints
+strata generate: 1466 MiB of weights loaded from /run/media/michael/2208B12208B0F63F/strata-iq3s/pack (302 canonical tensors skipped: served natively)
+strata generate: 300 native projection matrices, 2018.88 MiB of weights
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+DONE 147 3832 15204.7 6382.4 stop 96 132 0 87840 87840 0 0 0.0
+   T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+== engine exit 0, wall 59 s (ask wall 21667 ms) ==
+=============================== d2-minp07-32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+engine binary: 2026-10-03 18:34:22.670801073 -0600  35970200 bytes  md5 e79b2ad632d37d32786228b660d35b29
+== the graph path's own banner ==
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 114.13 ms/window = verify 100.12 (GPU-reach wait 85.11 + per-layer host 0.91 [plan 0.28 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.38 + tail 10.95) + commit/emit 1.90 + draft 12.11; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91706 ms (351.7 tok/s), 256 generated in 10500 ms (24.4 tok/s), drafts accepted 164 of 185, 0 checkpoints
+strata generate: 1466 MiB of weights loaded from /run/media/michael/2208B12208B0F63F/strata-iq3s/pack (302 canonical tensors skipped: served natively)
+strata generate: 300 native projection matrices, 2018.88 MiB of weights
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+DONE 256 32256 91706.1 10499.7 length 164 185 0 132960 132960 0 0 0.0
+   T lines: 256  md5 124a3cd39b33f7da31e225829625983a
+== engine exit 0, wall 140 s (ask wall 102734 ms) ==
+=============================== d2-minp07-4096
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2
+onecard=<none> profile=0 extra= extraenv=
+engine binary: 2026-10-03 18:34:22.670801073 -0600  35970200 bytes  md5 e79b2ad632d37d32786228b660d35b29
+== the graph path's own banner ==
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 113.07 ms/window = verify 100.90 (GPU-reach wait 84.36 + per-layer host 0.94 [plan 0.28 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.17 + tail 10.93) + commit/emit 1.87 + draft 10.30; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 15160 ms (252.8 tok/s), 147 generated in 6106 ms (24.1 tok/s), drafts accepted 93 of 110, 0 checkpoints
+strata generate: 1466 MiB of weights loaded from /run/media/michael/2208B12208B0F63F/strata-iq3s/pack (302 canonical tensors skipped: served natively)
+strata generate: 300 native projection matrices, 2018.88 MiB of weights
+strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+DONE 147 3832 15160.0 6105.8 stop 93 110 0 78720 78720 0 0 0.0
+   T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51
+== engine exit 0, wall 59 s (ask wall 21676 ms) ==
+
+## 3. the window's census (the corrected attribution; closure-path arms carry device microseconds)
+usage: d2_census.py [-h] [--window WINDOW] [--auto] [--top TOP]
+                    paths [paths ...]
+d2_census.py: error: the following arguments are required: paths
+
+## 4. the launch sites of the 4K histogram arm, merged per kernel
+
+## 5. the config of record, and the diff this card landed
+(no pre-D2 copy at /home/michael/strata-xpu/d2/config-before-d2.json)
+--- the landed file (config of record) ---
+{
+ "_note": "I1 (card t_7101e403): the Strata-recommended IQ3_S GSQ-RCO GGUF served through the repo's own path on BOTH B70s. The pack is the native IQ pack written by tools/iq_pack.py from shard 1 (the model, 54.818 GB); --native is that same shard 1 (the engine serves the quantized dense tensors and the experts natively from it, and --mmap-experts maps the GGUF in place because the pack has no experts.bin); --ple-gguf is shard 2 -- the PLE table (per_layer_token_embd, 1 tensor, 28.800 GB) which docs/AMD_HIP.md:141-147 says the ORIGINAL GSQ-RCO files keep in shard 2 (Orca keeps it in shard 1). --mtp is the drafter: the model's OWN MTP head (the GSQ-RCO GGUF ships no MTP head - tools/mtp_fetch.py's docstring), obtained upstream's way from the PUBLIC canonical checkpoint Qwen/Qwen3.8-Flash-Next at mtp_fetch.py's PINNED revision de4b8e4d43b917e7706784d8bb445c9af86a3540 and SHA256-verified 31/31 per tensor, then tools/mtp_pack.py --experts q2_0 -> tools/mtp_rt.py -> cp data/draft_vocab.bin (P7, card t_6789d6df; artifacts under /home/michael/strata-xpu/mtp/). It is NOT built from the W4A16 checkpoint and NOT via tools/mtp_w4a16_adapter.py - that route is out of scope (PLAN U13/U19) and its artifact is byte-identical but was missing the draft_vocab.bin step. 'gpu': [0,1] makes serve/server.py append `--layer-split auto` (serve/server.py:628-629) and ZE_AFFINITY_MASK must then be UNSET (PLAN 11 U11). Local file, gitignored (/.gitignore:37). P6 (card t_5dfc11a3, 2026-10-03): the args below are the 256K config of record -- --max-context 262144 with KV streaming --kv-resident 32768 -- exactly as M6c measured the 256K deliverable (m6c/WRITEUP-M6C.md). The file as P7 left it carried --max-context 4096 with no --kv-resident (P7's 4K serve arm); that pre-P6 file is kept byte-identical at /home/michael/strata-xpu/p6/config-before-p6.json (md5 2fe9a4b711fbd704abc95958166f74fc).",
+ "exe": "build-sycl/strata",
+ "cwd": "/home/michael/strata-xpu/strata",
+ "args": ["--pack", "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack",
+          "--native", "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+          "--ple-gguf", "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf",
+          "--mtp", "/home/michael/strata-xpu/mtp/rt",
+          "--kv", "int8",
+          "--expert-cache", "auto",
+          "--expert-profile", "/home/michael/strata-xpu/strata/data/expert-profile.bin",
+          "--mmap-experts",
+          "--prefill", "512",
+          "--spec", "4",
+          "--spec-min-p", "0.5",
+          "--max-context", "262144",
+          "--kv-resident", "32768",
+          "--no-capture",
+          "--stats"],
+ "env": {"STRATA_DECODE_TIMING": "1"},
+ "backend": "sycl",
+ "gpu": [0, 1],
+ "layer_split": "auto",
+ "lib_dirs": ["/opt/intel/oneapi/compiler/2026.1/lib",
+              "/opt/intel/oneapi/mkl/2026.1/lib",
+              "/opt/intel/oneapi/tbb/2023.1/lib/intel64/gcc4.8"],
+ "tokenizer": "/run/media/michael/2208B12208B0F63F/strata-iq3s/pack/tokenizer",
+ "model_name": "qwen3.8-flash-next-iq3s",
+ "log": "/home/michael/strata-xpu/logs/i1-iq3s-engine.log",
+ "port": 8099
+}
