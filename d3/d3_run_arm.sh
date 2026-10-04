@@ -28,6 +28,7 @@ BIN=""
 SPEC=""
 SPECMINP="0.7"
 MTPMAXT=""
+MAXCTX=""
 GRAPH=""
 HIST=0
 HISTW=2
@@ -40,6 +41,7 @@ while [ $# -gt 0 ]; do
     --prompt) PROMPT=$2; shift 2 ;;
     --prefill) PREFILL=$2; shift 2 ;;
     --kvres) KVRES=$2; shift 2 ;;
+    --maxctx) MAXCTX=$2; shift 2 ;;
     --bin) BIN=$2; shift 2 ;;
     --spec) SPEC=$2; shift 2 ;;
     --spec-min-p) SPECMINP=$2; shift 2 ;;
@@ -81,7 +83,7 @@ MTP=$R/mtp/rt
 ENGINE=("$SRC/build-sycl/strata" --serve
   --pack "$PACK" --native "$SH1" --ple-gguf "$SH2" --mtp "$MTP"
   --kv int8 --expert-cache auto --expert-profile "$SRC/data/expert-profile.bin" --mmap-experts
-  --prefill "$PREFILL" --spec "$SPEC" --spec-min-p "$SPECMINP" --max-context "$CTX" --no-capture --stats
+  --prefill "$PREFILL" --spec "$SPEC" --spec-min-p "$SPECMINP" --max-context "${MAXCTX:-$CTX}" --no-capture --stats
   --prompt-cache 0 --prompt-cache-every 0)
 [ -n "$MTPMAXT" ] && ENGINE+=(--mtp-max-t "$MTPMAXT")
 if [ -n "$ONECARD" ]; then export ZE_AFFINITY_MASK="$ONECARD"; else unset ZE_AFFINITY_MASK; ENGINE+=(--layer-split auto); fi

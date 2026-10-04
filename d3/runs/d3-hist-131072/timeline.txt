@@ -1,0 +1,573 @@
+# epoch	monotonic	stream	line
+1791078275.112848	210493.307571	ERR	strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+1791078275.236128	210493.430851	ERR	strata generate: PCIe probe: 26.5 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+1791078275.236149	210493.430870	ERR	strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
+1791078275.324297	210493.519019	ERR	strata generate: native pack: /run/media/michael/2208B12208B0F63F/strata-iq3s/pack experts (largest blob 2.66 MB), token embedding IQ4_XS in mapped host memory (322 MiB)
+1791078275.579482	210493.774205	ERR	strata generate: 1466 MiB of weights loaded from /run/media/michael/2208B12208B0F63F/strata-iq3s/pack (302 canonical tensors skipped: served natively)
+1791078276.256885	210494.451608	ERR	strata generate: 300 native projection matrices, 2018.88 MiB of weights
+1791078276.299495	210494.494217	ERR	strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+1791078277.619277	210495.814000	ERR	strata generate: layer split: CUDA1 PCIe probe 13.4 GB/s -> pcie_frac 0.28
+1791078277.619305	210495.814026	ERR	strata generate: layer split: CUDA1 holds its weights; 28.34 GiB free (its session follows the split search)
+1791078277.619313	210495.814035	ERR	strata generate: profile /home/michael/strata-xpu/strata/data/expert-profile.bin: 24576 ranked pairs, built for 24576 slots
+1791078277.619505	210495.814226	ERR	strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.84 GiB free before its session carve
+1791078277.619510	210495.814231	ERR	strata generate: layer split auto: CUDA1 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.59 GiB free before its session carve
+1791078277.621665	210495.816387	ERR	strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
+1791078277.724947	210495.919670	ERR	strata generate: KV streaming: 32768 of 131072 cells per QSA layer in VRAM, the K/V in 0.64 GiB of pinned RAM
+1791078277.726163	210495.920884	ERR	strata generate: PLE on, table 320001536 rows of /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf
+1791078278.022589	210496.217312	ERR	strata generate: layer split: CUDA1 holds its weights, session [23, 48) and the head; 27.42 GiB free
+1791078278.431033	210496.625756	ERR	strata mtp: draft layer loaded, 835 MiB of VRAM (experts 675, dense 111), files read in 0.41 s (1924 MiB/s)
+1791078278.431052	210496.625774	ERR	strata generate: GPU 0: Intel(R) Graphics [0xe223], compute capability 12.0
+1791078278.438193	210496.632914	ERR	strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+1791078278.445291	210496.640012	ERR	strata generate: expert cache auto: 27.18 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10687 slots
+1791078278.632792	210496.827515	ERR	strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+1791078278.632813	210496.827534	ERR	strata generate: the GPU computes the experts in the cache; it rounds differently from the CPU,
+1791078278.632818	210496.827540	ERR	                 so a reply can differ slightly from a run without the cache (same quality:
+1791078278.632823	210496.827544	ERR	                 bench/results/2026-09-27-cache-parity).
+1791078278.632827	210496.827548	ERR	                 PROFILE, ranked by routing frequency, no eviction.
+1791078286.202937	210504.397660	ERR	strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified
+1791078304.768269	210522.962992	ERR	strata generate: layer split: CUDA1 runs layers 23-47, expert cache 12800 slots (25.63 GiB), 12800 of its 12800 profiled pairs; slot 0 verified
+1791078304.768286	210522.963007	ERR	strata generate: layer split: CUDA0 runs layers 0-22
+1791078304.867029	210523.061751	ERR	strata generate: routing-aware prefetch of the file tier on (the next layer's router)
+1791078304.867435	210523.062157	ERR	strata generate: R4 hit path ON - resident experts are computed on the GPU
+1791078304.867438	210523.062159	ERR	strata generate: 19 expert-pool workers + the host thread
+1791078304.867440	210523.062161	ERR	strata generate: session is up (engine 0.1.34)
+1791078304.869098	210523.063819	ERR	strata generate: token graph hit path: 24576 resident experts, decided on the device
+1791078304.869129	210523.063850	ERR	strata serve: layer split: 100% of the experts resident, the prompt path's streamed ring 96 slots
+1791078304.869156	210523.063877	ERR	strata serve: prompt chunk auto: 8192 tokens
+1791078304.869214	210523.063935	ERR	strata serve:   CUDA0 keeps its own prompt buffers (3.79 GiB of 5.97 GiB free): no loan
+1791078304.869232	210523.063953	ERR	strata serve:   CUDA1 prompt path borrows 1887 of its 12800 slots (3.79 GiB)
+1791078305.209399	210523.404121	ERR	strata hc: CUDA1: the hyper-connection read runs as staged (the norm per token and stream, the down projection's activations staged ahead by cp.async); checked bit for bit against the plain read on this card (STRATA_HC_SPLIT=1 or 0 for the earlier ones)
+1791078305.212255	210523.406977	ERR	strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+1791078305.212279	210523.407000	ERR	strata serve: layer split: layers 0-22 (CUDA0), 23-47 (CUDA1), one hand-off per window
+1791078305.275115	210523.469838	ERR	strata hc: CUDA0: the hyper-connection read runs as staged (the norm per token and stream, the down projection's activations staged ahead by cp.async); checked bit for bit against the plain read on this card (STRATA_HC_SPLIT=1 or 0 for the earlier ones)
+1791078305.276703	210523.471425	ERR	strata verify: window up to 6 tokens, 74.7 MiB of device buffers
+1791078305.281449	210523.476170	ERR	strata mtp: draft head over 106299 tokens (212.9 MiB)
+1791078305.282269	210523.476990	ERR	strata serve: 2132 MiB of VRAM free with everything loaded
+1791078305.282332	210523.477054	OUT	INFO context=131072 kv=int8 kv_resident=32768 expert_slots=24576 expert_cache_mib=47962 expert_slots_primary=11776 expert_cache_primary_mib=21712 spec=6 mtp_max=4 lookup=3 vram_free_mib=2132 cvec=0 arena_mib=0 pool_workers=19 pcie_frac=0.55 spec_min_p=0.70 conversation_cache_mib=0 conversation_cache_slots=4 conversation_cache_min_free_mib=2560 engine=0.1.34
+1791078305.282339	210523.477061	OUT	READY 131072 stop
+1791078305.712842	210523.907564	OUT	RESUME 0
+1791078306.758924	210524.953647	ERR	qsa_block_scores: no TF32 tc path on this backend (the device refuses tf32 joint_matrix); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3) -> warp kernel
+1791078306.759421	210524.954143	ERR	qsa_prompt_attn_batch: SYCL backend -> portable v1 kernel (m16n8k16 has no SYCL spelling); STRATA_SYCL_XMX is off: portable FP32 path (PLAN.md M3)
+1791078337.173950	210555.368673	OUT	PP 8192 129024 31465 260.4
+1791078356.941564	210575.136287	OUT	PP 16384 129024 51232 319.8
+1791078377.080158	210595.274881	OUT	PP 24576 129024 71371 344.3
+1791078397.553243	210615.747966	OUT	PP 32768 129024 91844 356.8
+1791078418.368717	210636.563439	OUT	PP 40960 129024 112659 363.6
+1791078439.559659	210657.754382	OUT	PP 49152 129024 133850 367.2
+1791078461.112778	210679.307501	OUT	PP 57344 129024 155403 369.0
+1791078483.000750	210701.195473	OUT	PP 65536 129024 177291 369.7
+1791078505.289224	210723.483947	OUT	PP 73728 129024 199580 369.4
+1791078527.900362	210746.095085	OUT	PP 81920 129024 222191 368.7
+1791078550.858296	210769.053019	OUT	PP 90112 129024 245149 367.6
+1791078574.192593	210792.387316	ERR	strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+1791078574.836097	210793.030820	OUT	PP 98304 129024 269127 365.3
+1791078601.031109	210819.225832	OUT	PP 106496 129024 295322 360.6
+1791078627.596813	210845.791536	OUT	PP 114688 129024 321887 356.3
+1791078654.518886	210872.713609	OUT	PP 122880 129024 348810 352.3
+1791078675.418596	210893.613319	OUT	PP 129023 129024 369709 349.0
+1791078678.006505	210896.201228	OUT	REUSED 0
+1791078678.010785	210896.205508	ERR	strata verify: captured the 1-token window (upload no error, sync no error)
+1791078678.062695	210896.257418	ERR	strata submit: stage window T=1 pos0=129023 layers 0..22 (23): submitted 1808 (kernel 1610 memset 0 memcpy 193 barrier 5 event 0 hostfn 0 graph 0) + recorded 0; 78.6 per layer; GPU-reach wait 32.61 ms
+1791078678.074515	210896.269236	ERR	strata verify: captured the 1-token window (upload no error, sync no error)
+1791078678.120487	210896.315209	ERR	strata submit: stage window T=1 pos0=129023 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 26.95 ms
+1791078678.136436	210896.331157	OUT	T 248068
+1791078678.151148	210896.345869	ERR	strata verify: captured the 4-token window (upload no error, sync no error)
+1791078678.219622	210896.414344	ERR	strata submit: stage window T=4 pos0=129024 layers 0..22 (23): submitted 2252 (kernel 1682 memset 0 memcpy 556 barrier 14 event 0 hostfn 0 graph 0) + recorded 0; 97.9 per layer; GPU-reach wait 109.67 ms
+1791078678.234072	210896.428794	ERR	strata verify: captured the 4-token window (upload no error, sync no error)
+1791078678.314251	210896.508973	ERR	strata submit: stage window T=4 pos0=129024 layers 23..47 (25): submitted 2611 (kernel 1844 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 82.37 ms
+1791078678.334705	210896.529427	OUT	T 198
+1791078678.334719	210896.529441	OUT	T 760
+1791078678.334725	210896.529446	OUT	T 1156
+1791078678.334729	210896.529450	OUT	T 6587
+1791078678.414593	210896.609315	ERR	strata submit: stage window T=4 pos0=129028 layers 0..22 (23): submitted 2253 (kernel 1682 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 217.08 ms
+1791078678.503127	210896.697849	ERR	strata submit: stage window T=4 pos0=129028 layers 23..47 (25): submitted 2614 (kernel 1844 memset 0 memcpy 750 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 139.69 ms
+1791078678.523772	210896.718494	OUT	T 728
+1791078678.523787	210896.718509	OUT	T 310
+1791078678.523793	210896.718514	OUT	T 3286
+1791078678.523797	210896.718518	OUT	T 264
+1791078678.534431	210896.729153	ERR	strata verify: captured the 2-token window (upload no error, sync no error)
+1791078678.581345	210896.776067	ERR	strata submit: stage window T=2 pos0=129032 layers 0..22 (23): submitted 1952 (kernel 1634 memset 0 memcpy 314 barrier 4 event 0 hostfn 0 graph 0) + recorded 0; 84.9 per layer; GPU-reach wait 309.68 ms
+1791078678.593834	210896.788556	ERR	strata verify: captured the 2-token window (upload no error, sync no error)
+1791078678.646590	210896.841312	ERR	strata submit: stage window T=2 pos0=129032 layers 23..47 (25): submitted 2213 (kernel 1798 memset 0 memcpy 414 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 88.5 per layer; GPU-reach wait 174.75 ms
+1791078678.663804	210896.858526	OUT	T 3349
+1791078678.663811	210896.858532	OUT	T 351
+1791078678.740973	210896.935695	ERR	strata submit: stage window T=4 pos0=129034 layers 0..22 (23): submitted 2253 (kernel 1682 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 397.06 ms
+1791078678.826021	210897.020744	ERR	strata submit: stage window T=4 pos0=129034 layers 23..47 (25): submitted 2609 (kernel 1844 memset 0 memcpy 750 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 228.61 ms
+1791078678.846744	210897.041466	OUT	T 992
+1791078678.846761	210897.041482	OUT	T 14
+1791078678.846766	210897.041487	OUT	T 77517
+1791078678.846770	210897.041491	OUT	T 4560
+1791078678.886734	210897.081456	ERR	strata submit: stage window T=1 pos0=129038 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 479.80 ms
+1791078678.934444	210897.129166	ERR	strata submit: stage window T=1 pos0=129038 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 254.66 ms
+1791078678.951045	210897.145766	OUT	T 318
+1791078678.985317	210897.180039	ERR	strata submit: stage window T=1 pos0=129039 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 529.35 ms
+1791078679.033158	210897.227880	ERR	strata submit: stage window T=1 pos0=129039 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 280.77 ms
+1791078679.048978	210897.243700	OUT	T 2495
+1791078679.083202	210897.277925	ERR	strata submit: stage window T=1 pos0=129040 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 578.98 ms
+1791078679.131608	210897.326331	ERR	strata submit: stage window T=1 pos0=129040 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 306.88 ms
+1791078679.147369	210897.342090	OUT	T 450
+1791078679.224394	210897.419116	ERR	strata submit: stage window T=4 pos0=129041 layers 0..22 (23): submitted 2260 (kernel 1682 memset 0 memcpy 556 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 98.3 per layer; GPU-reach wait 657.63 ms
+1791078679.298577	210897.493300	ERR	strata submit: stage window T=4 pos0=129041 layers 23..47 (25): submitted 2616 (kernel 1844 memset 0 memcpy 750 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 363.91 ms
+1791078679.300682	210897.495403	OUT	T 8
+1791078679.300694	210897.495415	OUT	T 321
+1791078679.300698	210897.495419	OUT	T 1141
+1791078679.300701	210897.495422	OUT	T 9417
+1791078679.352465	210897.547188	ERR	strata submit: stage window T=2 pos0=129045 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 747.81 ms
+1791078679.401130	210897.595852	ERR	strata submit: stage window T=2 pos0=129045 layers 23..47 (25): submitted 2216 (kernel 1798 memset 0 memcpy 414 barrier 4 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 400.22 ms
+1791078679.402976	210897.597697	OUT	T 11
+1791078679.402982	210897.597703	OUT	T 23812
+1791078679.478612	210897.673334	ERR	strata submit: stage window T=4 pos0=129047 layers 0..22 (23): submitted 2255 (kernel 1682 memset 0 memcpy 556 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 834.64 ms
+1791078679.550099	210897.744821	ERR	strata submit: stage window T=4 pos0=129047 layers 23..47 (25): submitted 2609 (kernel 1844 memset 0 memcpy 750 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 454.92 ms
+1791078679.552437	210897.747159	OUT	T 279
+1791078679.552452	210897.747174	OUT	T 1379
+1791078679.552458	210897.747180	OUT	T 2894
+1791078679.552463	210897.747184	OUT	T 55404
+1791078679.618373	210897.813095	ERR	strata submit: stage window T=4 pos0=129051 layers 0..22 (23): submitted 2253 (kernel 1682 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 939.98 ms
+1791078679.691209	210897.885931	ERR	strata submit: stage window T=4 pos0=129051 layers 23..47 (25): submitted 2612 (kernel 1844 memset 0 memcpy 750 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 104.5 per layer; GPU-reach wait 510.94 ms
+1791078679.693421	210897.888143	OUT	T 466
+1791078679.693435	210897.888156	OUT	T 4906
+1791078679.693440	210897.888161	OUT	T 14832
+1791078679.693444	210897.888166	OUT	T 303
+1791078679.771240	210897.965962	ERR	strata submit: stage window T=4 pos0=129055 layers 0..22 (23): submitted 2255 (kernel 1682 memset 0 memcpy 556 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 1048.29 ms
+1791078679.844905	210898.039629	ERR	strata submit: stage window T=4 pos0=129055 layers 23..47 (25): submitted 2618 (kernel 1844 memset 0 memcpy 750 barrier 24 event 0 hostfn 0 graph 0) + recorded 0; 104.7 per layer; GPU-reach wait 567.58 ms
+1791078679.846915	210898.041637	OUT	T 1906
+1791078679.846927	210898.041649	OUT	T 314
+1791078679.846931	210898.041653	OUT	T 28943
+1791078679.846935	210898.041656	OUT	T 11
+1791078679.897618	210898.092340	ERR	strata submit: stage window T=2 pos0=129059 layers 0..22 (23): submitted 1950 (kernel 1634 memset 0 memcpy 314 barrier 2 event 0 hostfn 0 graph 0) + recorded 0; 84.8 per layer; GPU-reach wait 1137.84 ms
+1791078679.945588	210898.140310	ERR	strata submit: stage window T=2 pos0=129059 layers 23..47 (25): submitted 2215 (kernel 1798 memset 0 memcpy 414 barrier 3 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 603.18 ms
+1791078679.947408	210898.142130	OUT	T 440
+1791078679.947420	210898.142141	OUT	T 5721
+1791078679.997751	210898.192473	ERR	strata submit: stage window T=2 pos0=129061 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 1206.31 ms
+1791078680.046151	210898.240873	ERR	strata submit: stage window T=2 pos0=129061 layers 23..47 (25): submitted 2216 (kernel 1798 memset 0 memcpy 414 barrier 4 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 639.30 ms
+1791078680.047808	210898.242529	OUT	T 16687
+1791078680.126829	210898.321552	ERR	strata submit: stage window T=4 pos0=129062 layers 0..22 (23): submitted 2257 (kernel 1682 memset 0 memcpy 556 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 1296.37 ms
+1791078680.198932	210898.393654	ERR	strata submit: stage window T=4 pos0=129062 layers 23..47 (25): submitted 2611 (kernel 1844 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 694.55 ms
+1791078680.201129	210898.395850	OUT	T 321
+1791078680.201141	210898.395862	OUT	T 13769
+1791078680.201145	210898.395866	OUT	T 25689
+1791078680.201149	210898.395870	OUT	T 13
+1791078680.276925	210898.471646	ERR	strata submit: stage window T=4 pos0=129066 layers 0..22 (23): submitted 2253 (kernel 1682 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 1401.70 ms
+1791078680.348910	210898.543632	ERR	strata submit: stage window T=4 pos0=129066 layers 23..47 (25): submitted 2612 (kernel 1844 memset 0 memcpy 750 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 104.5 per layer; GPU-reach wait 749.69 ms
+1791078680.351163	210898.545885	OUT	T 271
+1791078680.351175	210898.545896	OUT	T 9764
+1791078680.351179	210898.545900	OUT	T 728
+1791078680.351183	210898.545904	OUT	T 15060
+1791078680.428116	210898.622838	ERR	strata submit: stage window T=4 pos0=129070 layers 0..22 (23): submitted 2257 (kernel 1682 memset 0 memcpy 556 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 1507.87 ms
+1791078680.500227	210898.694949	ERR	strata submit: stage window T=4 pos0=129070 layers 23..47 (25): submitted 2610 (kernel 1844 memset 0 memcpy 750 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 804.93 ms
+1791078680.502312	210898.697034	OUT	T 22903
+1791078680.502327	210898.697048	OUT	T 279
+1791078680.502332	210898.697053	OUT	T 1970
+1791078680.502337	210898.697058	OUT	T 321
+1791078680.552847	210898.747569	ERR	strata submit: stage window T=2 pos0=129074 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 1596.17 ms
+1791078680.601319	210898.796041	ERR	strata submit: stage window T=2 pos0=129074 layers 23..47 (25): submitted 2216 (kernel 1798 memset 0 memcpy 414 barrier 4 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 841.04 ms
+1791078680.603123	210898.797845	OUT	T 9417
+1791078680.603137	210898.797858	OUT	T 364
+1791078680.637655	210898.832377	ERR	strata submit: stage window T=1 pos0=129076 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 1655.76 ms
+1791078680.674198	210898.868920	ERR	strata submit: stage window T=1 pos0=129076 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 867.14 ms
+1791078680.675892	210898.870614	OUT	T 55404
+1791078680.750683	210898.945406	ERR	strata submit: stage window T=4 pos0=129077 layers 0..22 (23): submitted 2254 (kernel 1682 memset 0 memcpy 556 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 1731.91 ms
+1791078680.820918	210899.015641	ERR	strata submit: stage window T=4 pos0=129077 layers 23..47 (25): submitted 2607 (kernel 1844 memset 0 memcpy 750 barrier 13 event 0 hostfn 0 graph 0) + recorded 0; 104.3 per layer; GPU-reach wait 920.63 ms
+1791078680.822849	210899.017570	OUT	T 321
+1791078680.900761	210899.095483	ERR	strata submit: stage window T=4 pos0=129078 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 1837.42 ms
+1791078680.974080	210899.168803	ERR	strata submit: stage window T=4 pos0=129078 layers 23..47 (25): submitted 2613 (kernel 1844 memset 0 memcpy 750 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 104.5 per layer; GPU-reach wait 976.98 ms
+1791078680.976595	210899.171317	OUT	T 4906
+1791078680.976609	210899.171331	OUT	T 4562
+1791078680.976615	210899.171336	OUT	T 13
+1791078680.976619	210899.171340	OUT	T 271
+1791078681.011945	210899.206667	ERR	strata submit: stage window T=1 pos0=129082 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 1917.25 ms
+1791078681.048652	210899.243375	ERR	strata submit: stage window T=1 pos0=129082 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1003.10 ms
+1791078681.050327	210899.245049	OUT	T 332
+1791078681.084206	210899.278928	ERR	strata submit: stage window T=1 pos0=129083 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 1966.83 ms
+1791078681.120778	210899.315501	ERR	strata submit: stage window T=1 pos0=129083 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1029.16 ms
+1791078681.122555	210899.317277	OUT	T 31995
+1791078681.171466	210899.366188	ERR	strata submit: stage window T=2 pos0=129084 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 2025.17 ms
+1791078681.218753	210899.413476	ERR	strata submit: stage window T=2 pos0=129084 layers 23..47 (25): submitted 2213 (kernel 1798 memset 0 memcpy 414 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 88.5 per layer; GPU-reach wait 1064.12 ms
+1791078681.220599	210899.415320	OUT	T 2022
+1791078681.220613	210899.415334	OUT	T 51572
+1791078681.296134	210899.490857	ERR	strata submit: stage window T=4 pos0=129086 layers 0..22 (23): submitted 2253 (kernel 1682 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 2110.44 ms
+1791078681.368041	210899.562764	ERR	strata submit: stage window T=4 pos0=129086 layers 23..47 (25): submitted 2611 (kernel 1844 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 1119.00 ms
+1791078681.370152	210899.564873	OUT	T 2699
+1791078681.370166	210899.564887	OUT	T 64700
+1791078681.370171	210899.564892	OUT	T 271
+1791078681.370176	210899.564897	OUT	T 16
+1791078681.385610	210899.580332	ERR	strata verify: captured the 3-token window (upload no error, sync no error)
+1791078681.439310	210899.634032	ERR	strata submit: stage window T=3 pos0=129090 layers 0..22 (23): submitted 2100 (kernel 1658 memset 0 memcpy 435 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 2206.56 ms
+1791078681.439717	210899.634439	ERR	strata verify: captured the 3-token window (upload no error, sync no error)
+1791078681.507032	210899.701754	ERR	strata submit: stage window T=3 pos0=129090 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 1164.25 ms
+1791078681.509058	210899.703780	OUT	T 13
+1791078681.509072	210899.703794	OUT	T 2972
+1791078681.509078	210899.703799	OUT	T 63
+1791078681.544927	210899.739649	ERR	strata submit: stage window T=1 pos0=129093 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 2275.39 ms
+1791078681.581650	210899.776373	ERR	strata submit: stage window T=1 pos0=129093 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1190.48 ms
+1791078681.583337	210899.778058	OUT	T 71376
+1791078681.617871	210899.812593	ERR	strata submit: stage window T=1 pos0=129094 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 2325.21 ms
+1791078681.654781	210899.849504	ERR	strata submit: stage window T=1 pos0=129094 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1216.84 ms
+1791078681.656429	210899.851151	OUT	T 15248
+1791078681.731757	210899.926480	ERR	strata submit: stage window T=4 pos0=129095 layers 0..22 (23): submitted 2253 (kernel 1682 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 2401.65 ms
+1791078681.803260	210899.997983	ERR	strata submit: stage window T=4 pos0=129095 layers 23..47 (25): submitted 2610 (kernel 1844 memset 0 memcpy 750 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 1271.32 ms
+1791078681.805273	210899.999994	OUT	T 41571
+1791078681.805278	210899.999999	OUT	T 24337
+1791078681.805284	210900.000005	OUT	T 63
+1791078681.805286	210900.000007	OUT	T 471
+1791078681.840689	210900.035412	ERR	strata submit: stage window T=1 pos0=129099 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 2479.60 ms
+1791078681.877425	210900.072148	ERR	strata submit: stage window T=1 pos0=129099 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1297.41 ms
+1791078681.879149	210900.073871	OUT	T 31084
+1791078681.913452	210900.108174	ERR	strata submit: stage window T=1 pos0=129100 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 2529.25 ms
+1791078681.950009	210900.144731	ERR	strata submit: stage window T=1 pos0=129100 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1323.53 ms
+1791078681.951676	210900.146398	OUT	T 709
+1791078681.985998	210900.180719	ERR	strata submit: stage window T=1 pos0=129101 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 2578.87 ms
+1791078682.022521	210900.217244	ERR	strata submit: stage window T=1 pos0=129101 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1349.59 ms
+1791078682.024145	210900.218867	OUT	T 593
+1791078682.058631	210900.253354	ERR	strata submit: stage window T=1 pos0=129102 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 2628.42 ms
+1791078682.095326	210900.290049	ERR	strata submit: stage window T=1 pos0=129102 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1375.64 ms
+1791078682.096950	210900.291671	OUT	T 4499
+1791078682.131108	210900.325830	ERR	strata submit: stage window T=1 pos0=129103 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 2677.98 ms
+1791078682.167667	210900.362389	ERR	strata submit: stage window T=1 pos0=129103 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1401.74 ms
+1791078682.169296	210900.364017	OUT	T 4011
+1791078682.218570	210900.413292	ERR	strata submit: stage window T=2 pos0=129104 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 2736.25 ms
+1791078682.266566	210900.461288	ERR	strata submit: stage window T=2 pos0=129104 layers 23..47 (25): submitted 2215 (kernel 1798 memset 0 memcpy 414 barrier 3 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 1437.47 ms
+1791078682.268554	210900.463276	OUT	T 16000
+1791078682.268560	210900.463281	OUT	T 92217
+1791078682.335355	210900.530078	ERR	strata submit: stage window T=3 pos0=129106 layers 0..22 (23): submitted 2100 (kernel 1658 memset 0 memcpy 435 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 2815.22 ms
+1791078682.397488	210900.592211	ERR	strata submit: stage window T=3 pos0=129106 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 1484.52 ms
+1791078682.399481	210900.594202	OUT	T 561
+1791078682.399495	210900.594217	OUT	T 709
+1791078682.399501	210900.594222	OUT	T 506
+1791078682.449941	210900.644663	ERR	strata submit: stage window T=2 pos0=129109 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 2894.97 ms
+1791078682.497850	210900.692572	ERR	strata submit: stage window T=2 pos0=129109 layers 23..47 (25): submitted 2214 (kernel 1798 memset 0 memcpy 414 barrier 2 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 1520.04 ms
+1791078682.499829	210900.694550	OUT	T 279
+1791078682.499840	210900.694561	OUT	T 1546
+1791078682.549317	210900.744039	ERR	strata submit: stage window T=2 pos0=129111 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 2962.77 ms
+1791078682.597409	210900.792131	ERR	strata submit: stage window T=2 pos0=129111 layers 23..47 (25): submitted 2214 (kernel 1798 memset 0 memcpy 414 barrier 2 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 1555.75 ms
+1791078682.599154	210900.793875	OUT	T 809
+1791078682.599167	210900.793888	OUT	T 314
+1791078682.649328	210900.844051	ERR	strata submit: stage window T=2 pos0=129113 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 3031.27 ms
+1791078682.697342	210900.892064	ERR	strata submit: stage window T=2 pos0=129113 layers 23..47 (25): submitted 2213 (kernel 1798 memset 0 memcpy 414 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 88.5 per layer; GPU-reach wait 1591.37 ms
+1791078682.699100	210900.893821	OUT	T 279
+1791078682.699106	210900.893827	OUT	T 1970
+1791078682.749231	210900.943954	ERR	strata submit: stage window T=2 pos0=129115 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 3099.89 ms
+1791078682.797708	210900.992431	ERR	strata submit: stage window T=2 pos0=129115 layers 23..47 (25): submitted 2215 (kernel 1798 memset 0 memcpy 414 barrier 3 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 1627.36 ms
+1791078682.799557	210900.994279	OUT	T 369
+1791078682.799583	210900.994305	OUT	T 3799
+1791078682.864807	210901.059530	ERR	strata submit: stage window T=3 pos0=129117 layers 0..22 (23): submitted 2100 (kernel 1658 memset 0 memcpy 435 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 3177.50 ms
+1791078682.925491	210901.120214	ERR	strata submit: stage window T=3 pos0=129117 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 1673.08 ms
+1791078682.927516	210901.122237	OUT	T 974
+1791078682.927521	210901.122243	OUT	T 4937
+1791078682.927523	210901.122244	OUT	T 12
+1791078682.978133	210901.172855	ERR	strata submit: stage window T=2 pos0=129120 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 3256.00 ms
+1791078683.027290	210901.222013	ERR	strata submit: stage window T=2 pos0=129120 layers 23..47 (25): submitted 2217 (kernel 1798 memset 0 memcpy 414 barrier 5 event 0 hostfn 0 graph 0) + recorded 0; 88.7 per layer; GPU-reach wait 1709.69 ms
+1791078683.029066	210901.223788	OUT	T 13957
+1791078683.029078	210901.223799	OUT	T 13
+1791078683.063710	210901.258433	ERR	strata submit: stage window T=1 pos0=129122 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 3316.07 ms
+1791078683.100304	210901.295027	ERR	strata submit: stage window T=1 pos0=129122 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1735.75 ms
+1791078683.101783	210901.296505	OUT	T 1049
+1791078683.136583	210901.331306	ERR	strata submit: stage window T=1 pos0=129123 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 3365.64 ms
+1791078683.173266	210901.367989	ERR	strata submit: stage window T=1 pos0=129123 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 1761.78 ms
+1791078683.174966	210901.369688	OUT	T 14619
+1791078683.225169	210901.419890	ERR	strata submit: stage window T=2 pos0=129124 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 3424.56 ms
+1791078683.273940	210901.468662	ERR	strata submit: stage window T=2 pos0=129124 layers 23..47 (25): submitted 2217 (kernel 1798 memset 0 memcpy 414 barrier 5 event 0 hostfn 0 graph 0) + recorded 0; 88.7 per layer; GPU-reach wait 1798.05 ms
+1791078683.275689	210901.470411	OUT	T 1510
+1791078683.275703	210901.470424	OUT	T 74
+1791078683.351493	210901.546215	ERR	strata submit: stage window T=4 pos0=129126 layers 0..22 (23): submitted 2254 (kernel 1682 memset 0 memcpy 556 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 3511.48 ms
+1791078683.423337	210901.618059	ERR	strata submit: stage window T=4 pos0=129126 layers 23..47 (25): submitted 2611 (kernel 1844 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 1852.82 ms
+1791078683.425397	210901.620119	OUT	T 5786
+1791078683.425411	210901.620132	OUT	T 4127
+1791078683.425416	210901.620137	OUT	T 23758
+1791078683.425420	210901.620141	OUT	T 283
+1791078683.440968	210901.635690	ERR	strata verify: captured the 6-token window (upload no error, sync no error)
+1791078683.529695	210901.724418	ERR	strata submit: stage window T=6 pos0=129130 layers 0..22 (23): submitted 2557 (kernel 1730 memset 0 memcpy 798 barrier 29 event 0 hostfn 0 graph 0) + recorded 0; 111.2 per layer; GPU-reach wait 3636.14 ms
+1791078683.530245	210901.724966	ERR	strata verify: captured the 6-token window (upload no error, sync no error)
+1791078683.638872	210901.833595	ERR	strata submit: stage window T=6 pos0=129130 layers 23..47 (25): submitted 3007 (kernel 1890 memset 0 memcpy 1086 barrier 31 event 0 hostfn 0 graph 0) + recorded 0; 120.3 per layer; GPU-reach wait 1932.77 ms
+1791078683.641264	210901.835986	OUT	T 220
+1791078683.641278	210901.835999	OUT	T 16
+1791078683.641293	210901.836014	OUT	T 17
+1791078683.641297	210901.836018	OUT	T 23
+1791078683.641301	210901.836022	OUT	T 63
+1791078683.721205	210901.915928	ERR	strata submit: stage window T=4 pos0=129135 layers 0..22 (23): submitted 2256 (kernel 1682 memset 0 memcpy 556 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 3769.53 ms
+1791078683.794942	210901.989665	ERR	strata submit: stage window T=4 pos0=129135 layers 23..47 (25): submitted 2615 (kernel 1844 memset 0 memcpy 750 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 1989.31 ms
+1791078683.797039	210901.991761	OUT	T 321
+1791078683.797051	210901.991773	OUT	T 1510
+1791078683.797055	210901.991777	OUT	T 10272
+1791078683.797059	210901.991780	OUT	T 51
+1791078683.875138	210902.069861	ERR	strata submit: stage window T=4 pos0=129139 layers 0..22 (23): submitted 2260 (kernel 1682 memset 0 memcpy 556 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 98.3 per layer; GPU-reach wait 3878.85 ms
+1791078683.950215	210902.144938	ERR	strata submit: stage window T=4 pos0=129139 layers 23..47 (25): submitted 2618 (kernel 1844 memset 0 memcpy 750 barrier 24 event 0 hostfn 0 graph 0) + recorded 0; 104.7 per layer; GPU-reach wait 2047.31 ms
+1791078683.952430	210902.147152	OUT	T 348
+1791078683.952445	210902.147166	OUT	T 220
+1791078683.952450	210902.147171	OUT	T 16
+1791078683.952454	210902.147176	OUT	T 15
+1791078684.049385	210902.244107	ERR	strata submit: stage window T=6 pos0=129143 layers 0..22 (23): submitted 2557 (kernel 1730 memset 0 memcpy 798 barrier 29 event 0 hostfn 0 graph 0) + recorded 0; 111.2 per layer; GPU-reach wait 4006.59 ms
+1791078684.149143	210902.343866	ERR	strata submit: stage window T=6 pos0=129143 layers 23..47 (25): submitted 3007 (kernel 1890 memset 0 memcpy 1086 barrier 31 event 0 hostfn 0 graph 0) + recorded 0; 120.3 per layer; GPU-reach wait 2126.45 ms
+1791078684.151675	210902.346397	OUT	T 2564
+1791078684.151690	210902.346411	OUT	T 580
+1791078684.151695	210902.346416	OUT	T 5786
+1791078684.151699	210902.346420	OUT	T 4127
+1791078684.151703	210902.346424	OUT	T 23758
+1791078684.151707	210902.346428	OUT	T 63
+1791078684.190711	210902.385434	ERR	strata submit: stage window T=1 pos0=129149 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 4112.25 ms
+1791078684.227433	210902.422156	ERR	strata submit: stage window T=1 pos0=129149 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 2152.53 ms
+1791078684.229051	210902.423772	OUT	T 4417
+1791078684.263432	210902.458154	ERR	strata submit: stage window T=1 pos0=129150 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 4161.85 ms
+1791078684.299950	210902.494672	ERR	strata submit: stage window T=1 pos0=129150 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 2178.64 ms
+1791078684.301850	210902.496571	OUT	T 1064
+1791078684.378156	210902.572879	ERR	strata submit: stage window T=4 pos0=129151 layers 0..22 (23): submitted 2256 (kernel 1682 memset 0 memcpy 556 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 4239.46 ms
+1791078684.451157	210902.645880	ERR	strata submit: stage window T=4 pos0=129151 layers 23..47 (25): submitted 2612 (kernel 1844 memset 0 memcpy 750 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 104.5 per layer; GPU-reach wait 2234.58 ms
+1791078684.453296	210902.648018	OUT	T 16065
+1791078684.453310	210902.648032	OUT	T 11
+1791078684.453315	210902.648037	OUT	T 694
+1791078684.453320	210902.648041	OUT	T 279
+1791078684.488967	210902.683689	ERR	strata submit: stage window T=1 pos0=129155 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 4319.44 ms
+1791078684.525604	210902.720326	ERR	strata submit: stage window T=1 pos0=129155 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 2260.61 ms
+1791078684.527309	210902.722030	OUT	T 4880
+1791078684.561814	210902.756536	ERR	strata submit: stage window T=1 pos0=129156 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 4368.97 ms
+1791078684.598434	210902.793157	ERR	strata submit: stage window T=1 pos0=129156 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 2286.71 ms
+1791078684.600216	210902.794937	OUT	T 7873
+1791078684.634294	210902.829016	ERR	strata submit: stage window T=1 pos0=129157 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 4418.57 ms
+1791078684.670756	210902.865478	ERR	strata submit: stage window T=1 pos0=129157 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 2312.75 ms
+1791078684.672450	210902.867172	OUT	T 369
+1791078684.738874	210902.933597	ERR	strata submit: stage window T=3 pos0=129158 layers 0..22 (23): submitted 2100 (kernel 1658 memset 0 memcpy 435 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 4487.81 ms
+1791078684.801017	210902.995740	ERR	strata submit: stage window T=3 pos0=129158 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 2359.67 ms
+1791078684.803010	210902.997731	OUT	T 31084
+1791078684.803024	210902.997745	OUT	T 13
+1791078684.803029	210902.997750	OUT	T 561
+1791078684.838053	210903.032776	ERR	strata submit: stage window T=1 pos0=129161 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 4558.21 ms
+1791078684.874616	210903.069338	ERR	strata submit: stage window T=1 pos0=129161 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 2385.75 ms
+1791078684.876291	210903.071012	OUT	T 1510
+1791078684.910533	210903.105255	ERR	strata submit: stage window T=1 pos0=129162 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 4607.76 ms
+1791078684.947129	210903.141851	ERR	strata submit: stage window T=1 pos0=129162 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 2411.80 ms
+1791078684.948789	210903.143511	OUT	T 67
+1791078684.997477	210903.192199	ERR	strata submit: stage window T=2 pos0=129163 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 4665.87 ms
+1791078685.045801	210903.240523	ERR	strata submit: stage window T=2 pos0=129163 layers 23..47 (25): submitted 2215 (kernel 1798 memset 0 memcpy 414 barrier 3 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 2447.68 ms
+1791078685.047609	210903.242331	OUT	T 70938
+1791078685.114410	210903.309133	ERR	strata submit: stage window T=3 pos0=129164 layers 0..22 (23): submitted 2101 (kernel 1658 memset 0 memcpy 435 barrier 8 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 4745.43 ms
+1791078685.175385	210903.370108	ERR	strata submit: stage window T=3 pos0=129164 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 2493.54 ms
+1791078685.177178	210903.371900	OUT	T 24337
+1791078685.177192	210903.371913	OUT	T 16871
+1791078685.233204	210903.427926	ERR	strata submit: stage window T=3 pos0=129166 layers 0..22 (23): submitted 2100 (kernel 1658 memset 0 memcpy 435 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 4833.78 ms
+1791078685.295206	210903.489929	ERR	strata submit: stage window T=3 pos0=129166 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 2540.41 ms
+1791078685.297202	210903.491924	OUT	T 1148
+1791078685.297216	210903.491938	OUT	T 2073
+1791078685.297222	210903.491943	OUT	T 516
+1791078685.391443	210903.586165	ERR	strata submit: stage window T=6 pos0=129169 layers 0..22 (23): submitted 2557 (kernel 1730 memset 0 memcpy 798 barrier 29 event 0 hostfn 0 graph 0) + recorded 0; 111.2 per layer; GPU-reach wait 4948.77 ms
+1791078685.486177	210903.680899	ERR	strata submit: stage window T=6 pos0=129169 layers 23..47 (25): submitted 3007 (kernel 1890 memset 0 memcpy 1086 barrier 31 event 0 hostfn 0 graph 0) + recorded 0; 120.3 per layer; GPU-reach wait 2614.64 ms
+1791078685.488917	210903.683638	OUT	T 8
+1791078685.488929	210903.683650	OUT	T 318
+1791078685.488933	210903.683654	OUT	T 10272
+1791078685.488936	210903.683657	OUT	T 51
+1791078685.488939	210903.683660	OUT	T 348
+1791078685.488943	210903.683664	OUT	T 580
+1791078685.556465	210903.751188	ERR	strata submit: stage window T=3 pos0=129175 layers 0..22 (23): submitted 2100 (kernel 1658 memset 0 memcpy 435 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 5066.25 ms
+1791078685.617718	210903.812441	ERR	strata submit: stage window T=3 pos0=129175 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 2660.77 ms
+1791078685.619721	210903.814443	OUT	T 578
+1791078685.619737	210903.814458	OUT	T 63
+1791078685.619742	210903.814463	OUT	T 5533
+1791078685.696997	210903.891720	ERR	strata submit: stage window T=4 pos0=129178 layers 0..22 (23): submitted 2255 (kernel 1682 memset 0 memcpy 556 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 5163.25 ms
+1791078685.769383	210903.964106	ERR	strata submit: stage window T=4 pos0=129178 layers 23..47 (25): submitted 2613 (kernel 1844 memset 0 memcpy 750 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 104.5 per layer; GPU-reach wait 2715.81 ms
+1791078685.771484	210903.966205	OUT	T 1510
+1791078685.771498	210903.966219	OUT	T 74
+1791078685.821513	210904.016236	ERR	strata submit: stage window T=2 pos0=129180 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 5250.24 ms
+1791078685.869148	210904.063871	ERR	strata submit: stage window T=2 pos0=129180 layers 23..47 (25): submitted 2214 (kernel 1798 memset 0 memcpy 414 barrier 2 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 2750.98 ms
+1791078685.870957	210904.065678	OUT	T 63
+1791078685.870972	210904.065693	OUT	T 864
+1791078685.905808	210904.100531	ERR	strata submit: stage window T=1 pos0=129182 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 5308.91 ms
+1791078685.942482	210904.137204	ERR	strata submit: stage window T=1 pos0=129182 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 2777.05 ms
+1791078685.944127	210904.138849	OUT	T 1362
+1791078685.993091	210904.187813	ERR	strata submit: stage window T=2 pos0=129183 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 5367.22 ms
+1791078686.041035	210904.235757	ERR	strata submit: stage window T=2 pos0=129183 layers 23..47 (25): submitted 2214 (kernel 1798 memset 0 memcpy 414 barrier 2 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 2812.63 ms
+1791078686.042901	210904.237623	OUT	T 381
+1791078686.042915	210904.237636	OUT	T 685
+1791078686.121920	210904.316643	ERR	strata submit: stage window T=4 pos0=129185 layers 0..22 (23): submitted 2260 (kernel 1682 memset 0 memcpy 556 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 98.3 per layer; GPU-reach wait 5456.72 ms
+1791078686.195055	210904.389778	ERR	strata submit: stage window T=4 pos0=129185 layers 23..47 (25): submitted 2613 (kernel 1844 memset 0 memcpy 750 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 104.5 per layer; GPU-reach wait 2868.71 ms
+1791078686.197365	210904.392086	OUT	T 310
+1791078686.197378	210904.392100	OUT	T 220
+1791078686.197383	210904.392105	OUT	T 16
+1791078686.197387	210904.392109	OUT	T 15
+1791078686.231804	210904.426527	ERR	strata submit: stage window T=1 pos0=129189 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 5536.32 ms
+1791078686.268378	210904.463100	ERR	strata submit: stage window T=1 pos0=129189 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 2894.76 ms
+1791078686.270004	210904.464725	OUT	T 11
+1791078686.319664	210904.514387	ERR	strata submit: stage window T=2 pos0=129190 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 5595.24 ms
+1791078686.368208	210904.562931	ERR	strata submit: stage window T=2 pos0=129190 layers 23..47 (25): submitted 2216 (kernel 1798 memset 0 memcpy 414 barrier 4 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 2930.80 ms
+1791078686.370008	210904.564730	OUT	T 694
+1791078686.370020	210904.564741	OUT	T 279
+1791078686.403798	210904.598521	ERR	strata submit: stage window T=1 pos0=129192 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 5654.74 ms
+1791078686.440429	210904.635151	ERR	strata submit: stage window T=1 pos0=129192 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 2956.89 ms
+1791078686.442055	210904.636777	OUT	T 20286
+1791078686.492142	210904.686864	ERR	strata submit: stage window T=2 pos0=129193 layers 0..22 (23): submitted 1950 (kernel 1634 memset 0 memcpy 314 barrier 2 event 0 hostfn 0 graph 0) + recorded 0; 84.8 per layer; GPU-reach wait 5713.77 ms
+1791078686.540059	210904.734782	ERR	strata submit: stage window T=2 pos0=129193 layers 23..47 (25): submitted 2215 (kernel 1798 memset 0 memcpy 414 barrier 3 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 2992.26 ms
+1791078686.541847	210904.736569	OUT	T 369
+1791078686.541861	210904.736582	OUT	T 1510
+1791078686.617010	210904.811732	ERR	strata submit: stage window T=4 pos0=129195 layers 0..22 (23): submitted 2254 (kernel 1682 memset 0 memcpy 556 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 5799.63 ms
+1791078686.688083	210904.882805	ERR	strata submit: stage window T=4 pos0=129195 layers 23..47 (25): submitted 2608 (kernel 1844 memset 0 memcpy 750 barrier 14 event 0 hostfn 0 graph 0) + recorded 0; 104.3 per layer; GPU-reach wait 3046.31 ms
+1791078686.690037	210904.884759	OUT	T 10272
+1791078686.690052	210904.884773	OUT	T 51
+1791078686.690057	210904.884778	OUT	T 348
+1791078686.690061	210904.884782	OUT	T 580
+1791078686.767652	210904.962375	ERR	strata submit: stage window T=4 pos0=129199 layers 0..22 (23): submitted 2257 (kernel 1682 memset 0 memcpy 556 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 5905.32 ms
+1791078686.839698	210905.034421	ERR	strata submit: stage window T=4 pos0=129199 layers 23..47 (25): submitted 2609 (kernel 1844 memset 0 memcpy 750 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 3101.20 ms
+1791078686.841566	210905.036288	OUT	T 63
+1791078686.841580	210905.036301	OUT	T 524
+1791078686.919462	210905.114185	ERR	strata submit: stage window T=4 pos0=129201 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 6012.45 ms
+1791078686.992336	210905.187059	ERR	strata submit: stage window T=4 pos0=129201 layers 23..47 (25): submitted 2612 (kernel 1844 memset 0 memcpy 750 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 104.5 per layer; GPU-reach wait 3156.97 ms
+1791078686.994501	210905.189223	OUT	T 1510
+1791078686.994515	210905.189236	OUT	T 10272
+1791078686.994520	210905.189242	OUT	T 51
+1791078686.994524	210905.189246	OUT	T 348
+1791078687.028928	210905.223650	ERR	strata submit: stage window T=1 pos0=129205 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 6091.71 ms
+1791078687.065582	210905.260304	ERR	strata submit: stage window T=1 pos0=129205 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 3183.02 ms
+1791078687.067226	210905.261947	OUT	T 220
+1791078687.134264	210905.328987	ERR	strata submit: stage window T=3 pos0=129206 layers 0..22 (23): submitted 2101 (kernel 1658 memset 0 memcpy 435 barrier 8 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 6162.68 ms
+1791078687.199067	210905.393789	ERR	strata submit: stage window T=3 pos0=129206 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 3231.63 ms
+1791078687.201075	210905.395797	OUT	T 16
+1791078687.201089	210905.395810	OUT	T 15
+1791078687.201094	210905.395815	OUT	T 27653
+1791078687.236187	210905.430910	ERR	strata submit: stage window T=1 pos0=129209 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 6234.75 ms
+1791078687.272837	210905.467560	ERR	strata submit: stage window T=1 pos0=129209 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 3257.69 ms
+1791078687.274401	210905.469123	OUT	T 1368
+1791078687.349935	210905.544658	ERR	strata submit: stage window T=4 pos0=129210 layers 0..22 (23): submitted 2256 (kernel 1682 memset 0 memcpy 556 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 6311.80 ms
+1791078687.421416	210905.616138	ERR	strata submit: stage window T=4 pos0=129210 layers 23..47 (25): submitted 2607 (kernel 1844 memset 0 memcpy 750 barrier 13 event 0 hostfn 0 graph 0) + recorded 0; 104.3 per layer; GPU-reach wait 3312.02 ms
+1791078687.423709	210905.618431	OUT	T 1510
+1791078687.423721	210905.618442	OUT	T 74
+1791078687.423725	210905.618446	OUT	T 63
+1791078687.423729	210905.618450	OUT	T 369
+1791078687.458628	210905.653351	ERR	strata submit: stage window T=1 pos0=129214 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 6389.60 ms
+1791078687.495267	210905.689990	ERR	strata submit: stage window T=1 pos0=129214 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 3338.11 ms
+1791078687.496934	210905.691655	OUT	T 8882
+1791078687.546093	210905.740815	ERR	strata submit: stage window T=2 pos0=129215 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 6447.85 ms
+1791078687.594645	210905.789369	ERR	strata submit: stage window T=2 pos0=129215 layers 23..47 (25): submitted 2214 (kernel 1798 memset 0 memcpy 414 barrier 2 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 3374.10 ms
+1791078687.596529	210905.791251	OUT	T 1056
+1791078687.596544	210905.791265	OUT	T 220
+1791078687.672007	210905.866729	ERR	strata submit: stage window T=4 pos0=129217 layers 0..22 (23): submitted 2255 (kernel 1682 memset 0 memcpy 556 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 6534.50 ms
+1791078687.744329	210905.939052	ERR	strata submit: stage window T=4 pos0=129217 layers 23..47 (25): submitted 2612 (kernel 1844 memset 0 memcpy 750 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 104.5 per layer; GPU-reach wait 3429.24 ms
+1791078687.746755	210905.941477	OUT	T 16
+1791078687.746767	210905.941488	OUT	T 15
+1791078687.746771	210905.941492	OUT	T 11
+1791078687.746774	210905.941496	OUT	T 279
+1791078687.781791	210905.976513	ERR	strata submit: stage window T=1 pos0=129221 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 6613.09 ms
+1791078687.818483	210906.013206	ERR	strata submit: stage window T=1 pos0=129221 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 3455.30 ms
+1791078687.820099	210906.014821	OUT	T 20286
+1791078687.854440	210906.049162	ERR	strata submit: stage window T=1 pos0=129222 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 6662.63 ms
+1791078687.891116	210906.085839	ERR	strata submit: stage window T=1 pos0=129222 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 3481.38 ms
+1791078687.892758	210906.087480	OUT	T 369
+1791078687.926308	210906.121031	ERR	strata submit: stage window T=1 pos0=129223 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 6712.20 ms
+1791078687.962973	210906.157696	ERR	strata submit: stage window T=1 pos0=129223 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 3507.46 ms
+1791078687.964649	210906.159370	OUT	T 8882
+1791078687.998886	210906.193609	ERR	strata submit: stage window T=1 pos0=129224 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 6761.77 ms
+1791078688.035635	210906.230357	ERR	strata submit: stage window T=1 pos0=129224 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 3533.54 ms
+1791078688.037223	210906.231945	OUT	T 1056
+1791078688.070644	210906.265366	ERR	strata submit: stage window T=1 pos0=129225 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 6811.31 ms
+1791078688.107519	210906.302242	ERR	strata submit: stage window T=1 pos0=129225 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 3559.57 ms
+1791078688.109180	210906.303901	OUT	T 4221
+1791078688.143329	210906.338051	ERR	strata submit: stage window T=1 pos0=129226 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 6860.82 ms
+1791078688.180000	210906.374721	ERR	strata submit: stage window T=1 pos0=129226 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 3585.63 ms
+1791078688.181829	210906.376551	OUT	T 364
+1791078688.215828	210906.410550	ERR	strata submit: stage window T=1 pos0=129227 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 6910.39 ms
+1791078688.252445	210906.447166	ERR	strata submit: stage window T=1 pos0=129227 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 3611.72 ms
+1791078688.254272	210906.448994	OUT	T 16905
+1791078688.320782	210906.515504	ERR	strata submit: stage window T=3 pos0=129228 layers 0..22 (23): submitted 2100 (kernel 1658 memset 0 memcpy 435 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 6979.69 ms
+1791078688.383484	210906.578207	ERR	strata submit: stage window T=3 pos0=129228 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 3659.32 ms
+1791078688.385114	210906.579836	OUT	T 13224
+1791078688.452997	210906.647720	ERR	strata submit: stage window T=3 pos0=129229 layers 0..22 (23): submitted 2100 (kernel 1658 memset 0 memcpy 435 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 7071.21 ms
+1791078688.515616	210906.710339	ERR	strata submit: stage window T=3 pos0=129229 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 3706.76 ms
+1791078688.517604	210906.712326	OUT	T 13
+1791078688.517619	210906.712340	OUT	T 32645
+1791078688.517624	210906.712346	OUT	T 3655
+1791078688.567672	210906.762394	ERR	strata submit: stage window T=2 pos0=129232 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 7150.88 ms
+1791078688.615610	210906.810332	ERR	strata submit: stage window T=2 pos0=129232 layers 23..47 (25): submitted 2213 (kernel 1798 memset 0 memcpy 414 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 88.5 per layer; GPU-reach wait 3742.25 ms
+1791078688.617621	210906.812342	OUT	T 471
+1791078688.617633	210906.812354	OUT	T 424
+1791078688.667165	210906.861887	ERR	strata submit: stage window T=2 pos0=129234 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 7218.58 ms
+1791078688.714614	210906.909336	ERR	strata submit: stage window T=2 pos0=129234 layers 23..47 (25): submitted 2213 (kernel 1798 memset 0 memcpy 414 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 88.5 per layer; GPU-reach wait 3777.35 ms
+1791078688.716268	210906.910990	OUT	T 577
+1791078688.781507	210906.976230	ERR	strata submit: stage window T=3 pos0=129235 layers 0..22 (23): submitted 2100 (kernel 1658 memset 0 memcpy 435 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 7295.31 ms
+1791078688.842037	210907.036760	ERR	strata submit: stage window T=3 pos0=129235 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 3822.73 ms
+1791078688.843986	210907.038708	OUT	T 4603
+1791078688.843998	210907.038719	OUT	T 310
+1791078688.844002	210907.038723	OUT	T 1510
+1791078688.919338	210907.114061	ERR	strata submit: stage window T=4 pos0=129238 layers 0..22 (23): submitted 2253 (kernel 1682 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 7390.94 ms
+1791078688.991690	210907.186413	ERR	strata submit: stage window T=4 pos0=129238 layers 23..47 (25): submitted 2613 (kernel 1844 memset 0 memcpy 750 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 104.5 per layer; GPU-reach wait 3877.96 ms
+1791078688.993745	210907.188467	OUT	T 10272
+1791078688.993757	210907.188478	OUT	T 51
+1791078688.993762	210907.188483	OUT	T 348
+1791078688.993765	210907.188486	OUT	T 580
+1791078689.066332	210907.261055	ERR	strata submit: stage window T=4 pos0=129242 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 7498.85 ms
+1791078689.140082	210907.334805	ERR	strata submit: stage window T=4 pos0=129242 layers 23..47 (25): submitted 2614 (kernel 1844 memset 0 memcpy 750 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 3934.43 ms
+1791078689.141901	210907.336623	OUT	T 63
+1791078689.141913	210907.336635	OUT	T 864
+1791078689.208709	210907.403432	ERR	strata submit: stage window T=3 pos0=129244 layers 0..22 (23): submitted 2100 (kernel 1658 memset 0 memcpy 435 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 91.3 per layer; GPU-reach wait 7597.53 ms
+1791078689.270179	210907.464902	ERR	strata submit: stage window T=3 pos0=129244 layers 23..47 (25): submitted 2410 (kernel 1821 memset 0 memcpy 582 barrier 7 event 0 hostfn 0 graph 0) + recorded 0; 96.4 per layer; GPU-reach wait 3980.79 ms
+1791078689.272110	210907.466831	OUT	T 369
+1791078689.272121	210907.466843	OUT	T 279
+1791078689.272126	210907.466847	OUT	T 1428
+1791078689.307256	210907.501979	ERR	strata submit: stage window T=1 pos0=129247 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 7667.40 ms
+1791078689.343906	210907.538629	ERR	strata submit: stage window T=1 pos0=129247 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 4006.86 ms
+1791078689.345772	210907.540494	OUT	T 3136
+1791078689.395519	210907.590242	ERR	strata submit: stage window T=2 pos0=129248 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 7726.15 ms
+1791078689.443423	210907.638146	ERR	strata submit: stage window T=2 pos0=129248 layers 23..47 (25): submitted 2214 (kernel 1798 memset 0 memcpy 414 barrier 2 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 4042.39 ms
+1791078689.445214	210907.639936	OUT	T 579
+1791078689.445226	210907.639947	OUT	T 1331
+1791078689.479610	210907.674333	ERR	strata submit: stage window T=1 pos0=129250 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 7785.17 ms
+1791078689.516231	210907.710953	ERR	strata submit: stage window T=1 pos0=129250 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 4068.43 ms
+1791078689.517899	210907.712621	OUT	T 13
+1791078689.567651	210907.762373	ERR	strata submit: stage window T=2 pos0=129251 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 7844.03 ms
+1791078689.615357	210907.810079	ERR	strata submit: stage window T=2 pos0=129251 layers 23..47 (25): submitted 2213 (kernel 1798 memset 0 memcpy 414 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 88.5 per layer; GPU-reach wait 4103.75 ms
+1791078689.617478	210907.812200	OUT	T 1921
+1791078689.617490	210907.812211	OUT	T 413
+1791078689.651853	210907.846575	ERR	strata submit: stage window T=1 pos0=129253 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 7902.84 ms
+1791078689.688365	210907.883086	ERR	strata submit: stage window T=1 pos0=129253 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 4129.83 ms
+1791078689.690046	210907.884768	OUT	T 264
+1791078689.738889	210907.933611	ERR	strata submit: stage window T=2 pos0=129254 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 7961.14 ms
+1791078689.786334	210907.981055	ERR	strata submit: stage window T=2 pos0=129254 layers 23..47 (25): submitted 2213 (kernel 1798 memset 0 memcpy 414 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 88.5 per layer; GPU-reach wait 4164.99 ms
+1791078689.788173	210907.982894	OUT	T 2843
+1791078689.788184	210907.982905	OUT	T 1562
+1791078689.838226	210908.032948	ERR	strata submit: stage window T=2 pos0=129256 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 8029.07 ms
+1791078689.886685	210908.081407	ERR	strata submit: stage window T=2 pos0=129256 layers 23..47 (25): submitted 2216 (kernel 1798 memset 0 memcpy 414 barrier 4 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 4201.05 ms
+1791078689.888537	210908.083259	OUT	T 682
+1791078689.888551	210908.083273	OUT	T 264
+1791078689.923095	210908.117817	ERR	strata submit: stage window T=1 pos0=129258 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 8088.62 ms
+1791078689.959604	210908.154325	ERR	strata submit: stage window T=1 pos0=129258 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 4227.12 ms
+1791078689.961416	210908.156138	OUT	T 7875
+1791078689.995447	210908.190170	ERR	strata submit: stage window T=1 pos0=129259 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 8138.20 ms
+1791078690.032557	210908.227280	ERR	strata submit: stage window T=1 pos0=129259 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 4253.63 ms
+1791078690.034221	210908.228943	OUT	T 1510
+1791078690.111551	210908.306273	ERR	strata submit: stage window T=4 pos0=129260 layers 0..22 (23): submitted 2260 (kernel 1682 memset 0 memcpy 556 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 98.3 per layer; GPU-reach wait 8217.09 ms
+1791078690.184802	210908.379525	ERR	strata submit: stage window T=4 pos0=129260 layers 23..47 (25): submitted 2614 (kernel 1844 memset 0 memcpy 750 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 4309.61 ms
+1791078690.187339	210908.382061	OUT	T 74
+1791078690.187354	210908.382075	OUT	T 7561
+1791078690.187360	210908.382081	OUT	T 424
+1791078690.187364	210908.382085	OUT	T 1000
+1791078690.238941	210908.433664	ERR	strata submit: stage window T=2 pos0=129264 layers 0..22 (23): submitted 1949 (kernel 1634 memset 0 memcpy 314 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 84.7 per layer; GPU-reach wait 8304.88 ms
+1791078690.286766	210908.481488	ERR	strata submit: stage window T=2 pos0=129264 layers 23..47 (25): submitted 2215 (kernel 1798 memset 0 memcpy 414 barrier 3 event 0 hostfn 0 graph 0) + recorded 0; 88.6 per layer; GPU-reach wait 4344.90 ms
+1791078690.288724	210908.483446	OUT	T 1144
+1791078690.288736	210908.483457	OUT	T 310
+1791078690.365429	210908.560151	ERR	strata submit: stage window T=4 pos0=129266 layers 0..22 (23): submitted 2257 (kernel 1682 memset 0 memcpy 556 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 8391.64 ms
+1791078690.437932	210908.632654	ERR	strata submit: stage window T=4 pos0=129266 layers 23..47 (25): submitted 2610 (kernel 1844 memset 0 memcpy 750 barrier 16 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 4400.25 ms
+1791078690.440012	210908.634734	OUT	T 20286
+1791078690.440024	210908.634745	OUT	T 1495
+1791078690.440028	210908.634749	OUT	T 13
+1791078690.440031	210908.634753	OUT	T 561
+1791078690.475129	210908.669852	ERR	strata submit: stage window T=1 pos0=129270 layers 0..22 (23): submitted 1804 (kernel 1610 memset 0 memcpy 193 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 78.4 per layer; GPU-reach wait 8470.45 ms
+1791078690.511827	210908.706549	ERR	strata submit: stage window T=1 pos0=129270 layers 23..47 (25): submitted 2022 (kernel 1775 memset 0 memcpy 246 barrier 1 event 0 hostfn 0 graph 0) + recorded 0; 80.9 per layer; GPU-reach wait 4426.30 ms
+1791078690.513345	210908.708066	OUT	T 1716
+1791078690.589394	210908.784117	ERR	strata submit: stage window T=4 pos0=129271 layers 0..22 (23): submitted 2253 (kernel 1682 memset 0 memcpy 556 barrier 15 event 0 hostfn 0 graph 0) + recorded 0; 98.0 per layer; GPU-reach wait 8547.23 ms
+1791078690.661275	210908.855998	ERR	strata submit: stage window T=4 pos0=129271 layers 23..47 (25): submitted 2611 (kernel 1844 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 4481.18 ms
+1791078690.663304	210908.858026	OUT	T 1510
+1791078690.663319	210908.858040	OUT	T 77
+1791078690.738305	210908.933028	ERR	strata submit: stage window T=4 pos0=129273 layers 0..22 (23): submitted 2251 (kernel 1682 memset 0 memcpy 556 barrier 13 event 0 hostfn 0 graph 0) + recorded 0; 97.9 per layer; GPU-reach wait 8651.89 ms
+1791078690.809123	210909.003845	ERR	strata submit: stage window T=4 pos0=129273 layers 23..47 (25): submitted 2608 (kernel 1844 memset 0 memcpy 750 barrier 14 event 0 hostfn 0 graph 0) + recorded 0; 104.3 per layer; GPU-reach wait 4535.03 ms
+1791078690.811246	210909.005967	OUT	T 73555
+1791078690.811260	210909.005981	OUT	T 348
+1791078690.811265	210909.005987	OUT	T 580
+1791078690.811270	210909.005991	OUT	T 835
+1791078690.886911	210909.081634	ERR	strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 2258 (kernel 1682 memset 0 memcpy 556 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 8757.04 ms
+1791078690.960369	210909.155091	ERR	strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2617 (kernel 1844 memset 0 memcpy 750 barrier 23 event 0 hostfn 0 graph 0) + recorded 0; 104.7 per layer; GPU-reach wait 4591.43 ms
+1791078690.962531	210909.157253	OUT	T 580
+1791078690.962558	210909.157279	OUT	T 5786
+1791078690.962563	210909.157284	OUT	DONE 256 129024 372297.2 12952.2 length 143 161 0 132480 132480 0 0 0.0
+1791078690.962573	210909.157295	ERR	strata decode timing: 115 windows, avg T 2.40, 2.23 tokens/window, 112.63 ms/window = verify 100.80 (GPU-reach wait 76.64 + per-layer host 0.85 [plan 0.28 actq 0.16 jobs 0.17 CPU 0.00] + stage 1.24 + tail 9.51) + commit/emit 1.94 + draft 9.89; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.00, PCIe 0.00
+1791078690.962600	210909.157321	ERR	strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 4.48 conv 0.09 ab 0.23 z 2.67 rec 0.36 out-proj 2.43 hc-read1+router 2.55 shared+quant 2.38 waitA 0.12 VRAM hits 7.77 waitB 0.11 PCIe grp 0.38 waitCPU 0.04 copy+combine 0.16 (gap) 0.03   hc0 norm 0.79   hc0 down 0.81   hc0 up 0.72 | QSA layers: q8+kv-idx 0.07 k/v+norm-rope 0.25 kv+idx append 0.56 q+q-idx 1.78 scores+topk 1.97 kv-resolve 0.17 attention 0.63 gate 0.02 out-proj 0.74 hc-read1+router 0.79 shared+quant 0.76 waitA 0.05 VRAM hits 2.30 waitB 0.03 PCIe grp 0.11 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.24   hc0 up 0.21 | total 36.93 ms/window over 115 windows
+1791078690.962612	210909.157333	ERR	strata serve: prompt 129024 tokens = 0 reused + 129024 read in 372297 ms (346.6 tok/s), 256 generated in 12952 ms (19.8 tok/s), drafts accepted 143 of 161, 0 checkpoints
+1791078690.962614	210909.157335	ERR	strata serve: decode expert cache hit rate: 100.0% (132480 hits / 132480 lookups)
+1791078690.962616	210909.157337	ERR	strata serve: expert tiers: GPU 132480 hits this request; since the start RAM 0 blobs, files 0 blobs 119490.0 MB read (the GGUF in place)
+1791078690.962785	210909.157506	ERR	strata serve: KV streaming: 91.56% of 708630 block reads hit VRAM, 240.8 MiB read from RAM
+1791078690.962790	210909.157511	ERR	strata serve: suffix drafts: 6 windows, 20 of 23 drafts accepted
+1791078692.405716	210915.600773	EXIT	0

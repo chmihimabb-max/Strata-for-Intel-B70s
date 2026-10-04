@@ -93,8 +93,29 @@ def main() -> int:
     ap.add_argument("paths", nargs="+")
     ap.add_argument("--window", default="auto", help="auto (largest by counted submissions) or a number")
     ap.add_argument("--all", action="store_true", help="every window in the file, not just the chosen one")
+    ap.add_argument("--brief", action="store_true",
+                    help="one line per file, for the growth table: the chosen window's ms by family")
     ap.add_argument("--top", type=int, default=14)
     o = ap.parse_args()
+
+    if o.brief:
+        print("%-34s %3s %9s %9s %9s %9s %9s %9s %9s" %
+              ("hist.txt", "T", "window_ms", "scores", "topk", "attn", "sel%", "waitflag", "stamp"))
+        for path in o.paths:
+            wins = parse(path)
+            if not wins:
+                print("%-34s  no histogram lines" % path)
+                continue
+            w = max(wins, key=lambda x: sum(c for c, _, _ in wins[x]["rows"]))
+            d = wins[w]
+            tot_us = sum(us for _, us, _ in d["rows"])
+            g = lambda p: sum(us for _, us, n in d["rows"] if base(n).startswith(p))
+            sc, tk, at = g("qsa_block_scores"), g("qsa_block_topk"), g("qsa_decode_attn")
+            wf, st = g("wait_flag"), g("gpu_stamp")
+            print("%-34s %3s %9.2f %9.3f %9.3f %9.3f %8.2f%% %9.3f %9.3f" %
+                  (path, win_T(d["tag"]), tot_us / 1000.0, sc / 1000.0, tk / 1000.0, at / 1000.0,
+                   100.0 * (sc + tk) / tot_us if tot_us else 0.0, wf / 1000.0, st / 1000.0))
+        return 0
 
     for path in o.paths:
         wins = parse(path)

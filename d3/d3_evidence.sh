@@ -11,6 +11,12 @@ OUT=$R/d3/D3-EVIDENCE.txt
   echo "############ 1. the arm table (d3/d3_report.py)"
   /usr/bin/python3 d3/d3_report.py --root "$R/d3/runs" --full
   echo
+  echo "############ 1b. the engine's own window account + P9 stage table per arm (d3/d3_stages.py)"
+  /usr/bin/python3 d3/d3_stages.py "$R/d3/runs"
+  echo
+  echo "############ 1c. the selection's growth, one line per census arm (d3/d3_select.py --brief)"
+  /usr/bin/python3 d3/d3_select.py --brief "$R"/d3/runs/*/hist.txt
+  echo
   echo "############ 2. the census per arm (d3/d3_select.py: per-window device time, the selection, the handshake)"
   for h in "$R"/d3/runs/*/hist.txt; do
     [ -s "$h" ] || continue
