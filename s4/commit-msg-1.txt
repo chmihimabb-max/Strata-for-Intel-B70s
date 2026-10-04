@@ -1,0 +1,33 @@
+S4 (t_30d9ccfb): a split's mid-prompt checkpoint part is copied on ITS stage's device
+
+The served path (serve.server on the two-GPU split, the config of record verbatim) failed a
+32,277-token /v1/chat/completions at the 16,384-token checkpoint with
+
+  strata/sycl: memcpy failed: level_zero backend failed with error: 39 (UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY)
+  strata serve: checkpoint save: conversation snapshot running-state copy: invalid argument
+  strata serve: saving a checkpoint part failed
+  HTTP 400 saving a checkpoint part failed
+
+and the engine exited.  The length sweep brackets it exactly at the engine's own mid-prompt
+checkpoint cadence: 16,352 prompt tokens (4,096 / 16,052 / 16,352 all pass, in one server
+lifetime) pass and 16,452 fails at the chunk that ends at 16,384 - which is
+`--prompt-cache-every`'s default (generate.cpp:396) reached through
+`pp_next_check = resume + o.prompt_cache_every` (generate.cpp:5056).  P6's four served requests
+passed because they were 26-45 tokens; P10's driver arms passed at 32,256 tokens because every
+one of them passes `--prompt-cache 0 --prompt-cache-every 0` (p10/p10_run_arm.sh:63,
+d1/d1_run_arm.sh:84) and so never takes one.
+
+The save is a layer split's per-stage part (`on_stage_chunk`), and a split's later stages run on
+a helper thread (prefill's hand-off `std::async`, src/prefill/prefill.cpp:2054) whose current
+device is not the stage's.  `conversation_checkpoint_save` copies the stage's running state to
+the host through the default queue of the CURRENT device (src/core/conversation_state.cpp:32-39
+-> the shim's memcpy_impl, include/strata/sycl_compat/cuda_runtime.h:896), and in a split the two
+cards share ONE context (cuda_runtime.h:344-346), so the device-1 pointer is a valid USM pointer
+for the device-0 queue and the copy is issued ACROSS the pair - which has no peer path (S1).  The
+turn-boundary save 60 lines above already asserts each stage's device around exactly this copy
+(generate.cpp:4397-4402); the mid-prompt one did not.  `i == 0 ? 0 : stages[i - 1]->dev` is the
+same stage-device convention as generate.cpp:2339 and :4071.
+
+Not a config change: the fix is the copy, so the config of record keeps its checkpoints (prefix
+reuse between turns, and the parking refusal at generate.cpp:1269 is a different path that stays
+off because `--conversation-cache-mib` is 0).

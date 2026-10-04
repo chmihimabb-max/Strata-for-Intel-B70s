@@ -4461,6 +4461,15 @@ int main(int argc, char** argv) {
                 stage_sp.on_stage_chunk = [&, i](int64_t done, std::string& e) -> bool {
                     if (o.prompt_cache <= 0 || o.prompt_cache_every <= 0 || done < part_next[i]) return true;
                     part_next[i] = done + o.prompt_cache_every;
+                    // This stage's running state lives on ONE device (`stage_ss`), and the copy that saves it is
+                    // the CALLING thread's copy - a split's later stages run on a helper thread (prefill: the
+                    // hand-off `std::async`), whose current device is not the stage's.  Without this the save is a
+                    // cross-device copy on this pair, which has no peer path: it comes back as
+                    // `UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY` and the request dies mid-prompt (measured through
+                    // serve.server: a 16,452-token request, at the 16,384-token checkpoint).  The turn-boundary
+                    // save in `checkpoint_at` does the same for each stage, and for the head the current device
+                    // already is the head's (0) - 4,455 lines up.
+                    const strata::core::OnDevice on(i == 0 ? 0 : stages[i - 1]->dev);
                     ConvCheckpoint part;   // this stage's state at `done` (its stream is synchronized)
                     part.ids.assign(cur.begin(), cur.begin() + done);
                     if (!checkpoint_save(part, stage_ss, g)) { e = "saving a checkpoint part failed"; return false; }

@@ -71,8 +71,11 @@ echo "server pid ${SPID:-unknown}; server log $SL; engine log $ENGLOG" >> "$D/lo
 
 E_START=$(date +%s)
 READY=0
+# ready = /v1/models answers with a model list AND the server's own "ready:" banner is in its log (the banner is
+# printed when the engine reports loaded; /v1/models alone can answer earlier, as p6_wait.sh's plain '"object"'
+# test would accept)
 for i in $(seq 1 900); do
-  if curl -s -m 5 "http://127.0.0.1:$PORT/v1/models" | grep -q '"loaded": true'; then READY=1; break; fi
+  if curl -s -m 5 "http://127.0.0.1:$PORT/v1/models" | grep -q '"object"' && grep -q '^ready: http' "$SL"; then READY=1; break; fi
   pgrep -f "$SRE" >/dev/null || break
   sleep 1
 done
