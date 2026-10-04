@@ -1,0 +1,11 @@
+D3 (t_87aa2963): the arm rig, retargeted at d3/runs and at the config of record as D2 landed it
+
+d3/d3_run_arm.sh is D2's arm runner (one engine, both B70s, the ask fed from a FIFO after "everything
+loaded", md5 + device check + every engine line in the arm's own log) with three changes: the runs root is
+d3/runs, the default --spec-min-p is 0.7 (the config of record since D2 landed it - the D2 rig still defaulted
+to 0.5), and the A/B switch clear list now also unsets STRATA_SCORES_MULTI, STRATA_TOPK_OLD,
+STRATA_TEST_VERIFY_STALL, STRATA_MMVQ_MULTI_GENERIC and the two P1b drain knobs, so no leaked switch can
+silently measure another path.  d3/d3_chain.sh holds the arm blocks (A: the selection's census + P9 stage
+stamps at three depths on the closure path; B: the window-level sharing's price; C: the coarsest exact sync
+the engine has, E-6's device plan).  d3/d3_stall.sh is the #267 stall rig (P1b's shape, STRATA_TEST_VERIFY_STALL
+withholding the last layer's flag in window N) and d3/d3_drive.py is D2's FIFO driver, copied.
