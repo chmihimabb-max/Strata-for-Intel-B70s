@@ -1,0 +1,26 @@
+# epoch	monotonic	stream	line
+1791074909.776100	207127.970822	ERR	strata generate: layer split across 2 GPUs: CUDA0, then CUDA1 (split auto)
+1791074909.912790	207128.107512	ERR	strata generate: PCIe probe: 26.5 GB/s host->device -> pcie_frac 0.55 (default 0.55)
+1791074909.912803	207128.107524	ERR	strata generate: this CPU has no AVX-512: the expert kernels run on AVX-2 (multi-token for the i-quant gate/up rows)
+1791074910.000366	207128.195089	ERR	strata generate: native pack: /run/media/michael/2208B12208B0F63F/strata-iq3s/pack experts (largest blob 2.66 MB), token embedding IQ4_XS in mapped host memory (322 MiB)
+1791074910.248472	207128.443194	ERR	strata generate: 1466 MiB of weights loaded from /run/media/michael/2208B12208B0F63F/strata-iq3s/pack (302 canonical tensors skipped: served natively)
+1791074910.897630	207129.092353	ERR	strata generate: 300 native projection matrices, 2018.88 MiB of weights
+1791074910.939466	207129.134188	ERR	strata generate: the SSD is kept awake while rows are read: one page of the table after 100 ms without a read, until 60 s after the last request (STRATA_SSD_KEEPALIVE=0 turns it off)
+1791074912.279254	207130.473977	ERR	strata generate: layer split: CUDA1 PCIe probe 13.4 GB/s -> pcie_frac 0.28
+1791074912.279270	207130.473992	ERR	strata generate: layer split: CUDA1 holds its weights; 28.34 GiB free (its session follows the split search)
+1791074912.279408	207130.474129	ERR	strata generate: profile /home/michael/strata-xpu/strata/data/expert-profile.bin: 24576 ranked pairs, built for 24576 slots
+1791074912.279512	207130.474233	ERR	strata generate: layer split auto: CUDA0 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.83 GiB free before its session carve
+1791074912.279515	207130.474236	ERR	strata generate: layer split auto: CUDA1 256 SMs at 1.80 GHz -> 0.16 ms per layer, 26.59 GiB free before its session carve
+1791074912.281702	207130.476423	ERR	strata generate: layer split auto: K=23 - predicted 7.6 ms per decode window; the caches hold 24576 of 24576 profiled pairs (~100.0% of the routed mass)
+1791074912.300935	207130.495657	ERR	strata generate: PLE on, table 320001536 rows of /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf
+1791074912.486071	207130.680793	ERR	strata generate: layer split: CUDA1 holds its weights, session [23, 48) and the head; 27.53 GiB free
+1791074912.890667	207131.085390	ERR	strata mtp: draft layer loaded, 839 MiB of VRAM (experts 675, dense 111), files read in 0.40 s (1942 MiB/s)
+1791074912.890686	207131.085407	ERR	strata generate: GPU 0: Intel(R) Graphics [0xe223], compute capability 12.0
+1791074912.897791	207131.092512	ERR	strata generate: experts via mmap (--mmap-experts; the GGUF shards in place, no experts.bin)
+1791074912.903262	207131.097984	ERR	strata generate: expert cache auto: 27.26 GiB free, 700 MiB reserved (+0 MiB for the draft head) -> 10716 slots
+1791074913.100296	207131.295018	ERR	strata generate: expert cache 11776 slots, 21.20 GiB of VRAM; policy is
+1791074913.100312	207131.295034	ERR	strata generate: the GPU computes the experts in the cache; it rounds differently from the CPU,
+1791074913.100314	207131.295036	ERR	                 so a reply can differ slightly from a run without the cache (same quality:
+1791074913.100316	207131.295037	ERR	                 bench/results/2026-09-27-cache-parity).
+1791074913.100317	207131.295039	ERR	                 PROFILE, ranked by routing frequency, no eviction.
+1791074920.653815	207138.848538	ERR	strata generate: pre-filled 11776 of 11776 slots from the profile; slot 0 verified

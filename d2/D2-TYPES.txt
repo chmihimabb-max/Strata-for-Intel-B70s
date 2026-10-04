@@ -1,0 +1,693 @@
+# D2 tensor census -- Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf
+# gguf tensors: 1223
+
+## GLOBAL output.weight   (1 tensors)
+   Q6_K x1
+
+## GLOBAL output_hc_down.weight   (1 tensors)
+   BF16 x1
+
+## GLOBAL output_hc_norm.weight   (1 tensors)
+   F32 x1
+
+## GLOBAL output_hc_up.weight   (1 tensors)
+   BF16 x1
+
+## GLOBAL token_embd.weight   (1 tensors)
+   IQ4_XS x1
+
+## NATIVE-DENSE attn_gate.weight   (36 tensors)
+   IQ4_XS x8  Q4_K x10  Q5_K x4  Q6_K x14
+   blk.0.attn_gate.weight                               Q4_K  shape=[2560, 6144]
+   blk.1.attn_gate.weight                               Q6_K  shape=[2560, 6144]
+   blk.10.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.12.attn_gate.weight                              IQ4_XS  shape=[2560, 6144]
+   blk.13.attn_gate.weight                              Q4_K  shape=[2560, 6144]
+   blk.14.attn_gate.weight                              Q5_K  shape=[2560, 6144]
+   blk.16.attn_gate.weight                              IQ4_XS  shape=[2560, 6144]
+   blk.17.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.18.attn_gate.weight                              IQ4_XS  shape=[2560, 6144]
+   blk.2.attn_gate.weight                               IQ4_XS  shape=[2560, 6144]
+   blk.20.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.21.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.22.attn_gate.weight                              Q4_K  shape=[2560, 6144]
+   blk.24.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.25.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.26.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.28.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.29.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.30.attn_gate.weight                              Q4_K  shape=[2560, 6144]
+   blk.32.attn_gate.weight                              Q5_K  shape=[2560, 6144]
+   blk.33.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.34.attn_gate.weight                              IQ4_XS  shape=[2560, 6144]
+   blk.36.attn_gate.weight                              Q4_K  shape=[2560, 6144]
+   blk.37.attn_gate.weight                              Q4_K  shape=[2560, 6144]
+   blk.38.attn_gate.weight                              Q5_K  shape=[2560, 6144]
+   blk.4.attn_gate.weight                               Q6_K  shape=[2560, 6144]
+   blk.40.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.41.attn_gate.weight                              Q4_K  shape=[2560, 6144]
+   blk.42.attn_gate.weight                              IQ4_XS  shape=[2560, 6144]
+   blk.44.attn_gate.weight                              Q4_K  shape=[2560, 6144]
+   blk.45.attn_gate.weight                              Q6_K  shape=[2560, 6144]
+   blk.46.attn_gate.weight                              Q5_K  shape=[2560, 6144]
+   blk.5.attn_gate.weight                               Q4_K  shape=[2560, 6144]
+   blk.6.attn_gate.weight                               IQ4_XS  shape=[2560, 6144]
+   blk.8.attn_gate.weight                               IQ4_XS  shape=[2560, 6144]
+   blk.9.attn_gate.weight                               Q4_K  shape=[2560, 6144]
+
+## NATIVE-DENSE attn_qkv.weight   (36 tensors)
+   IQ4_XS x2  Q4_K x2  Q5_K x10  Q6_K x22
+   blk.0.attn_qkv.weight                                Q6_K  shape=[2560, 10240]
+   blk.1.attn_qkv.weight                                Q5_K  shape=[2560, 10240]
+   blk.10.attn_qkv.weight                               Q5_K  shape=[2560, 10240]
+   blk.12.attn_qkv.weight                               Q5_K  shape=[2560, 10240]
+   blk.13.attn_qkv.weight                               Q4_K  shape=[2560, 10240]
+   blk.14.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.16.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.17.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.18.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.2.attn_qkv.weight                                Q6_K  shape=[2560, 10240]
+   blk.20.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.21.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.22.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.24.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.25.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.26.attn_qkv.weight                               Q5_K  shape=[2560, 10240]
+   blk.28.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.29.attn_qkv.weight                               Q5_K  shape=[2560, 10240]
+   blk.30.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.32.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.33.attn_qkv.weight                               IQ4_XS  shape=[2560, 10240]
+   blk.34.attn_qkv.weight                               Q5_K  shape=[2560, 10240]
+   blk.36.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.37.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.38.attn_qkv.weight                               Q5_K  shape=[2560, 10240]
+   blk.4.attn_qkv.weight                                Q6_K  shape=[2560, 10240]
+   blk.40.attn_qkv.weight                               Q6_K  shape=[2560, 10240]
+   blk.41.attn_qkv.weight                               Q4_K  shape=[2560, 10240]
+   blk.42.attn_qkv.weight                               Q5_K  shape=[2560, 10240]
+   blk.44.attn_qkv.weight                               Q5_K  shape=[2560, 10240]
+   blk.45.attn_qkv.weight                               IQ4_XS  shape=[2560, 10240]
+   blk.46.attn_qkv.weight                               Q5_K  shape=[2560, 10240]
+   blk.5.attn_qkv.weight                                Q6_K  shape=[2560, 10240]
+   blk.6.attn_qkv.weight                                Q6_K  shape=[2560, 10240]
+   blk.8.attn_qkv.weight                                Q6_K  shape=[2560, 10240]
+   blk.9.attn_qkv.weight                                Q6_K  shape=[2560, 10240]
+
+## OTHER blk.* ffn_down_exps.weight   (48 tensors)
+   IQ4_NL x39  Q2_0 x9
+   blk.0.ffn_down_exps.weight                           IQ4_NL  shape=[640, 2560, 512]
+   blk.1.ffn_down_exps.weight                           Q2_0  shape=[640, 2560, 512]
+   blk.10.ffn_down_exps.weight                          Q2_0  shape=[640, 2560, 512]
+   blk.11.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.12.ffn_down_exps.weight                          Q2_0  shape=[640, 2560, 512]
+   blk.13.ffn_down_exps.weight                          Q2_0  shape=[640, 2560, 512]
+   blk.14.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.15.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.16.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.17.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.18.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.19.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.2.ffn_down_exps.weight                           IQ4_NL  shape=[640, 2560, 512]
+   blk.20.ffn_down_exps.weight                          Q2_0  shape=[640, 2560, 512]
+   blk.21.ffn_down_exps.weight                          Q2_0  shape=[640, 2560, 512]
+   blk.22.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.23.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.24.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.25.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.26.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.27.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.28.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.29.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.3.ffn_down_exps.weight                           IQ4_NL  shape=[640, 2560, 512]
+   blk.30.ffn_down_exps.weight                          Q2_0  shape=[640, 2560, 512]
+   blk.31.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.32.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.33.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.34.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.35.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.36.ffn_down_exps.weight                          Q2_0  shape=[640, 2560, 512]
+   blk.37.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.38.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.39.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.4.ffn_down_exps.weight                           IQ4_NL  shape=[640, 2560, 512]
+   blk.40.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.41.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.42.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.43.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.44.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.45.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.46.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.47.ffn_down_exps.weight                          IQ4_NL  shape=[640, 2560, 512]
+   blk.5.ffn_down_exps.weight                           IQ4_NL  shape=[640, 2560, 512]
+   blk.6.ffn_down_exps.weight                           IQ4_NL  shape=[640, 2560, 512]
+   blk.7.ffn_down_exps.weight                           IQ4_NL  shape=[640, 2560, 512]
+   blk.8.ffn_down_exps.weight                           Q2_0  shape=[640, 2560, 512]
+   blk.9.ffn_down_exps.weight                           IQ4_NL  shape=[640, 2560, 512]
+
+## NATIVE-DENSE ffn_down_shexp.weight   (48 tensors)
+   IQ4_NL x47  Q8_0 x1
+   blk.0.ffn_down_shexp.weight                          IQ4_NL  shape=[640, 2560]
+   blk.1.ffn_down_shexp.weight                          IQ4_NL  shape=[640, 2560]
+   blk.10.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.11.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.12.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.13.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.14.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.15.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.16.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.17.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.18.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.19.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.2.ffn_down_shexp.weight                          IQ4_NL  shape=[640, 2560]
+   blk.20.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.21.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.22.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.23.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.24.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.25.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.26.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.27.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.28.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.29.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.3.ffn_down_shexp.weight                          IQ4_NL  shape=[640, 2560]
+   blk.30.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.31.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.32.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.33.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.34.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.35.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.36.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.37.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.38.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.39.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.4.ffn_down_shexp.weight                          IQ4_NL  shape=[640, 2560]
+   blk.40.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.41.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.42.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.43.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.44.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.45.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.46.ffn_down_shexp.weight                         IQ4_NL  shape=[640, 2560]
+   blk.47.ffn_down_shexp.weight                         Q8_0  shape=[640, 2560]
+   blk.5.ffn_down_shexp.weight                          IQ4_NL  shape=[640, 2560]
+   blk.6.ffn_down_shexp.weight                          IQ4_NL  shape=[640, 2560]
+   blk.7.ffn_down_shexp.weight                          IQ4_NL  shape=[640, 2560]
+   blk.8.ffn_down_shexp.weight                          IQ4_NL  shape=[640, 2560]
+   blk.9.ffn_down_shexp.weight                          IQ4_NL  shape=[640, 2560]
+
+## OTHER blk.* ffn_gate_exps.weight   (48 tensors)
+   IQ2_S x20  IQ3_S x10  IQ3_XXS x17  IQ4_XS x1
+   blk.0.ffn_gate_exps.weight                           IQ3_XXS  shape=[2560, 640, 512]
+   blk.1.ffn_gate_exps.weight                           IQ2_S  shape=[2560, 640, 512]
+   blk.10.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.11.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.12.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.13.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.14.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.15.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.16.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.17.ffn_gate_exps.weight                          IQ3_S  shape=[2560, 640, 512]
+   blk.18.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.19.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.2.ffn_gate_exps.weight                           IQ2_S  shape=[2560, 640, 512]
+   blk.20.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.21.ffn_gate_exps.weight                          IQ3_S  shape=[2560, 640, 512]
+   blk.22.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.23.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.24.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.25.ffn_gate_exps.weight                          IQ3_S  shape=[2560, 640, 512]
+   blk.26.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.27.ffn_gate_exps.weight                          IQ3_S  shape=[2560, 640, 512]
+   blk.28.ffn_gate_exps.weight                          IQ3_S  shape=[2560, 640, 512]
+   blk.29.ffn_gate_exps.weight                          IQ3_S  shape=[2560, 640, 512]
+   blk.3.ffn_gate_exps.weight                           IQ2_S  shape=[2560, 640, 512]
+   blk.30.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.31.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.32.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.33.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.34.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.35.ffn_gate_exps.weight                          IQ3_S  shape=[2560, 640, 512]
+   blk.36.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.37.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.38.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.39.ffn_gate_exps.weight                          IQ2_S  shape=[2560, 640, 512]
+   blk.4.ffn_gate_exps.weight                           IQ2_S  shape=[2560, 640, 512]
+   blk.40.ffn_gate_exps.weight                          IQ3_S  shape=[2560, 640, 512]
+   blk.41.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.42.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.43.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.44.ffn_gate_exps.weight                          IQ3_S  shape=[2560, 640, 512]
+   blk.45.ffn_gate_exps.weight                          IQ3_S  shape=[2560, 640, 512]
+   blk.46.ffn_gate_exps.weight                          IQ3_XXS  shape=[2560, 640, 512]
+   blk.47.ffn_gate_exps.weight                          IQ4_XS  shape=[2560, 640, 512]
+   blk.5.ffn_gate_exps.weight                           IQ2_S  shape=[2560, 640, 512]
+   blk.6.ffn_gate_exps.weight                           IQ2_S  shape=[2560, 640, 512]
+   blk.7.ffn_gate_exps.weight                           IQ3_XXS  shape=[2560, 640, 512]
+   blk.8.ffn_gate_exps.weight                           IQ2_S  shape=[2560, 640, 512]
+   blk.9.ffn_gate_exps.weight                           IQ2_S  shape=[2560, 640, 512]
+
+## OTHER blk.* ffn_gate_inp.weight   (48 tensors)
+   BF16 x48
+
+## OTHER blk.* ffn_gate_inp_shexp.weight   (48 tensors)
+   BF16 x48
+
+## NATIVE-DENSE ffn_gate_shexp.weight   (48 tensors)
+   IQ4_XS x15  Q4_K x16  Q5_K x4  Q6_K x13
+   blk.0.ffn_gate_shexp.weight                          Q4_K  shape=[2560, 640]
+   blk.1.ffn_gate_shexp.weight                          IQ4_XS  shape=[2560, 640]
+   blk.10.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.11.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.12.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.13.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.14.ffn_gate_shexp.weight                         IQ4_XS  shape=[2560, 640]
+   blk.15.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.16.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.17.ffn_gate_shexp.weight                         IQ4_XS  shape=[2560, 640]
+   blk.18.ffn_gate_shexp.weight                         Q5_K  shape=[2560, 640]
+   blk.19.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.2.ffn_gate_shexp.weight                          Q4_K  shape=[2560, 640]
+   blk.20.ffn_gate_shexp.weight                         IQ4_XS  shape=[2560, 640]
+   blk.21.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.22.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.23.ffn_gate_shexp.weight                         Q5_K  shape=[2560, 640]
+   blk.24.ffn_gate_shexp.weight                         IQ4_XS  shape=[2560, 640]
+   blk.25.ffn_gate_shexp.weight                         IQ4_XS  shape=[2560, 640]
+   blk.26.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.27.ffn_gate_shexp.weight                         IQ4_XS  shape=[2560, 640]
+   blk.28.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.29.ffn_gate_shexp.weight                         Q5_K  shape=[2560, 640]
+   blk.3.ffn_gate_shexp.weight                          IQ4_XS  shape=[2560, 640]
+   blk.30.ffn_gate_shexp.weight                         IQ4_XS  shape=[2560, 640]
+   blk.31.ffn_gate_shexp.weight                         IQ4_XS  shape=[2560, 640]
+   blk.32.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.33.ffn_gate_shexp.weight                         IQ4_XS  shape=[2560, 640]
+   blk.34.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.35.ffn_gate_shexp.weight                         IQ4_XS  shape=[2560, 640]
+   blk.36.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.37.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.38.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.39.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.4.ffn_gate_shexp.weight                          Q6_K  shape=[2560, 640]
+   blk.40.ffn_gate_shexp.weight                         Q5_K  shape=[2560, 640]
+   blk.41.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.42.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.43.ffn_gate_shexp.weight                         Q6_K  shape=[2560, 640]
+   blk.44.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.45.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.46.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.47.ffn_gate_shexp.weight                         Q4_K  shape=[2560, 640]
+   blk.5.ffn_gate_shexp.weight                          IQ4_XS  shape=[2560, 640]
+   blk.6.ffn_gate_shexp.weight                          Q6_K  shape=[2560, 640]
+   blk.7.ffn_gate_shexp.weight                          IQ4_XS  shape=[2560, 640]
+   blk.8.ffn_gate_shexp.weight                          IQ4_XS  shape=[2560, 640]
+   blk.9.ffn_gate_shexp.weight                          Q4_K  shape=[2560, 640]
+
+## OTHER blk.* ffn_up_exps.weight   (48 tensors)
+   IQ2_S x20  IQ3_S x10  IQ3_XXS x17  IQ4_XS x1
+   blk.0.ffn_up_exps.weight                             IQ3_XXS  shape=[2560, 640, 512]
+   blk.1.ffn_up_exps.weight                             IQ2_S  shape=[2560, 640, 512]
+   blk.10.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.11.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.12.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.13.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.14.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.15.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.16.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.17.ffn_up_exps.weight                            IQ3_S  shape=[2560, 640, 512]
+   blk.18.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.19.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.2.ffn_up_exps.weight                             IQ2_S  shape=[2560, 640, 512]
+   blk.20.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.21.ffn_up_exps.weight                            IQ3_S  shape=[2560, 640, 512]
+   blk.22.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.23.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.24.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.25.ffn_up_exps.weight                            IQ3_S  shape=[2560, 640, 512]
+   blk.26.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.27.ffn_up_exps.weight                            IQ3_S  shape=[2560, 640, 512]
+   blk.28.ffn_up_exps.weight                            IQ3_S  shape=[2560, 640, 512]
+   blk.29.ffn_up_exps.weight                            IQ3_S  shape=[2560, 640, 512]
+   blk.3.ffn_up_exps.weight                             IQ2_S  shape=[2560, 640, 512]
+   blk.30.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.31.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.32.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.33.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.34.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.35.ffn_up_exps.weight                            IQ3_S  shape=[2560, 640, 512]
+   blk.36.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.37.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.38.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.39.ffn_up_exps.weight                            IQ2_S  shape=[2560, 640, 512]
+   blk.4.ffn_up_exps.weight                             IQ2_S  shape=[2560, 640, 512]
+   blk.40.ffn_up_exps.weight                            IQ3_S  shape=[2560, 640, 512]
+   blk.41.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.42.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.43.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.44.ffn_up_exps.weight                            IQ3_S  shape=[2560, 640, 512]
+   blk.45.ffn_up_exps.weight                            IQ3_S  shape=[2560, 640, 512]
+   blk.46.ffn_up_exps.weight                            IQ3_XXS  shape=[2560, 640, 512]
+   blk.47.ffn_up_exps.weight                            IQ4_XS  shape=[2560, 640, 512]
+   blk.5.ffn_up_exps.weight                             IQ2_S  shape=[2560, 640, 512]
+   blk.6.ffn_up_exps.weight                             IQ2_S  shape=[2560, 640, 512]
+   blk.7.ffn_up_exps.weight                             IQ3_XXS  shape=[2560, 640, 512]
+   blk.8.ffn_up_exps.weight                             IQ2_S  shape=[2560, 640, 512]
+   blk.9.ffn_up_exps.weight                             IQ2_S  shape=[2560, 640, 512]
+
+## NATIVE-DENSE ffn_up_shexp.weight   (48 tensors)
+   IQ4_XS x13  Q4_K x14  Q5_K x8  Q6_K x13
+   blk.0.ffn_up_shexp.weight                            IQ4_XS  shape=[2560, 640]
+   blk.1.ffn_up_shexp.weight                            Q4_K  shape=[2560, 640]
+   blk.10.ffn_up_shexp.weight                           Q4_K  shape=[2560, 640]
+   blk.11.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.12.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.13.ffn_up_shexp.weight                           IQ4_XS  shape=[2560, 640]
+   blk.14.ffn_up_shexp.weight                           IQ4_XS  shape=[2560, 640]
+   blk.15.ffn_up_shexp.weight                           IQ4_XS  shape=[2560, 640]
+   blk.16.ffn_up_shexp.weight                           Q4_K  shape=[2560, 640]
+   blk.17.ffn_up_shexp.weight                           Q4_K  shape=[2560, 640]
+   blk.18.ffn_up_shexp.weight                           Q5_K  shape=[2560, 640]
+   blk.19.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.2.ffn_up_shexp.weight                            Q6_K  shape=[2560, 640]
+   blk.20.ffn_up_shexp.weight                           Q4_K  shape=[2560, 640]
+   blk.21.ffn_up_shexp.weight                           IQ4_XS  shape=[2560, 640]
+   blk.22.ffn_up_shexp.weight                           IQ4_XS  shape=[2560, 640]
+   blk.23.ffn_up_shexp.weight                           Q5_K  shape=[2560, 640]
+   blk.24.ffn_up_shexp.weight                           Q5_K  shape=[2560, 640]
+   blk.25.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.26.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.27.ffn_up_shexp.weight                           IQ4_XS  shape=[2560, 640]
+   blk.28.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.29.ffn_up_shexp.weight                           IQ4_XS  shape=[2560, 640]
+   blk.3.ffn_up_shexp.weight                            Q4_K  shape=[2560, 640]
+   blk.30.ffn_up_shexp.weight                           Q4_K  shape=[2560, 640]
+   blk.31.ffn_up_shexp.weight                           Q5_K  shape=[2560, 640]
+   blk.32.ffn_up_shexp.weight                           Q4_K  shape=[2560, 640]
+   blk.33.ffn_up_shexp.weight                           Q4_K  shape=[2560, 640]
+   blk.34.ffn_up_shexp.weight                           Q5_K  shape=[2560, 640]
+   blk.35.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.36.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.37.ffn_up_shexp.weight                           Q5_K  shape=[2560, 640]
+   blk.38.ffn_up_shexp.weight                           IQ4_XS  shape=[2560, 640]
+   blk.39.ffn_up_shexp.weight                           Q4_K  shape=[2560, 640]
+   blk.4.ffn_up_shexp.weight                            Q5_K  shape=[2560, 640]
+   blk.40.ffn_up_shexp.weight                           IQ4_XS  shape=[2560, 640]
+   blk.41.ffn_up_shexp.weight                           Q4_K  shape=[2560, 640]
+   blk.42.ffn_up_shexp.weight                           IQ4_XS  shape=[2560, 640]
+   blk.43.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.44.ffn_up_shexp.weight                           Q4_K  shape=[2560, 640]
+   blk.45.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.46.ffn_up_shexp.weight                           Q6_K  shape=[2560, 640]
+   blk.47.ffn_up_shexp.weight                           Q5_K  shape=[2560, 640]
+   blk.5.ffn_up_shexp.weight                            Q6_K  shape=[2560, 640]
+   blk.6.ffn_up_shexp.weight                            Q4_K  shape=[2560, 640]
+   blk.7.ffn_up_shexp.weight                            IQ4_XS  shape=[2560, 640]
+   blk.8.ffn_up_shexp.weight                            Q4_K  shape=[2560, 640]
+   blk.9.ffn_up_shexp.weight                            IQ4_XS  shape=[2560, 640]
+
+## OTHER blk.* hc_attn_down.weight   (48 tensors)
+   BF16 x48
+
+## OTHER blk.* hc_attn_inject.weight   (48 tensors)
+   BF16 x48
+
+## OTHER blk.* hc_attn_norm.weight   (48 tensors)
+   F32 x48
+
+## OTHER blk.* hc_attn_up.weight   (48 tensors)
+   BF16 x48
+
+## OTHER blk.* hc_ffn_down.weight   (48 tensors)
+   BF16 x48
+
+## OTHER blk.* hc_ffn_inject.weight   (48 tensors)
+   BF16 x48
+
+## OTHER blk.* hc_ffn_norm.weight   (48 tensors)
+   F32 x48
+
+## OTHER blk.* hc_ffn_up.weight   (48 tensors)
+   BF16 x48
+
+## OTHER blk.* 0.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* ssm_alpha.weight   (36 tensors)
+   BF16 x36
+
+## OTHER blk.* ssm_beta.weight   (36 tensors)
+   BF16 x36
+
+## OTHER blk.* ssm_conv1d.weight   (36 tensors)
+   F32 x36
+
+## OTHER blk.* ssm_dt.bias   (36 tensors)
+   F32 x36
+
+## OTHER blk.* ssm_norm.weight   (36 tensors)
+   F32 x36
+
+## NATIVE-DENSE ssm_out.weight   (36 tensors)
+   Q4_K x3  Q5_K x4  Q6_K x29
+   blk.0.ssm_out.weight                                 Q6_K  shape=[6144, 2560]
+   blk.1.ssm_out.weight                                 Q6_K  shape=[6144, 2560]
+   blk.10.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.12.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.13.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.14.ssm_out.weight                                Q4_K  shape=[6144, 2560]
+   blk.16.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.17.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.18.ssm_out.weight                                Q5_K  shape=[6144, 2560]
+   blk.2.ssm_out.weight                                 Q6_K  shape=[6144, 2560]
+   blk.20.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.21.ssm_out.weight                                Q5_K  shape=[6144, 2560]
+   blk.22.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.24.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.25.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.26.ssm_out.weight                                Q5_K  shape=[6144, 2560]
+   blk.28.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.29.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.30.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.32.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.33.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.34.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.36.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.37.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.38.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.4.ssm_out.weight                                 Q6_K  shape=[6144, 2560]
+   blk.40.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.41.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.42.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.44.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.45.ssm_out.weight                                Q6_K  shape=[6144, 2560]
+   blk.46.ssm_out.weight                                Q5_K  shape=[6144, 2560]
+   blk.5.ssm_out.weight                                 Q4_K  shape=[6144, 2560]
+   blk.6.ssm_out.weight                                 Q6_K  shape=[6144, 2560]
+   blk.8.ssm_out.weight                                 Q4_K  shape=[6144, 2560]
+   blk.9.ssm_out.weight                                 Q6_K  shape=[6144, 2560]
+
+## OTHER blk.* ple_conv1d.weight   (1 tensors)
+   F16 x1
+
+## ple_key.weight (RETAINED-IF-NATIVE-PLE)   (1 tensors)
+   BF16 x1
+
+## OTHER blk.* ple_norm_conv.weight   (1 tensors)
+   F32 x1
+
+## OTHER blk.* ple_norm_key.weight   (1 tensors)
+   F32 x1
+
+## OTHER blk.* ple_norm_query.weight   (1 tensors)
+   F32 x1
+
+## OTHER blk.* ple_value.weight   (1 tensors)
+   BF16 x1
+
+## OTHER blk.* 1.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 2.ssm_a   (1 tensors)
+   F32 x1
+
+## NATIVE-DENSE attn_k.weight   (12 tensors)
+   IQ4_XS x1  Q6_K x11
+   blk.11.attn_k.weight                                 Q6_K  shape=[2560, 512]
+   blk.15.attn_k.weight                                 Q6_K  shape=[2560, 512]
+   blk.19.attn_k.weight                                 Q6_K  shape=[2560, 512]
+   blk.23.attn_k.weight                                 Q6_K  shape=[2560, 512]
+   blk.27.attn_k.weight                                 Q6_K  shape=[2560, 512]
+   blk.3.attn_k.weight                                  Q6_K  shape=[2560, 512]
+   blk.31.attn_k.weight                                 Q6_K  shape=[2560, 512]
+   blk.35.attn_k.weight                                 Q6_K  shape=[2560, 512]
+   blk.39.attn_k.weight                                 Q6_K  shape=[2560, 512]
+   blk.43.attn_k.weight                                 Q6_K  shape=[2560, 512]
+   blk.47.attn_k.weight                                 Q6_K  shape=[2560, 512]
+   blk.7.attn_k.weight                                  IQ4_XS  shape=[2560, 512]
+
+## OTHER blk.* attn_k_norm.weight   (12 tensors)
+   F32 x12
+
+## NATIVE-DENSE attn_output.weight   (12 tensors)
+   Q4_K x1  Q6_K x11
+   blk.11.attn_output.weight                            Q6_K  shape=[6144, 2560]
+   blk.15.attn_output.weight                            Q6_K  shape=[6144, 2560]
+   blk.19.attn_output.weight                            Q6_K  shape=[6144, 2560]
+   blk.23.attn_output.weight                            Q6_K  shape=[6144, 2560]
+   blk.27.attn_output.weight                            Q6_K  shape=[6144, 2560]
+   blk.3.attn_output.weight                             Q4_K  shape=[6144, 2560]
+   blk.31.attn_output.weight                            Q6_K  shape=[6144, 2560]
+   blk.35.attn_output.weight                            Q6_K  shape=[6144, 2560]
+   blk.39.attn_output.weight                            Q6_K  shape=[6144, 2560]
+   blk.43.attn_output.weight                            Q6_K  shape=[6144, 2560]
+   blk.47.attn_output.weight                            Q6_K  shape=[6144, 2560]
+   blk.7.attn_output.weight                             Q6_K  shape=[6144, 2560]
+
+## NATIVE-DENSE attn_q.weight   (12 tensors)
+   IQ4_XS x3  Q4_K x1  Q5_K x3  Q6_K x5
+   blk.11.attn_q.weight                                 Q4_K  shape=[2560, 12288]
+   blk.15.attn_q.weight                                 IQ4_XS  shape=[2560, 12288]
+   blk.19.attn_q.weight                                 Q5_K  shape=[2560, 12288]
+   blk.23.attn_q.weight                                 Q5_K  shape=[2560, 12288]
+   blk.27.attn_q.weight                                 Q5_K  shape=[2560, 12288]
+   blk.3.attn_q.weight                                  IQ4_XS  shape=[2560, 12288]
+   blk.31.attn_q.weight                                 Q6_K  shape=[2560, 12288]
+   blk.35.attn_q.weight                                 Q6_K  shape=[2560, 12288]
+   blk.39.attn_q.weight                                 Q6_K  shape=[2560, 12288]
+   blk.43.attn_q.weight                                 Q6_K  shape=[2560, 12288]
+   blk.47.attn_q.weight                                 Q6_K  shape=[2560, 12288]
+   blk.7.attn_q.weight                                  IQ4_XS  shape=[2560, 12288]
+
+## OTHER blk.* attn_q_norm.weight   (12 tensors)
+   F32 x12
+
+## NATIVE-DENSE attn_v.weight   (12 tensors)
+   Q5_K x2  Q6_K x10
+   blk.11.attn_v.weight                                 Q5_K  shape=[2560, 512]
+   blk.15.attn_v.weight                                 Q6_K  shape=[2560, 512]
+   blk.19.attn_v.weight                                 Q5_K  shape=[2560, 512]
+   blk.23.attn_v.weight                                 Q6_K  shape=[2560, 512]
+   blk.27.attn_v.weight                                 Q6_K  shape=[2560, 512]
+   blk.3.attn_v.weight                                  Q6_K  shape=[2560, 512]
+   blk.31.attn_v.weight                                 Q6_K  shape=[2560, 512]
+   blk.35.attn_v.weight                                 Q6_K  shape=[2560, 512]
+   blk.39.attn_v.weight                                 Q6_K  shape=[2560, 512]
+   blk.43.attn_v.weight                                 Q6_K  shape=[2560, 512]
+   blk.47.attn_v.weight                                 Q6_K  shape=[2560, 512]
+   blk.7.attn_v.weight                                  Q6_K  shape=[2560, 512]
+
+## OTHER blk.* k_norm.weight   (12 tensors)
+   F32 x12
+
+## OTHER blk.* k_proj.weight   (12 tensors)
+   BF16 x12
+
+## OTHER blk.* q_norm.weight   (12 tensors)
+   F32 x12
+
+## OTHER blk.* q_proj.weight   (12 tensors)
+   BF16 x12
+
+## OTHER blk.* 4.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 5.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 6.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 8.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 9.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 10.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 12.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 13.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 14.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 16.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 17.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 18.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 20.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 21.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 22.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 24.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 25.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 26.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 28.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 29.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 30.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 32.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 33.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 34.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 36.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 37.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 38.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 40.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 41.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 42.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 44.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 45.ssm_a   (1 tensors)
+   F32 x1
+
+## OTHER blk.* 46.ssm_a   (1 tensors)
+   F32 x1
+
+## ROUTED EXPERTS (pack/native_experts.txt: layer gu_type d_type ...)
+   gu_type x d_type: 18/20 x14  18/42 x3  21/20 x9  21/42 x1  22/20 x15  22/42 x5  23/20 x1
+   per layer: 0:18/20 1:22/42 2:22/20 3:22/20 4:22/20 5:22/20 6:22/20 7:18/20 8:22/42 9:22/20 10:22/42 11:22/20 12:18/42 13:22/42 14:18/20 15:22/20 16:18/20 17:21/20 18:18/20 19:22/20 20:18/42 21:21/42 22:18/20 23:22/20 24:22/20 25:21/20 26:22/20 27:21/20 28:21/20 29:21/20 30:18/42 31:18/20 32:22/20 33:18/20 34:22/20 35:21/20 36:22/42 37:18/20 38:18/20 39:22/20 40:21/20 41:18/20 42:18/20 43:18/20 44:21/20 45:21/20 46:18/20 47:23/20

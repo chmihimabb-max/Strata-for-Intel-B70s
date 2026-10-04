@@ -1,0 +1,16 @@
+D2 (t_0416a0c0): the arm rig, the tensor census, and task 0's first arms
+
+The rig is D1's arm runner retargeted at d2/runs (one engine, the config of record
+verbatim, a FIFO so the ask is fed after "everything loaded"), plus the two chains:
+chain0 = task 0's --spec-min-p 0.5 vs 0.7 re-verification at 4K/32K/128K, chain1 =
+the dispatch A/B arms (batched vs per-token decode GEMV, the three hyper-connection
+read variants, the fused vs per-token mixer read, and the launch-site census).
+
+d2/D2-TYPES.txt is the tensor -> type census the dispatch map is read against: the
+GGUF shard's own types per tensor class, from tools/gguf_reader.py (the same types the
+engine's NativeDense reads), plus the pack's per-layer expert gu/down types.  300
+native dense projections and 48 layers of routed experts, and the type of every one of
+them is now written down rather than assumed.
+
+The binary under every arm is build-sycl/strata (md5 e79b2ad632d37d32786228b660d35b29),
+i.e. the config of record's exe at HEAD; the arms' own logs carry the md5 they ran.

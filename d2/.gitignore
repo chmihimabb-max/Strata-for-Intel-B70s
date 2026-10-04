@@ -1,0 +1,9 @@
+# D2 arm scratch that is either regenerable or pure noise.  The EVIDENCE is log.txt (wall/load/md5/T-line count +
+# md5), err.txt (the engine's own lines: decode timing, submit census, resident numbers), out.txt (the PP/T/DONE
+# lines = the greedy token ids) and timeline.txt (phase stamps).  Run data lives under d2/runs/ because the card
+# asks for the raw output here; the big ones are excluded so a commit stays reviewable.
+runs/*/ask.txt
+runs/*/stdin.fifo
+runs/*/drive.pid
+runs/*/hist.txt
+runs/*/sites.csv
