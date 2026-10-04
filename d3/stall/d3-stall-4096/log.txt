@@ -1,0 +1,47 @@
+D3 stall arm d3-stall-4096   2026-10-03T20:33:52-06:00
+binary: /home/michael/strata-xpu/strata/build-sycl/strata  (2026-10-03 19:22:10.716037687 -0600 35970200 bytes)  md5 e841fd061fec873c2f24e785973a2ebe
+repo: 7690621 D3 (t_87aa2963): the sharing A/B at 4K/32K (-1.0%/-0.2%, ids identical) and the E-6 sync ceiling (+2.9%/+3.3%, ids identical)
+env: STRATA_TEST_VERIFY_STALL=1 STRATA_RELEASE_DRAIN_MS=unset SECOND_ASK=1
+arm: max-new=16 max-context=4096 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt one engine, both cards, layer-split auto, spec-min-p 0.7
+   no engine of ours
+ 
+:: initializing oneAPI environment ...
+   d3_stall.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: d3-stall-4096 /home/michael/strata-xpu/strata/build-sycl/strata 16 4096 1 1
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+engine exited -6
+== exit 250, wall 109s ==
+48:strata serve: no progress for 60 s during a request (verify window: waiting for the GPU to finish the window (flags A/B/M raised) 1) - stopping the engine so the server starts it again (issue #29)
+52:  verify window: 1 tokens at position 3831, host at layer step 23; the GPU rang 23; flags: served 22, plan (A) 23, copies (B) 23; tail beacons 0 0 0 0 0 0 0 0
+57:  verify window: 1 tokens at position 3831, host at layer step 23; the GPU rang 23; flags: served 22, plan (A) 23, copies (B) 23; tail beacons 0 0 0 0 0 0 0 0
+60:verify release: enter (thread 2102035180072210629, budget 5000 ms)
+61:verify release: flag publication 0.078 ms; drain budget 5000 ms
+62:verify release: the GPU finished; drain 3.410 ms, release 3.492 ms (publication 3.491 ms)
+63:strata: released the verify window's GPU waits (#267): the GPU finished in 3 ms
+65:verify release: enter (thread 2102035180072210629, budget 5000 ms)
+66:verify release: flag publication 0.021 ms; drain budget 5000 ms
+68:verify teardown: the window on cs_ was released (#267); it finished (1.063 ms of a 5000 ms budget)
+69:verify release: the GPU finished; drain 3.223 ms, release 3.244 ms (publication 3.244 ms)
+70:strata: released the verify window's GPU waits (#267): the GPU finished in 3 ms
+-- generated T lines: 0 --
+d41d8cd98f00b204e9800998ecf8427e  /home/michael/strata-xpu/strata/d3/stall/d3-stall-4096/tokens.txt
+PP 3831 3832 13615 281.4
+ERR verify: an earlier window never finished on the GPU (#267); restart the engine
+== the engine's own end-of-run lines ==
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata: #267 release pass over live verifier slot 0 (thread 2102035180072210629)
+strata: released the verify window's GPU waits (#267): the GPU finished in 3 ms
+strata: #267 release pass over live verifier slot 1 (thread 2102035180072210629)
+verify teardown: the window on cs_ was released (#267); it finished (1.063 ms of a 5000 ms budget)
+strata: released the verify window's GPU waits (#267): the GPU finished in 3 ms

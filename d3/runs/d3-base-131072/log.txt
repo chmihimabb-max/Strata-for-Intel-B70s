@@ -43,3 +43,22 @@ ask: 559537 B, ids 129024
 == drive pid 1311763; waiting for 'everything loaded' ==
 == loaded=1 after 32s (2026-10-03T20:20:09-06:00) ==
 == ask fed at 2026-10-03T20:20:09-06:00 (epoch_ms 1791080409035) ==
+== the ask finished=1 after 384375 ms (2026-10-03T20:26:33-06:00) ==
+engine exited 0 at epoch 1791080794.333969
+== engine exit 0, wall 422 s (ask wall 384375 ms) ==
+== the graph path's own banner ==
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+== the engine's numbers ==
+strata serve: prompt chunk auto: 8192 tokens
+strata decode timing: 118 windows, avg T 2.37, 2.17 tokens/window, 102.97 ms/window = verify 91.30 (GPU-reach wait 78.89 + per-layer host 0.82 [plan 0.27 actq 0.16 jobs 0.15 CPU 0.00] + stage 1.18 + tail 9.27) + commit/emit 1.79 + draft 9.88; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 23.73, PCIe 0.00
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 371799 ms (347.0 tok/s), 256 generated in 12150 ms (21.1 tok/s), drafts accepted 140 of 162, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (134400 hits / 134400 lookups)
+== submit lines ==
+strata submit: stage window T=4 pos0=129273 layers 0..22 (23): submitted 85 (kernel 0 memset 0 memcpy 72 barrier 12 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 9142.04 ms
+strata submit: stage window T=4 pos0=129273 layers 23..47 (25): submitted 93 (kernel 0 memset 0 memcpy 78 barrier 14 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 4820.39 ms
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 91 (kernel 0 memset 0 memcpy 72 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 9250.48 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4879.07 ms
+== the request ==
+DONE 256 129024 371798.8 12150.4 length 140 162 0 134400 134400 0 0 0.0
+PP lines: 16  last: PP 129023 129024 369140 349.5
+T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8

@@ -29,33 +29,42 @@ side by side), `d3/d3_stall.sh` (the #267 stall rig, P1b's shape), `d3/d3_eviden
    `qsa_block_scores` **0.210 → 1.466 → 5.361 ms** at 4K/32K/128K (×25.5 while the scored blocks grow ×33.6),
    `qsa_block_topk` 0.684 → 0.750 → 1.403 ms (×2.1), `qsa_decode_attn_batch` 2.031 → 2.000 → 1.944 ms (**flat**,
    P9's finding re-confirmed).  As a share of the window's counted device time the selection is **0.68% → 1.68% →
-   4.82%**; the attention is 1.54% → 1.5% → 1.4%.  So "the selection is what grows with depth" holds as a whole and
-   the depth-growing term inside it is the scores (the choice of candidate blocks), not the top-k (the choosing).
+   4.82%**; the attention is 1.54% → 1.50% → 1.40%.  So "the selection is what grows with depth" holds as a whole,
+   and inside it the growing term is the *scores* (the sweep over candidate blocks), not the top-k (the choosing).
 2. **The card's per-token premise is refuted: the selection is already window-level, and the per-block key read is
    already shared across the window's rows.**  Both kernels are launched **once per (QSA layer, window)** over the
-   window's rows (`src/core/verify.cpp:1019-1022`), and the scores kernel that runs is upstream's
-   `block_scores_multi_kernel` (commit `a20f3b5`, default on, `STRATA_SCORES_MULTI=0` = the old per-query grid),
-   which reads each key block **once for all of the window's queries** (`src/kernels/cuda/qsa_select.cu:600-646`).
-   The A/B that prices that sharing (the old grid vs the shipped one, ids as the guard) is §4:
-   **PENDING-B**.
-3. **The top-k's dispatch is not a performance question on this config — measured, not inferred, from the census's
-   own symbol**: the record's `--max-context 262144` takes the **memory-keyed** kernel
-   (`qsa_block_topk_ref`, 0.485 ms at 4K) and the arm-CTX configs take the **register** one (0.684 ms) — and the
-   memory kernel is the **cheaper** of the two at 4K, so neither the record nor the arms are on a slow path.  What
-   the dispatch does hide is that the score sweep is **latency-bound**: it moves its working set at **~30 GB/s**
-   (28 GB/s at 4K, 33.7 GB/s at 32K) against a device of this class, i.e. ~14× above its own bandwidth floor at
-   32K — that is the named opportunity of this card, and it is a kernel shape, not a switch (§5).
+   window's rows (`src/core/verify.cpp:1019-1022`; 12 launches per window = the model's 12 QSA layers, no factor of
+   T), and the scores kernel that runs is upstream's `block_scores_multi_kernel` (commit `a20f3b5`, default on,
+   `STRATA_SCORES_MULTI=0` = the old per-query grid), which reads each key block **once for all of the window's
+   queries** (`src/kernels/cuda/qsa_select.cu:600-646`).  Priced, with the ids guard: **+1.0% decode at 4K, −0.2%
+   at 32K, +0.5% at 128K** for the shipping shared form against the old grid (§4) — i.e. the sharing is real but it
+   is not where the depth cost lives, because the sweep is latency-bound (§5.4).  The per-row scores themselves are
+   not duplicated work: each row has its own query and its own position, so the rows are a genuine T×B score
+   matrix, not the same B scores three times.
+3. **The top-k's dispatch differs between the record and every published decode arm — measured, not inferred, from
+   the census's own launcher symbol**: the record's `--max-context 262144` takes the **memory-keyed** kernel
+   (`qsa_block_topk_ref`) and the arm-CTX configs of D1/D2 (and of this card's first three arms) take the
+   **register** one, because the launcher's rule is capacity-based (`reach = max_cells/4 + 2` vs `fit = 1024×33`
+   blocks).  It is **not** a slow path at short depth (the memory kernel is 29% cheaper at 4K) and it costs
+   **+1.2% of the window at 128K** (3.044 against 1.403 ms) with identical ids; the obvious fix — pass the
+   window's own reach — is **unsafe on a captured graph** (§5.3), and a safe one needs an nb-agnostic top-k, which
+   is named rather than attempted on this evidence.
 4. **The per-layer handshake is counted exactly, and the coarsest exact sync the engine already has is measured.**
    Per **layer** per window: **3 host→device 4-byte publications**, **1 device→host ring** and **3 device-side
    `wait_flag_ge` spins**; the spins are **144 launches and 14.7 / 15.4 / 16.9 ms per window at 4K/32K/128K =
-   11.1% / 11.7% / 12.0%** of the window's counted device time, the largest single family in the window after the
-   projections.  `STRATA_VERIFY_DEVICE_PLAN=1` (E-6) is the engine's existing answer — the device plans its own
-   group and the wait becomes `wait_flag_ge_or`, which returns without touching the host's flag — and it is
-   **PENDING-D**.  The release path is untouched by this card and the stall rig re-proves the #267 guarantee on
-   the same binary (§6, PENDING-S).
-5. **Nothing was landed**: no source change, no config change.  What the card's own terms allow for both remaining
-   items — the sharing (already in the tree, priced here) and the sync (a design + a measured ceiling) — is what
-   this write-up is.
+   11.1% / 11.7% / 12.0%** of the window's counted device time — the largest single non-projection family in the
+   window.  `STRATA_VERIFY_DEVICE_PLAN=1` (E-6) is the engine's existing answer (the device plans its own group and
+   its waits return on a device-written word), and it is worth **+2.9% / +3.3% decode at 4K / 32K with
+   byte-identical ids**, i.e. the *measured ceiling* for the card's "coarser synchronisation" question: the host's
+   own per-layer work is another 0.7-0.8% and the two together are the whole term (§6.2).
+5. **The one named opportunity this card leaves behind**: the depth-growing score sweep moves its working set at
+   **28-37 GB/s** — the same class of device moves an order of magnitude more — because each `(block, query)` pair
+   is a serial chain of four head dot-products behind a fixed 256-block grid.  Its own bandwidth floor at 32K is
+   ~0.11 ms against the measured 1.44 ms, i.e. up to **~3.5% of a 128K window** if reshaped; that is a kernel
+   project with its own parity test, not a switch (§5.4).
+6. **Nothing was landed.**  No engine source changed (the binary is D2's `e841fd06…`), the config of record is
+   untouched, and E-6 is measured as a switch, not flipped into the record — the card's rule is not to destabilise
+   the release path for a few percent, and the stall rig re-proves the #267 guarantee on this binary (§6.3).
 
 ## 2. Config, instruments and their own cost
 
@@ -147,6 +156,27 @@ barrier-bound: 1024 threads × ~23 block-wide barriers per launch ≈ 57 µs at 
 attention is flat, as P9 measured.
 
 
+### 3.1 The ids guard, every arm
+
+One method, the rig's own (`grep '^T ' out.txt | md5sum`, the trailing newline included) — so every comparison below
+is like for like.  Every lever and every instrument this card measured leaves the greedy stream **byte-identical
+at each depth**:
+
+| depth | generated | ids md5, every arm of that depth |
+|---|---|---|
+| 4K | 147 tokens (the prompt's own stop) | `ac9f16fceed82e5681e42bd197835c51` — `base-4096`, `nomulti-4096`, `devplan-4096`, `hist-4096`, `histc-4096`, `oldtopk-4096` (all 6) |
+| 32K | 256 | `124a3cd39b33f7da31e225829625983a` — `base-32768`, `nomulti-32768`, `devplan-32768`, `hist-32768`, `histc-32768` (all 5) |
+| 128K | 256 | `c60e72d397e9b1cd44dab9c5ab1187c8` — `base-131072`, `hist-131072`, `histc-131072` (all 3 so far) |
+
+This is what makes the rest of the write-up's speed comparisons correctness-neutral: the max-context (4,096 vs
+262,144), the scores grid (`STRATA_SCORES_MULTI=0`), the top-k kernel (memory vs register), the device plan (E-6),
+the graph path (closure vs graph) and the instruments (census + stamps) *all* produce the same tokens at every
+depth here.  Two cross-session checks fall out of the same table: at 4K and 32K the rig-method md5 matches P9's own
+(`ac9f16fc…`, `124a3cd3…`); and with D2's reader's method (no trailing newline) the same streams read `66bf952d…` /
+`d87373e8…` / `511a89be…`, which are exactly D2's published 4K/32K/128K ids for `--spec-min-p 0.7` — i.e. this
+session re-ran D2's and P9's token streams.  **An id figure is only comparable within one method**; both are stated
+here so the match is checkable.
+
 ## 4. The sharing: what is already shared, and what the A/B prices
 
 **The card's premise does not hold, and the evidence is the call site and the census's launch counts.**  The
@@ -178,9 +208,23 @@ i.e. the shipped kernel's cost grows *sublinearly* in the window's rows — the 
 what remains per row is the dot product and the score store.
 
 *(b) The direct A/B*: the same arms with `STRATA_SCORES_MULTI=0`, which is the old per-(query, block) grid and the
-same arithmetic per (block, query) (so the ids must not move — the guard):
+same arithmetic per (block, query) — so the ids must not move, and they do not:
 
-[PENDING-B: the base/no-multi table at 4K/32K/128K with ms/window, decode tok/s and the ids md5.]
+| depth | arm | ms/window | decode tok/s | Δ against the shipped kernel | ids md5 |
+|---|---|---|---|---|---|
+| 4K | `d3-base-4096` (shipped, shared key read) | **113.72** | **23.94** | — | `66bf952d…` |
+| 4K | `d3-nomulti-4096` (old per-query grid) | 114.84 | 23.71 | **−0.98%** | `66bf952d…` identical |
+| 32K | `d3-base-32768` | **115.74** | **24.04** | — | `d87373e8…` |
+| 32K | `d3-nomulti-32768` | 116.01 | 23.99 | −0.21% | `d87373e8…` identical |
+| 128K | `d3-base-131072` | 102.97 | 21.07 | — | `511a89be…` |
+| 128K | `d3-nomulti-131072` | **102.46** | **21.17** | **+0.47%** | `511a89be…` identical |
+
+So the window-level sharing that is already in the tree is worth **+1.0% decode at 4K, a wash at 32K and nothing
+(marginally negative) at 128K** — and the mechanism is §5.4's: the kernel is latency-bound at ~30 GB/s, so four
+times the block-level parallelism (the old grid's `(blocks, nq)` shape) pays for the four times the key traffic at
+depth, while at 4K the traffic dominates.  **The card's "share the selection across the window" is therefore not
+the lever the depth cost is behind**; the sharing is present, its price is measured, and the depth cost is the
+sweep's own latency (§5.4).
 
 **What cannot be shared, and why the window is not "the same scores three times"**: each row's `step` carries its
 own `n_kv = pos + 1` and `n_bid = n_kv / 4` (`src/core/verify.cpp:1461`, `qsa_step_fill`), so row *t* scores a
@@ -352,7 +396,33 @@ single-arm-per-configuration discipline cannot provide.
 
 ### 6.3 The release path's guarantee (#267), re-proved on this binary
 
-[PENDING-S: the stall rig's lines.]
+`d3/d3_stall.sh d3-stall-4096 build-sycl/strata 16 4096 1 1` — P1b's rig: `STRATA_TEST_VERIFY_STALL=1` withholds the
+last layer's flag in the first window, and a SECOND ask follows, so both halves of the property are exercised
+(release, and the refusal afterwards).  On the binary this card measured (`e841fd06…`), exit **250**, wall 109 s,
+**0 generated tokens**:
+
+```
+strata serve: no progress for 60 s during a request (verify window: waiting for the GPU to finish the window
+  (flags A/B/M raised) 1) - stopping the engine so the server starts it again (issue #29)
+strata serve: stall report (engine 0.1.34): stage "verify window: waiting for the GPU to finish the window
+  (flags A/B/M raised) 1" for 59 s; 23 layers served since the last finished step
+  verify window: 1 tokens at position 3831, host at layer step 23; the GPU rang 23; flags: served 22, plan (A) 23,
+  copies (B) 23; tail beacons 0 0 0 0 0 0 0 0
+strata: #267 release pass over live verifier slot 0 (thread …)
+verify release: flag publication 0.078 ms; drain budget 5000 ms
+verify release: the GPU finished; drain 3.410 ms, release 3.492 ms (publication 3.491 ms)
+strata: released the verify window's GPU waits (#267): the GPU finished in 3 ms
+verify teardown: the window on cs_ was released (#267); it finished (1.063 ms of a 5000 ms budget)
+# and the second ask, on the same session:
+ERR verify: an earlier window never finished on the GPU (#267); restart the engine
+```
+
+Read: the host parked in the window's **tail** sync (the withheld flag is the last layer's, so the per-layer ring
+loop had already drained and the engine's 60 s no-progress watchdog — not the 20 s layer watchdog — is what caught
+it), the release published the flags and the drain returned in **3.49 ms against its 5000 ms budget**, the GPU
+finished, the process ended by itself (exit 250), and the session refused the next request with the documented
+reason instead of hanging or serving wrong tokens.  That is the property P1/P1b established, unchanged by this
+card — which is why §6.2's E-6 number is reported as a lever and not landed.
 
 
 
