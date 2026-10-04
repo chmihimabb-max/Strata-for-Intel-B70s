@@ -1,0 +1,35 @@
+{
+ "template": "/home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf",
+ "template_data_start": 11024384,
+ "native_dense": "/run/media/michael/2208B12208B0F63F/strata-w4a16/native/native-dense.gguf",
+ "native_data_start": 20000,
+ "native_region_bytes": 5038489600,
+ "serve_pack": "/run/media/michael/2208B12208B0F63F/strata-w4a16/serve-pack",
+ "dense_bin_bytes": 8787955200,
+ "ple": "/run/media/michael/2208B12208B0F63F/strata-w4a16/ple-iq4nl.gguf",
+ "ple_region_bytes": 28800138240,
+ "data_bytes": 110574307840,
+ "bases": {
+  "dense": 0,
+  "native": 8787955200,
+  "expert": 13826444800,
+  "ple": 81774169600,
+  "expert_layer_bytes": 1415577600,
+  "expert_role_bytes": 471859200
+ },
+ "types": {
+  "IQ4_NL": 1,
+  "Q8_0": 301,
+  "BF16": 485,
+  "F32": 292,
+  "Q4_0": 144,
+  "F16": 1
+ },
+ "counts": {
+  "densebin": 777,
+  "native": 302,
+  "expert": 144,
+  "ple": 1
+ },
+ "data_start_written": 11024672
+}

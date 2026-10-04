@@ -38,6 +38,8 @@ td.log
 /strata-*.log
 /build-strata.bat
 /.strata-mcp/
+# runtime pid file written by p6_start.sh (local session state, not source)
+p6/server.pid
 
 # image encoder (setup.py --vision): build output and the generated build script
 build-vision*/

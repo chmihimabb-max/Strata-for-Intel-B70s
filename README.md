@@ -29,8 +29,10 @@ KV streaming above 64K, MTP speculative decoding on. Model: `IQ3_S` (see below).
   790,765 block reads served from VRAM**, 287 MiB from RAM, **12,672 B of pinned RAM per context token**.
 - **Independently validated**: 182/184 comparable tokens identical to the llama.cpp-SYCL reference at `--kv int8`, 197/199
   at `--kv fp16`, every divergence attributed by measurement (one is the int8-KV trade, one a 0.07-nat coin flip).
-- **Correctness units**: `ctest` 38/40 (the 2 failures are environmental: `mlock` limits, missing AVX-512);
-  `kv_stream_parity` is **bitwise identical** streamed vs resident for int8 / fp16 / q4_0.
+- **Correctness units**: `ctest` 44/49 (the 5 failures are environmental on this box — `mlock` limits, missing AVX-512 —
+  and unchanged since the recorded baseline); `kv_stream_parity` is **bitwise identical** streamed vs resident for
+  int8 / fp16 / q4_0, and the decode-path parity tests (`mmvq_multi_parity`, `gr_parity`) are bit-exact to the shipped
+  kernels.
 
 ## Known gaps (honest list)
 
@@ -40,10 +42,13 @@ KV streaming above 64K, MTP speculative decoding on. Model: `IQ3_S` (see below).
   reference** (0.17/0.14-nat margins) where the shipped kernel is byte-identical, so it is deliberately not enabled.
 - On this card only **int8 8x32x16 → int32** (and bf16/f16 tile) XMX shapes exist; **4-bit cannot reach the tensor cores**
   at all.
-- Token generation is **GPU-bound per layer** (the verify is 83% of a decode window). A SYCL `command_graph` replay path
-  exists behind **`STRATA_SYCL_GRAPH=1`** (off by default): it removes 95% of the submissions and 3-4% of the window.
-- The web dashboard's **GPU telemetry has no Intel backend** yet (load / VRAM / temperature / power / PCIe read empty;
-  `serve/telemetry.py` implements NVML for NVIDIA and amdgpu sysfs for AMD).
+- Token generation is **GPU-bound per layer** (the verify is the bulk of a decode window; the 42–47 ms "GPU-reach wait" is
+  the GPU, not the host). The port's SYCL `command_graph` replay path is **on by default** (`STRATA_SYCL_GRAPH=0` turns it
+  off): ~95% fewer submissions and **−3.0 / −3.9 / −4.7% of the window** at 128K / 32K / 4K, greedy tokens byte-identical.
+- The web dashboard's **GPU telemetry is implemented for Arc** (`serve/telemetry.py`, an Intel backend on the `xe` driver:
+  load from `drm-cycles-ccs` / `drm-total-cycles-ccs`, VRAM client-deduplicated from `drm-total-vram0` against the PCI BAR
+  2 aperture, temperatures by hwmon label, power from the `energy1_input` counter across the sampler interval). PCIe link
+  gen / width / throughput have **no sysfs source on this driver and are reported as `null` with the reason, never as 0**.
 - Works on **this** hardware and configuration. This is not a general Intel support claim.
 
 ## Build
@@ -78,7 +83,7 @@ ctest --test-dir build-sycl -R 'kv|qsa|parity'      # source setvars first, or t
    ./build-sycl/strata --serve \
      --pack <pack-dir> --native <…IQ3_S-00001-of-00002.gguf> --ple-gguf <…IQ3_S-00002-of-00002.gguf> \
      --mtp mtp/rt --kv int8 --expert-cache auto --mmap-experts \
-     --spec 4 --spec-min-p 0.5 --kv-resident 32768 --max-context 262144 --no-capture --stats
+     --spec 4 --spec-min-p 0.7 --kv-resident 32768 --max-context 262144 --no-capture --stats
    # or with the HTTP server + dashboard:
    python -m serve.server --engine strata --config strata-sycl-iq3s.json --port 8099 --api-monitor
    ```
@@ -99,11 +104,17 @@ ctest --test-dir build-sycl -R 'kv|qsa|parity'      # source setvars first, or t
 - **The verify window's release had to be re-derived.** Upstream writes host-mapped words the spin kernels read; on this
   backend a poll over mapped host memory does not observe the host's stores, so the words are device memory published by a
   submitted copy on the verifier's own stream.
+- **The served path's mid-prompt checkpoint had to be device-corrected.** Under the layer split, the save copied a card-1
+  running state onto card 0's queue (one shared SYCL context, no peer path), so any prompt crossing 16,384 tokens returned
+  `UR_RESULT_ERROR_OUT_OF_DEVICE_MEMORY`; the save now asserts the stage's own device.
+- **Cold-start JIT was moved out of the request.** On a fresh program cache the first decode windows built the dense MMVQ
+  specializations in-flight — measured as 127.93 ms/window of verify time that no counter owned, over 54 windows — so the
+  serve path warms them before "everything loaded" (`native_mmvq_warmup` + `decode_warmup`: 192 + 54 launches, ~45 ms warm).
 - Intrinsics, sub-group widths and memory limits are mapped per the CUDA-surface contract; the two-GPU split, per-layer
   expert-cache slabs and the pinned-arena strategy all differ from CUDA in mechanism while preserving the guarantee.
 
-The engineering record lives in-tree: `p1/` … `p9/` (status reports and evidence per work item), plus the port's own probe
-scripts.
+The engineering record lives in-tree: `p1/` … `p10/`, `m6c/`, `i2/`, and the decode campaign's `d1/` … `d3/` with `s4/`,
+`s5/` (status reports and evidence per work item), plus the port's own probe scripts.
 
 ## Credits and license
 

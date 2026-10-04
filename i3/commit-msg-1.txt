@@ -1,0 +1,20 @@
+tools: w4a16_gguf_assemble.py - build a llama.cpp-loadable qwen4exp GGUF from the W4A16 pack
+
+Assembles ONE GGUF the llama.cpp qwen4exp fork can load, carrying the same weights our
+engine's W4A16 (serve-pack) run reads:
+
+  * KV metadata + the tensor name/shape table: copied from the upstream ISTA-DASLab
+    GSQ-RCO IQ3_S shard 1 (the file I2 proved this architecture loads), split.* dropped;
+  * the 144 routed-expert tensors (48 layers x gate/up/down, ne2=512): ggml Q4_0, the
+    bytes of the pack's experts.bin, re-laid out expert-major -> role-major;
+  * the 1079 dense tensors: 302 from M5's native-dense.gguf (Q8_0/F16) and 777 from
+    pack/dense.bin (F32/BF16/F16), i.e. exactly the serve-pack index the engine reads;
+  * the PLE n-gram table: ple-iq4nl.gguf (IQ4_NL), 1 tensor.
+
+The gather stride is anchored to the packer's own record: w4a16_experts.manifest.json
+(blob 2764800 B, layer 1415577600 B, up_off/down_off) and native_experts.txt (gu_type/
+d_type 2 = Q4_0), both checked before anything is written. --plan writes nothing, --verify
+re-reads the written file (tensor table + digests against the sources + an id -> slot sweep
+of the expert blocks) and recomputes W1's own per-layer sha256 for 6 layers of experts.bin.
+
+No artifact is opened for writing; the output is a new file.
