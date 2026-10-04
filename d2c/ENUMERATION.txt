@@ -1,0 +1,307 @@
+############ D2c: every program the decode phase still built on a COLD first run, named
+############ 2026-10-03T22:38:10-06:00
+
+METHOD.  A SYCL program here IS one strata::sycl_compat::launch(...) call site (device code split per
+kernel at compile AND link time).  Each cold run's compiler cache entry carries the site's SPIR-V, whose
+NUL-separated name section holds the mangled C++:
+  typeinfo name for strata::sycl_compat::launch<strata::kernels::<SITE>(args)::{lambda...}>::operator()<...>
+  void strata::kernels::(anonymous namespace)::<KERNEL><template args>(unsigned char*, ..., launch_shape, ...)
+c++filt turns the first into the LAUNCH SITE (the helper in src/kernels/cuda/*.cu) and the second into the
+exact KERNEL instantiation when the kernel is a real function template.  d2c/enumerate_c.py does this for
+every 0.src written between the engine's own 'prompt ... read in N ms' line and the ask's end.
+D2b's classify.py/name_other.py read neither form for 35 of the 61 and reported them as '(no symbol)'.
+
+===== 1. THE COLD DECODE PHASE BEFORE THIS CARD (d2c-mmoff-cold-4096: D2b's pass only) =====
+# d2c-mmoff-cold-4096 phase=decode: 61 programs, 55 distinct launch sites  (cache /tmp/d2c-cold2-cache/sycl)
+    4 x shared_expert_multi   (first +0.3s)
+    3 x shared_expert   (first +2.2s)
+    2 x native_ple_postops   (first +0.8s)
+    1 x copy_i32_from_mapped   (first +0.0s)
+    1 x copy_from_mapped   (first +0.0s)
+    1 x broadcast_streams   (first +0.0s)
+    1 x gdn_conv_l2_multi -> gdn_conv_l2_multi_kernel   (first +0.1s)
+    1 x gdn_ab_multi -> gdn_ab_multi_kernel   (first +0.1s)
+    1 x gdn_step_norm_multi -> gdn_step_norm_multi_kernel   (first +0.2s)
+    1 x bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<256>   (first +0.2s)
+    1 x native_router_top10 -> route   (first +0.3s)
+    1 x doorbell_publish -> doorbell_publish_kernel   (first +0.3s)
+    1 x f32_to_bf16_bulk   (first +0.3s)
+    1 x quantize_q8_1_rows -> quantize_q8_1_kernel   (first +0.4s)
+    1 x wait_flag_ge   (first +0.4s)
+    1 x (NO SITE) -> native_gu_multi_kernel<18>   (first +0.5s)
+    1 x native_expert_grouped   (first +0.5s)
+    1 x native_expert_grouped -> quantize_q8_1_kernel   (first +0.5s)
+    1 x (NO SITE) -> native_down_multi_kernel<20>   (first +0.6s)
+    1 x fetch_blobs   (first +0.6s)
+    1 x rebase_ptrs   (first +0.6s)
+    1 x copy_rows_from_mapped -> copy_rows_from_mapped_kernel   (first +0.7s)
+    1 x moe_hit_add   (first +0.7s)
+    1 x native_moe_combine   (first +0.7s)
+    1 x native_gr_post -> post   (first +0.7s)
+    1 x native_gr_rms_norm_weighted -> weighted_rms_norm<1024>   (first +0.7s)
+    1 x native_ple_postops -> gate_kernel   (first +0.8s)
+    1 x ple_history_advance   (first +0.8s)
+    1 x (NO SITE) -> native_gu_multi_kernel<22>   (first +0.9s)
+    1 x (NO SITE) -> native_down_multi_kernel<42>   (first +1.0s)
+    1 x native_qsa_indexer_append -> append<false>   (first +1.1s)
+    1 x qsa_block_scores -> block_scores_multi_kernel   (first +1.1s)
+    1 x qsa_decode_attn_batch -> attn_chunk_kernel<1>   (first +1.2s)
+    1 x qsa_decode_attn_batch -> attn_merge_kernel   (first +1.2s)
+    1 x native_qsa_gate_apply   (first +1.2s)
+    1 x (NO SITE) -> native_gu_multi_kernel<21>   (first +1.3s)
+    1 x gdn_conv_commit   (first +1.4s)
+    1 x copy_indexed   (first +1.4s)
+    1 x (NO SITE) -> native_gu_multi_kernel<23>   (first +1.6s)
+    1 x native_gr_down_silu   (first +1.6s)
+    1 x bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<160>   (first +1.6s)
+    1 x native_gr_pre_gated   (first +1.6s)
+    1 x sample_tokens -> sampler_greedy_kernel   (first +1.7s)
+    1 x mtp_select -> mtp_select_kernel   (first +1.7s)
+    1 x moe_group_resident -> group_resident_kernel   (first +1.8s)
+    1 x quantize_q8_0_scaled -> quantize_q8_0_scaled_kernel   (first +1.8s)
+    1 x moe_grouped_s2 -> gu_grouped_t_kernel   (first +2.1s)
+    1 x moe_grouped_s2   (first +2.1s)
+    1 x moe_grouped_s2 -> down_grouped_t_kernel   (first +2.2s)
+    1 x row_top_prob -> row_top_prob_kernel   (first +2.2s)
+    1 x map_ids   (first +2.3s)
+    1 x bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 4>   (first +2.3s)
+    1 x native_router_top10_multi -> route   (first +2.4s)
+    1 x native_moe_combine_multi   (first +2.4s)
+    1 x bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 8>   (first +4.3s)
+
+# per entry, in build order
+  +   0.00s  copy_i32_from_mapped
+  +   0.01s  copy_from_mapped
+  +   0.02s  broadcast_streams
+  +   0.06s  gdn_conv_l2_multi -> gdn_conv_l2_multi_kernel
+  +   0.13s  gdn_ab_multi -> gdn_ab_multi_kernel
+  +   0.20s  gdn_step_norm_multi -> gdn_step_norm_multi_kernel
+  +   0.24s  bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<256>
+  +   0.30s  native_router_top10 -> route
+  +   0.32s  doorbell_publish -> doorbell_publish_kernel
+  +   0.33s  f32_to_bf16_bulk
+  +   0.34s  shared_expert_multi
+  +   0.35s  shared_expert_multi
+  +   0.36s  shared_expert_multi
+  +   0.39s  quantize_q8_1_rows -> quantize_q8_1_kernel
+  +   0.40s  wait_flag_ge
+  +   0.50s  (NO SITE) -> native_gu_multi_kernel<18>
+  +   0.52s  native_expert_grouped
+  +   0.54s  native_expert_grouped -> quantize_q8_1_kernel
+  +   0.61s  (NO SITE) -> native_down_multi_kernel<20>
+  +   0.63s  fetch_blobs
+  +   0.63s  rebase_ptrs
+  +   0.66s  copy_rows_from_mapped -> copy_rows_from_mapped_kernel
+  +   0.67s  moe_hit_add
+  +   0.68s  native_moe_combine
+  +   0.70s  native_gr_post -> post
+  +   0.74s  native_gr_rms_norm_weighted -> weighted_rms_norm<1024>
+  +   0.77s  native_ple_postops -> gate_kernel
+  +   0.78s  native_ple_postops
+  +   0.80s  native_ple_postops
+  +   0.81s  ple_history_advance
+  +   0.91s  (NO SITE) -> native_gu_multi_kernel<22>
+  +   1.01s  (NO SITE) -> native_down_multi_kernel<42>
+  +   1.07s  native_qsa_indexer_append -> append<false>
+  +   1.11s  qsa_block_scores -> block_scores_multi_kernel
+  +   1.21s  qsa_decode_attn_batch -> attn_chunk_kernel<1>
+  +   1.23s  qsa_decode_attn_batch -> attn_merge_kernel
+  +   1.24s  native_qsa_gate_apply
+  +   1.35s  (NO SITE) -> native_gu_multi_kernel<21>
+  +   1.36s  gdn_conv_commit
+  +   1.37s  copy_indexed
+  +   1.55s  (NO SITE) -> native_gu_multi_kernel<23>
+  +   1.57s  native_gr_down_silu
+  +   1.60s  bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<160>
+  +   1.62s  native_gr_pre_gated
+  +   1.67s  sample_tokens -> sampler_greedy_kernel
+  +   1.73s  mtp_select -> mtp_select_kernel
+  +   1.76s  moe_group_resident -> group_resident_kernel
+  +   1.78s  quantize_q8_0_scaled -> quantize_q8_0_scaled_kernel
+  +   2.05s  moe_grouped_s2 -> gu_grouped_t_kernel
+  +   2.07s  moe_grouped_s2
+  +   2.18s  moe_grouped_s2 -> down_grouped_t_kernel
+  +   2.19s  shared_expert
+  +   2.20s  shared_expert
+  +   2.21s  shared_expert
+  +   2.25s  row_top_prob -> row_top_prob_kernel
+  +   2.25s  map_ids
+  +   2.32s  bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 4>
+  +   2.38s  native_router_top10_multi -> route
+  +   2.39s  shared_expert_multi
+  +   2.40s  native_moe_combine_multi
+  +   4.30s  bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 8>
+
+===== 2. THE SAME PHASE WITH THIS CARD'S PASS ON (d2c-wu-cold-4096) =====
+# d2c-wu-cold-4096 phase=decode: 15 programs, 9 distinct launch sites  (cache /tmp/d2c-cold3-cache/sycl)
+    4 x shared_expert_multi   (first +0.0s)
+    3 x shared_expert   (first +0.5s)
+    2 x native_ple_postops   (first +0.1s)
+    1 x native_gr_rms_norm_weighted -> weighted_rms_norm<1024>   (first +0.1s)
+    1 x native_ple_postops -> gate_kernel   (first +0.1s)
+    1 x native_qsa_indexer_append -> append<false>   (first +0.2s)
+    1 x qsa_block_scores -> block_scores_multi_kernel   (first +0.2s)
+    1 x qsa_decode_attn_batch -> attn_chunk_kernel<1>   (first +0.3s)
+    1 x qsa_decode_attn_batch -> attn_merge_kernel   (first +0.3s)
+
+# per entry, in build order
+  +   0.00s  shared_expert_multi
+  +   0.01s  shared_expert_multi
+  +   0.02s  shared_expert_multi
+  +   0.05s  native_gr_rms_norm_weighted -> weighted_rms_norm<1024>
+  +   0.09s  native_ple_postops -> gate_kernel
+  +   0.10s  native_ple_postops
+  +   0.12s  native_ple_postops
+  +   0.17s  native_qsa_indexer_append -> append<false>
+  +   0.22s  qsa_block_scores -> block_scores_multi_kernel
+  +   0.32s  qsa_decode_attn_batch -> attn_chunk_kernel<1>
+  +   0.33s  qsa_decode_attn_batch -> attn_merge_kernel
+  +   0.46s  shared_expert
+  +   0.47s  shared_expert
+  +   0.48s  shared_expert
+  +   0.51s  shared_expert_multi
+
+===== 3. WHERE THE DECODE PHASE'S PROGRAM TIME SITS, BY SITE (cold, D2b's pass only) =====
+# d2c-mmoff-cold-4096: 61 decode-phase programs, phase 8.94s (first write 0.03s after the prompt line)
+# summed gaps (first write included, tail of the phase not): 4324 ms
+    1895.1 ms  bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 8>
+     272.0 ms  moe_grouped_s2 -> gu_grouped_t_kernel
+     180.0 ms  (no site) -> native_gu_multi_kernel<23>
+     114.0 ms  moe_grouped_s2 -> down_grouped_t_kernel
+     104.0 ms  (no site) -> native_gu_multi_kernel<21>
+     102.0 ms  (no site) -> native_gu_multi_kernel<22>
+     102.0 ms  qsa_decode_attn_batch -> attn_chunk_kernel<1>
+     101.0 ms  (no site) -> native_gu_multi_kernel<18>
+      96.0 ms  (no site) -> native_down_multi_kernel<42>
+      73.0 ms  gdn_step_norm_multi -> gdn_step_norm_multi_kernel
+      69.0 ms  gdn_ab_multi -> gdn_ab_multi_kernel
+      68.0 ms  (no site) -> native_down_multi_kernel<20>
+      63.0 ms  bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 4>
+      60.0 ms  native_router_top10 -> route
+      60.0 ms  native_router_top10_multi -> route
+      59.0 ms  mtp_select -> mtp_select_kernel
+      58.0 ms  native_qsa_indexer_append -> append<false>
+      54.0 ms  sample_tokens -> sampler_greedy_kernel
+      43.0 ms  shared_expert_multi
+      41.0 ms  qsa_block_scores -> block_scores_multi_kernel
+      38.0 ms  native_ple_postops -> gate_kernel
+      36.0 ms  gdn_conv_l2_multi -> gdn_conv_l2_multi_kernel
+      35.0 ms  bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<256>
+      35.0 ms  native_gr_rms_norm_weighted -> weighted_rms_norm<1024>
+      34.0 ms  row_top_prob -> row_top_prob_kernel
+# 55 distinct sites
+
+===== 4. WARMABLE OR BOUND: WHAT decode_warmup() DOES WITH EACH SITE, AND WHY =====
+WARMED (decode_warmup.cu launches it once, on the caller's stream, over zeroed scratch of its own; every count
+it steers is a zeroed DEVICE word, so the kernels return from their first guard):
+
+  site                          launch(es)                     why it warms
+  ------------------------------------------------------------------------------------------------------------
+  bf16_gemv_fp32_mmvf           3 (n_in 640/2560/4096)         block size = HOST fn of n_in (mmvf_block_size) ->
+  bf16_gemv_fp32_mmvf_multi     3 (n_tok 2/4/8)                  <160> and <256>; n_tok<=4 vs >4 -> <256,4>/<256,8>
+  native_expert_grouped         7 (one per (gu,down) pair)     one call per TYPE builds native_gu_multi_kernel<TG>
+                                                               and native_down_multi_kernel<TD> (pack/native_experts.txt)
+  moe_grouped_s2                1                              the drafter's gu_grouped_t/down_grouped_t (H/FF are
+                                                               compile-time; alignment picks the fast kernels)
+  moe_group_resident            1                              group_resident_kernel
+  moe_hit_add                   1                              add_hits_kernel
+  gdn_conv_l2_multi             2 (n_tok 1/4)                  gdn_conv_l2_multi_kernel
+  gdn_conv_commit               1                              gdn_conv_commit_kernel (n_keep = a zeroed word)
+  gdn_ab_multi                  2 (n_tok 1/4)                  gdn_ab_multi_kernel
+  gdn_step_norm_multi           2 (n_tok 1/4)                  gdn_step_norm_multi_kernel (n_keep = nullptr = the
+                                                               kernels' own read-only state path)
+  mtp_select                    1                              mtp_select_kernel
+  native_router_top10           1                              route
+  native_router_top10_multi     2 (n_tok 1/8)                  route
+  sample_tokens                 2 (temperature 0 / >0)         sampler_greedy_kernel and the sampled path
+  row_top_prob                  1                              row_top_prob_kernel
+  map_ids                       1                              map_ids_kernel
+  native_moe_combine            1                              native_moe_combine_multi_kernel's single-column twin
+  native_moe_combine_multi      2 (n_tok 1/4)                  the MoE combination kernel
+  native_gr_pre_gated           2 (fused_layer 0/1)            pre_gated<true>/<false>
+  native_gr_post                1                              post
+  native_gr_down_silu           1                              down_silu
+  native_gr_rms_norm_weighted   2 (rows 1/4)                   weighted_rms_norm<1024>
+  native_qsa_gate_apply         1                              gate_kernel
+  ple_history_advance           1                              the PLE history shift
+  copy_from_mapped              1                              copy_from_mapped_kernel
+  copy_i32_from_mapped          1                              copy_i32_from_mapped_kernel
+  copy_rows_from_mapped         1                              copy_rows_from_mapped_kernel
+  f32_to_bf16_bulk              1                              f32_to_bf16_bulk_kernel
+  broadcast_streams             1                              broadcast_streams_kernel
+  copy_indexed                  1                              copy_indexed_kernel
+  doorbell_publish              1                              doorbell_publish_kernel
+  fetch_blobs                   1                              fetch_blobs_kernel
+  rebase_ptrs                   1                              rebase_ptrs_kernel
+  wait_flag_ge                  1                              wait_flag_ge_kernel (value 0 -> returns at once)
+  quantize_q8_1_rows            1                              quantize_q8_1_kernel
+  quantize_q8_0_scaled          1                              quantize_q8_0_scaled_kernel
+
+BOUND (NOT warmed, with the reason -- the card's "bound why it cannot be done for some of them"):
+
+  qsa_decode_attn_batch -> attn_chunk_kernel<1>, attn_merge_kernel
+      reads the QSA attention POOLS (QsaAttnPools: k/v pool, q4 codes, scales, a per-page table) through page
+      indices a request builds.  A dummy pool is not a smaller pool: the table indexes it, so zeroed table AND
+      zeroed pool are only safe if their arithmetic agrees with the real geometry, and QsaShapes/the pools are
+      built after the load phase.  ~101 ms of the cold decode phase; left to the request.
+  qsa_block_scores -> block_scores_multi_kernel
+      same pool/geometry dependency (pooled/dead buffers + steps).  ~41 ms.
+  native_qsa_indexer_append -> append<false>
+      needs QsaIndexerBuffers (tail/dead/pooled/block_pos) and QsaShapes; same reason.  ~59 ms.
+  shared_expert -> native_swiglu_kernel / the shared projections, shared_expert_multi
+      dispatches on the pack's OWN shared-expert types (NativeSharedWeights::gate_type/up_type/down_type) and on
+      SForm, i.e. on pack metadata rather than on a compile-time table.  Warming with a guessed type would build a
+      program the request does not use - strictly worse than not warming (D2b's over-warm measurement).  ~72 ms;
+      needs the pack's type fields plumbed into the pass.
+  native_ple_postops -> gate_kernel / the PLE post-ops
+      same: PleWeights (key/query/conv norms, conv1d taps) and five 10240-float buffers whose layout comes from
+      the pack.  ~10 ms.
+  The dense (quant type x ncols) MMVQ family is D2b's pass and is not repeated here.
+
+NOTE.  The bound set above is ~280 ms of the cold decode phase's ~1959 ms residual; the warmed set is the
+other ~85% of it.  Section 1 names every one of the 61, so the split is auditable line by line.
+
+===== 5. THE PER-SITE COST RANKING OF THE WARMED SET (what the pass moves) =====
+# d2c-mmoff-cold-4096: 61 decode-phase programs, phase 8.94s (first write 0.03s after the prompt line)
+# summed gaps (first write included, tail of the phase not): 4324 ms
+    1895.1 ms  bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 8>
+     272.0 ms  moe_grouped_s2 -> gu_grouped_t_kernel
+     180.0 ms  (no site) -> native_gu_multi_kernel<23>
+     114.0 ms  moe_grouped_s2 -> down_grouped_t_kernel
+     104.0 ms  (no site) -> native_gu_multi_kernel<21>
+     102.0 ms  (no site) -> native_gu_multi_kernel<22>
+     102.0 ms  qsa_decode_attn_batch -> attn_chunk_kernel<1>
+     101.0 ms  (no site) -> native_gu_multi_kernel<18>
+      96.0 ms  (no site) -> native_down_multi_kernel<42>
+      73.0 ms  gdn_step_norm_multi -> gdn_step_norm_multi_kernel
+      69.0 ms  gdn_ab_multi -> gdn_ab_multi_kernel
+      68.0 ms  (no site) -> native_down_multi_kernel<20>
+      63.0 ms  bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 4>
+      60.0 ms  native_router_top10 -> route
+      60.0 ms  native_router_top10_multi -> route
+      59.0 ms  mtp_select -> mtp_select_kernel
+      58.0 ms  native_qsa_indexer_append -> append<false>
+      54.0 ms  sample_tokens -> sampler_greedy_kernel
+      43.0 ms  shared_expert_multi
+      41.0 ms  qsa_block_scores -> block_scores_multi_kernel
+      38.0 ms  native_ple_postops -> gate_kernel
+      36.0 ms  gdn_conv_l2_multi -> gdn_conv_l2_multi_kernel
+      35.0 ms  bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<256>
+      35.0 ms  native_gr_rms_norm_weighted -> weighted_rms_norm<1024>
+      34.0 ms  row_top_prob -> row_top_prob_kernel
+      34.0 ms  bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<160>
+      32.0 ms  shared_expert
+      29.0 ms  copy_i32_from_mapped
+      27.0 ms  moe_group_resident -> group_resident_kernel
+      26.0 ms  quantize_q8_1_rows -> quantize_q8_1_kernel
+      26.0 ms  native_expert_grouped -> quantize_q8_1_kernel
+      26.0 ms  copy_rows_from_mapped -> copy_rows_from_mapped_kernel
+      26.0 ms  quantize_q8_0_scaled -> quantize_q8_0_scaled_kernel
+      25.0 ms  native_ple_postops
+      22.0 ms  doorbell_publish -> doorbell_publish_kernel
+      19.0 ms  qsa_decode_attn_batch -> attn_merge_kernel
+      17.0 ms  native_gr_post -> post
+      16.0 ms  native_qsa_gate_apply
+      15.0 ms  gdn_conv_commit
+      14.0 ms  wait_flag_ge
+# 55 distinct sites

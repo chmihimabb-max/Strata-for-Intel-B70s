@@ -38,6 +38,7 @@
 #include "strata/kernels/shared_expert.hpp"
 #include "strata/kernels/native_moe.hpp"
 #include "strata/kernels/native_mmvq.hpp"   // D2: native_mmvq_set_multi_exact (the multi-column layout switch)
+#include "strata/kernels/decode_warmup.hpp"  // D2c: decode_warmup (the rest of the decode path's first launches)
 #include "strata/kernels/native_gdn.hpp"
 #include "strata/kernels/native_router.hpp"
 #include "strata/kernels/native_qsa.hpp"
@@ -4658,6 +4659,12 @@ int main(int argc, char** argv) {
         // have arrived (it is fed from the FIFO after "everything loaded") and no window has run yet.  Nothing
         // the warm-up computes is read, so it changes no number; STRATA_MMVQ_WARMUP=0 is the A/B control arm.
         strata::kernels::native_mmvq_warmup(main_cs);
+        // D2c (card t_c7d8cd86): D2b's pass above covers the dense (type x ncols) MMVQ family only; a cold first
+        // decode phase still built 61 more programs (6 routed-expert gu/down + 55 one-off kernels, one per
+        // decode-path kernel SITE).  This is the same treatment for that set, still in the load phase and still
+        // before any window or capture.  Nothing it computes is read (every count it steers is a zeroed device
+        // word); STRATA_KERNEL_WARMUP=0 is its own A/B control arm, measured apart from STRATA_MMVQ_WARMUP=0.
+        strata::kernels::decode_warmup(main_cs);
         {
             // what is left once everything is allocated: under WDDM a GPU filled to the brim does not fail, it pages -
             // and a page-in while the verify graph spins on a host flag stalls the request for good

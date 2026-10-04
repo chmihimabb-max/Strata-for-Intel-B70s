@@ -1,0 +1,4 @@
+== D2c ctest 2026-10-03T22:38:19-06:00
+HEAD: 4cda001 D2b (t_f93760a1): the decode path's (type x ncols) specializations are built inside the first decode windows - build them in the load phase
+engine binary: md5 73ee6a3c385e06760d46277a1e481df0  2026-10-03 22:38:18.094090960 -0600
+ZE_AFFINITY_MASK=

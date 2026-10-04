@@ -177,6 +177,9 @@ set(STRATA_SYCL_KERNELS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/ple.cu"                 # 16 ple_parity, ple_q5_parity, ple_fp8_parity
     "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/native_ple_postops.cu"  # 28
     "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/shared_expert.cu"       # 17 shared_expert_parity
+    # D2c (card t_c7d8cd86): the load-phase warm-up for the REST of the decode path's first-launch programs.
+    # No `__global__` of its own - it calls the public entry points - so syclify emits it unchanged.
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/decode_warmup.cu"      # 50 (D2c; no kernels, one pass)
     "${CMAKE_CURRENT_SOURCE_DIR}/src/kernels/cuda/native_flash_attn.cu")  # 30
 
 set(_strata_sycl_kernel_tus "")

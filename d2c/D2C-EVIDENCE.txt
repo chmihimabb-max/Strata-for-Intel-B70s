@@ -1,0 +1,280 @@
+############ D2c evidence -- the other 61 decode-path programs (6 routed-expert gu/down + 55 one-off
+############ kernel sites) are built in the load phase too, 2026-10-03T22:41:35-06:00
+###### repo: 4cda001 D2b (t_f93760a1): the decode path's (type x ncols) specializations are built inside the first decode windows - build them in the load phase
+###### engine binaries:
+######   before this card: f49fe6669704561bb8155f9c4c9acaed (D2b; kept at /home/michael/strata-xpu/d2c/strata-f49fe666)
+######   after the second warm-up: 73ee6a3c385e06760d46277a1e481df0
+###### changed files: src/kernels/cuda/decode_warmup.cu (new), include/strata/kernels/decode_warmup.hpp (new),
+######   src/program/generate.cpp (one include + one call), cmake/sycl_backend.cmake (one TU),
+######   d2b/d2b_run_arm.sh (STRATA_KERNEL_WARMUP joins the unset list). No kernel source, no config change.
+
+###### 1. THE COLD FIRST RUNS (both SYCL_CACHE_DIR and NEO_CACHE_DIR fresh = a fresh install)
+d2c-nooff-cold-4096        win  54  ms/win  253.20  verify  229.31  RESID  128.26 (  6926 ms)  tokens  147  ids 66bf952d445e330c974c49e4f220b4b1
+                             programs in the ask 152  (prompt  59 + DECODE  93)  load  32s  ask  33.28s  start->answer  65.28s
+                             mmvq warmup      off   kernel warmup      off
+d2c-mmoff-cold-4096        win  54  ms/win  158.37  verify  136.14  RESID   35.51 (  1918 ms)  tokens  147  ids 66bf952d445e330c974c49e4f220b4b1
+                             programs in the ask 112  (prompt  51 + DECODE  61)  load  49s  ask  28.23s  start->answer  77.23s
+                             mmvq warmup  17511.0   kernel warmup      off
+d2c-wu-cold-4096           win  54  ms/win  119.93  verify  107.22  RESID    9.46 (   511 ms)  tokens  147  ids 66bf952d445e330c974c49e4f220b4b1
+                             programs in the ask  66  (prompt  51 + DECODE  15)  load  52s  ask  26.20s  start->answer  78.20s
+                             mmvq warmup  17453.0   kernel warmup   2287.0  (54 launches / 54 sites)
+
+###### 2. THE WARM CONTROLS (same session, shared warm caches)
+d2c-wu-4096                win  54  ms/win  112.78  verify  100.65  RESID    2.99 (   161 ms)  tokens  147  ids 66bf952d445e330c974c49e4f220b4b1
+                             programs in the ask   0  (prompt   0 + DECODE   0)  load  31s  ask  21.16s  start->answer  52.16s
+                             mmvq warmup     39.0   kernel warmup      5.0  (54 launches / 54 sites)
+d2c-mmoff-4096             win  53  ms/win  112.88  verify  100.85  RESID    2.80 (   148 ms)  tokens  147  ids 66bf952d445e330c974c49e4f220b4b1
+                             programs in the ask   0  (prompt   0 + DECODE   0)  load  31s  ask  21.16s  start->answer  52.16s
+                             mmvq warmup     39.0   kernel warmup      off
+d2c-wu-32768               win  92  ms/win  113.45  verify   99.47  RESID    1.38 (   127 ms)  tokens  256  ids d87373e84417dab60732a95eb47666a6
+                             programs in the ask   0  (prompt   0 + DECODE   0)  load  32s  ask 102.73s  start->answer 134.73s
+                             mmvq warmup     43.0   kernel warmup      6.0  (54 launches / 54 sites)
+
+###### 3. WHAT EACH COLD ARM BUILT INSIDE ITS OWN DECODE PHASE, BY LAUNCH SITE
+######   before = D2b's pass only (STRATA_KERNEL_WARMUP=0); after = both passes.
+######   (the enumeration is from each entry's SPIR-V name section: d2c/enumerate_c.py)
+== BEFORE  d2c-mmoff-cold-4096
+# d2c-mmoff-cold-4096 phase=decode: 61 programs, 55 distinct launch sites  (cache /tmp/d2c-cold2-cache/sycl)
+    4 x shared_expert_multi   (first +0.3s)
+    3 x shared_expert   (first +2.2s)
+    2 x native_ple_postops   (first +0.8s)
+    1 x copy_i32_from_mapped   (first +0.0s)
+    1 x copy_from_mapped   (first +0.0s)
+    1 x broadcast_streams   (first +0.0s)
+    1 x gdn_conv_l2_multi -> gdn_conv_l2_multi_kernel   (first +0.1s)
+    1 x gdn_ab_multi -> gdn_ab_multi_kernel   (first +0.1s)
+    1 x gdn_step_norm_multi -> gdn_step_norm_multi_kernel   (first +0.2s)
+    1 x bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<256>   (first +0.2s)
+    1 x native_router_top10 -> route   (first +0.3s)
+    1 x doorbell_publish -> doorbell_publish_kernel   (first +0.3s)
+    1 x f32_to_bf16_bulk   (first +0.3s)
+    1 x quantize_q8_1_rows -> quantize_q8_1_kernel   (first +0.4s)
+    1 x wait_flag_ge   (first +0.4s)
+    1 x (NO SITE) -> native_gu_multi_kernel<18>   (first +0.5s)
+    1 x native_expert_grouped   (first +0.5s)
+    1 x native_expert_grouped -> quantize_q8_1_kernel   (first +0.5s)
+    1 x (NO SITE) -> native_down_multi_kernel<20>   (first +0.6s)
+    1 x fetch_blobs   (first +0.6s)
+    1 x rebase_ptrs   (first +0.6s)
+    1 x copy_rows_from_mapped -> copy_rows_from_mapped_kernel   (first +0.7s)
+    1 x moe_hit_add   (first +0.7s)
+    1 x native_moe_combine   (first +0.7s)
+    1 x native_gr_post -> post   (first +0.7s)
+    1 x native_gr_rms_norm_weighted -> weighted_rms_norm<1024>   (first +0.7s)
+    1 x native_ple_postops -> gate_kernel   (first +0.8s)
+    1 x ple_history_advance   (first +0.8s)
+    1 x (NO SITE) -> native_gu_multi_kernel<22>   (first +0.9s)
+    1 x (NO SITE) -> native_down_multi_kernel<42>   (first +1.0s)
+    1 x native_qsa_indexer_append -> append<false>   (first +1.1s)
+    1 x qsa_block_scores -> block_scores_multi_kernel   (first +1.1s)
+    1 x qsa_decode_attn_batch -> attn_chunk_kernel<1>   (first +1.2s)
+    1 x qsa_decode_attn_batch -> attn_merge_kernel   (first +1.2s)
+    1 x native_qsa_gate_apply   (first +1.2s)
+    1 x (NO SITE) -> native_gu_multi_kernel<21>   (first +1.3s)
+    1 x gdn_conv_commit   (first +1.4s)
+    1 x copy_indexed   (first +1.4s)
+    1 x (NO SITE) -> native_gu_multi_kernel<23>   (first +1.6s)
+    1 x native_gr_down_silu   (first +1.6s)
+    1 x bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<160>   (first +1.6s)
+    1 x native_gr_pre_gated   (first +1.6s)
+    1 x sample_tokens -> sampler_greedy_kernel   (first +1.7s)
+    1 x mtp_select -> mtp_select_kernel   (first +1.7s)
+    1 x moe_group_resident -> group_resident_kernel   (first +1.8s)
+    1 x quantize_q8_0_scaled -> quantize_q8_0_scaled_kernel   (first +1.8s)
+    1 x moe_grouped_s2 -> gu_grouped_t_kernel   (first +2.1s)
+    1 x moe_grouped_s2   (first +2.1s)
+    1 x moe_grouped_s2 -> down_grouped_t_kernel   (first +2.2s)
+    1 x row_top_prob -> row_top_prob_kernel   (first +2.2s)
+    1 x map_ids   (first +2.3s)
+    1 x bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 4>   (first +2.3s)
+    1 x native_router_top10_multi -> route   (first +2.4s)
+    1 x native_moe_combine_multi   (first +2.4s)
+    1 x bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 8>   (first +4.3s)
+== AFTER   d2c-wu-cold-4096
+# d2c-wu-cold-4096 phase=decode: 15 programs, 9 distinct launch sites  (cache /tmp/d2c-cold3-cache/sycl)
+    4 x shared_expert_multi   (first +0.0s)
+    3 x shared_expert   (first +0.5s)
+    2 x native_ple_postops   (first +0.1s)
+    1 x native_gr_rms_norm_weighted -> weighted_rms_norm<1024>   (first +0.1s)
+    1 x native_ple_postops -> gate_kernel   (first +0.1s)
+    1 x native_qsa_indexer_append -> append<false>   (first +0.2s)
+    1 x qsa_block_scores -> block_scores_multi_kernel   (first +0.2s)
+    1 x qsa_decode_attn_batch -> attn_chunk_kernel<1>   (first +0.3s)
+    1 x qsa_decode_attn_batch -> attn_merge_kernel   (first +0.3s)
+== BEFORE  d2c-nooff-cold-4096 (no warm-up at all: the shipped baseline)
+# d2c-nooff-cold-4096 phase=decode: 93 programs, 79 distinct launch sites  (cache /tmp/d2c-cold1-cache/sycl)
+    9 x (NO SITE)   (first +3.9s)
+    4 x shared_expert_multi   (first +0.6s)
+    3 x shared_expert   (first +2.7s)
+    2 x native_ple_postops   (first +1.1s)
+    1 x copy_i32_from_mapped   (first +0.0s)
+    1 x copy_from_mapped   (first +0.0s)
+    1 x broadcast_streams   (first +0.0s)
+    1 x native_q6_k_mmvq -> native_q6_k_mmvq_kernel<false>   (first +0.1s)
+    1 x gdn_conv_l2_multi -> gdn_conv_l2_multi_kernel   (first +0.1s)
+    1 x gdn_ab_multi -> gdn_ab_multi_kernel   (first +0.2s)
+    1 x native_q4_k_mmvq -> native_q4_k_mmvq_kernel<false>   (first +0.2s)
+    1 x gdn_step_norm_multi -> gdn_step_norm_multi_kernel   (first +0.3s)
+    1 x bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<256>   (first +0.3s)
+    1 x native_router_top10 -> route   (first +0.4s)
+    1 x doorbell_publish -> doorbell_publish_kernel   (first +0.4s)
+    1 x f32_to_bf16_bulk   (first +0.4s)
+    1 x native_iq4_xs_mmvq -> native_iq4_xs_mmvq_kernel<true>   (first +0.6s)
+    1 x (NO SITE) -> native_small_mmvq_kernel<strata::kernels::(anonymous namespace)::IQ4NLBlock, 4, true>   (first +0.7s)
+    1 x quantize_q8_1_rows -> quantize_q8_1_kernel   (first +0.7s)
+    1 x wait_flag_ge   (first +0.7s)
+    1 x (NO SITE) -> native_gu_multi_kernel<18>   (first +0.8s)
+    1 x native_expert_grouped   (first +0.9s)
+    1 x native_expert_grouped -> quantize_q8_1_kernel   (first +0.9s)
+    1 x (NO SITE) -> native_down_multi_kernel<20>   (first +1.0s)
+    1 x fetch_blobs   (first +1.0s)
+    1 x rebase_ptrs   (first +1.0s)
+    1 x copy_rows_from_mapped -> copy_rows_from_mapped_kernel   (first +1.0s)
+    1 x moe_hit_add   (first +1.0s)
+    1 x native_moe_combine   (first +1.0s)
+    1 x native_gr_post -> post   (first +1.0s)
+    1 x native_gr_rms_norm_weighted -> weighted_rms_norm<1024>   (first +1.1s)
+    1 x native_ple_postops -> gate_kernel   (first +1.1s)
+    1 x ple_history_advance   (first +1.1s)
+    1 x native_q5_k_mmvq -> native_q5_k_mmvq_kernel<false>   (first +1.2s)
+    1 x (NO SITE) -> native_gu_multi_kernel<22>   (first +1.3s)
+    1 x (NO SITE) -> native_down_multi_kernel<42>   (first +1.4s)
+    1 x native_qsa_indexer_append -> append<false>   (first +1.5s)
+    1 x qsa_block_scores -> block_scores_multi_kernel   (first +1.5s)
+    1 x qsa_decode_attn_batch -> attn_chunk_kernel<1>   (first +1.6s)
+    1 x qsa_decode_attn_batch -> attn_merge_kernel   (first +1.6s)
+    1 x native_qsa_gate_apply   (first +1.6s)
+    1 x (NO SITE) -> native_gu_multi_kernel<21>   (first +1.7s)
+    1 x gdn_conv_commit   (first +1.8s)
+    1 x copy_indexed   (first +1.8s)
+    1 x (NO SITE) -> native_small_mmvq_kernel<strata::kernels::(anonymous namespace)::Q80Block, 8, true>   (first +1.9s)
+    1 x (NO SITE) -> native_gu_multi_kernel<23>   (first +2.0s)
+    1 x native_gr_down_silu   (first +2.0s)
+    1 x bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<160>   (first +2.0s)
+    1 x native_gr_pre_gated   (first +2.1s)
+    1 x sample_tokens -> sampler_greedy_kernel   (first +2.1s)
+    1 x (NO SITE) -> native_small_mmvq_kernel<strata::kernels::(anonymous namespace)::Q80Block, 8, false>   (first +2.2s)
+    1 x mtp_select -> mtp_select_kernel   (first +2.2s)
+    1 x moe_group_resident -> group_resident_kernel   (first +2.2s)
+    1 x quantize_q8_0_scaled -> quantize_q8_0_scaled_kernel   (first +2.3s)
+    1 x moe_grouped_s2 -> gu_grouped_t_kernel   (first +2.5s)
+    1 x moe_grouped_s2   (first +2.6s)
+    1 x moe_grouped_s2 -> down_grouped_t_kernel   (first +2.7s)
+    1 x row_top_prob -> row_top_prob_kernel   (first +2.7s)
+    1 x map_ids   (first +2.7s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q6KTraits, 4, 4, 1>   (first +2.8s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q4KTraits, 4, 4, 1>   (first +2.9s)
+    1 x bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 4>   (first +2.9s)
+    1 x native_router_top10_multi -> route   (first +3.0s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::IQ4XSTraits, 4, 4, 4>   (first +3.4s)
+    1 x native_moe_combine_multi   (first +3.9s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q5KTraits, 4, 4, 1>   (first +4.0s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q6KTraits, 2, 4, 1>   (first +4.3s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q4KTraits, 2, 4, 1>   (first +4.4s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::IQ4XSTraits, 2, 4, 4>   (first +4.7s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q5KTraits, 2, 4, 1>   (first +4.9s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q6KTraits, 6, 4, 1>   (first +6.7s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q4KTraits, 6, 4, 1>   (first +6.8s)
+    1 x bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 8>   (first +6.9s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::IQ4XSTraits, 6, 4, 4>   (first +7.4s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q5KTraits, 6, 4, 1>   (first +8.2s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q6KTraits, 3, 4, 1>   (first +10.4s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q4KTraits, 3, 4, 1>   (first +10.5s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::IQ4XSTraits, 3, 4, 4>   (first +10.8s)
+    1 x (NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q5KTraits, 3, 4, 1>   (first +11.2s)
+
+###### 4. THE TWO WARM-UPS' OWN LINES, PER ARM
+== d2c-nooff-cold-4096
+strata mmvq warmup: off (STRATA_MMVQ_WARMUP=0)
+strata kernel warmup: off (STRATA_KERNEL_WARMUP=0)
+== d2c-mmoff-cold-4096
+strata mmvq warmup: 192 launches over 6 types x ncols 1..8 x 2 launch shapes, 17511 ms
+strata kernel warmup: off (STRATA_KERNEL_WARMUP=0)
+== d2c-wu-cold-4096
+strata mmvq warmup: 192 launches over 6 types x ncols 1..8 x 2 launch shapes, 17453 ms
+strata kernel warmup: 54 launches over 54 sites, 2287 ms
+== d2c-wu-4096
+strata mmvq warmup: 192 launches over 6 types x ncols 1..8 x 2 launch shapes, 39 ms
+strata kernel warmup: 54 launches over 54 sites, 5 ms
+== d2c-mmoff-4096
+strata mmvq warmup: 192 launches over 6 types x ncols 1..8 x 2 launch shapes, 39 ms
+strata kernel warmup: off (STRATA_KERNEL_WARMUP=0)
+== d2c-wu-32768
+strata mmvq warmup: 192 launches over 6 types x ncols 1..8 x 2 launch shapes, 43 ms
+strata kernel warmup: 54 launches over 54 sites, 6 ms
+
+###### 5. THE LOAD WALL AND THE ASK, PER ARM
+d2c-nooff-cold-4096      == loaded=1 after 32s (2026-10-03T22:26:45-06:00) == == the ask finished=1 after 33276 ms (2026-10-03T22:27:19-06:00) == 
+d2c-mmoff-cold-4096      == loaded=1 after 49s (2026-10-03T22:28:15-06:00) == == the ask finished=1 after 28229 ms (2026-10-03T22:28:44-06:00) == 
+d2c-wu-cold-4096         == loaded=1 after 52s (2026-10-03T22:29:43-06:00) == == the ask finished=1 after 26202 ms (2026-10-03T22:30:09-06:00) == 
+d2c-wu-4096              == loaded=1 after 31s (2026-10-03T22:30:48-06:00) == == the ask finished=1 after 21165 ms (2026-10-03T22:31:09-06:00) == 
+d2c-mmoff-4096           == loaded=1 after 31s (2026-10-03T22:31:48-06:00) == == the ask finished=1 after 21164 ms (2026-10-03T22:32:09-06:00) == 
+d2c-wu-32768             == loaded=1 after 32s (2026-10-03T22:32:48-06:00) == == the ask finished=1 after 102727 ms (2026-10-03T22:34:30-06:00) == 
+
+###### 6. THE IDS (d2b/ids_b.py's rule: md5 over the T lines joined by newline)
+  d2c-nooff-cold-4096       147 tokens  ids 66bf952d445e330c974c49e4f220b4b1  <-- canonical
+  d2c-mmoff-cold-4096       147 tokens  ids 66bf952d445e330c974c49e4f220b4b1  <-- canonical
+  d2c-wu-cold-4096          147 tokens  ids 66bf952d445e330c974c49e4f220b4b1  <-- canonical
+  d2c-wu-4096               147 tokens  ids 66bf952d445e330c974c49e4f220b4b1  <-- canonical
+  d2c-mmoff-4096            147 tokens  ids 66bf952d445e330c974c49e4f220b4b1  <-- canonical
+  d2c-wu-32768              256 tokens  ids d87373e84417dab60732a95eb47666a6  <-- canonical
+######   the 4K canonical is 66bf952d445e330c974c49e4f220b4b1 and the 32K one d87373e84417dab60732a95eb47666a6
+
+###### 7. THE ENGINES' OWN DECODE AND PROMPT LINES, PER ARM
+== d2c-nooff-cold-4096
+strata decode timing: 54 windows, avg T 3.09, 2.72 tokens/window, 253.20 ms/window = verify 229.31 (GPU-reach wait 87.78 + per-layer host 0.95 [plan 0.29 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.21 + tail 11.11) + commit/emit 1.89 + draft 21.99; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.93, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 19391 ms (197.6 tok/s), 147 generated in 13673 ms (10.8 tok/s), drafts accepted 93 of 113, 0 checkpoints
+== d2c-mmoff-cold-4096
+strata decode timing: 54 windows, avg T 3.15, 2.72 tokens/window, 158.37 ms/window = verify 136.14 (GPU-reach wait 87.29 + per-layer host 0.97 [plan 0.30 actq 0.21 jobs 0.20 CPU 0.00] + stage 1.24 + tail 11.13) + commit/emit 1.88 + draft 20.35; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 31.48, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 19287 ms (198.7 tok/s), 147 generated in 8552 ms (17.2 tok/s), drafts accepted 93 of 116, 0 checkpoints
+== d2c-wu-cold-4096
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 119.93 ms/window = verify 107.22 (GPU-reach wait 84.70 + per-layer host 0.94 [plan 0.28 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.19 + tail 10.93) + commit/emit 1.89 + draft 10.82; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 19343 ms (198.1 tok/s), 147 generated in 6476 ms (22.7 tok/s), drafts accepted 93 of 110, 0 checkpoints
+== d2c-wu-4096
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 112.78 ms/window = verify 100.65 (GPU-reach wait 84.52 + per-layer host 0.93 [plan 0.28 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.23 + tail 10.98) + commit/emit 1.86 + draft 10.27; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 14985 ms (255.7 tok/s), 147 generated in 6090 ms (24.1 tok/s), drafts accepted 93 of 110, 0 checkpoints
+== d2c-mmoff-4096
+strata decode timing: 53 windows, avg T 3.09, 2.77 tokens/window, 112.88 ms/window = verify 100.85 (GPU-reach wait 84.93 + per-layer host 0.92 [plan 0.28 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.19 + tail 11.01) + commit/emit 1.87 + draft 10.16; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.94, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 14893 ms (257.3 tok/s), 147 generated in 5982 ms (24.6 tok/s), drafts accepted 94 of 111, 0 checkpoints
+== d2c-wu-32768
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 113.45 ms/window = verify 99.47 (GPU-reach wait 84.90 + per-layer host 0.92 [plan 0.28 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.33 + tail 10.94) + commit/emit 1.88 + draft 12.09; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+strata serve: prompt 32256 tokens = 0 reused + 32256 read in 91745 ms (351.6 tok/s), 256 generated in 10437 ms (24.5 tok/s), drafts accepted 164 of 185, 0 checkpoints
+
+###### 8. THE CACHE CENSUS AND THE PROGRAMS WRITTEN IN THE ASK, PER ARM
+d2c-nooff-cold-4096/log.txt:== cache census: SYCL 0.src entries 0 -> 157 (+157); NEO files 0 -> 155 (+155) ==
+d2c-mmoff-cold-4096/log.txt:== cache census: SYCL 0.src entries 0 -> 217 (+217); NEO files 0 -> 215 (+215) ==
+d2c-wu-cold-4096/log.txt:== cache census: SYCL 0.src entries 0 -> 221 (+221); NEO files 0 -> 219 (+219) ==
+d2c-wu-4096/log.txt:== cache census: SYCL 0.src entries 332 -> 332 (+0); NEO files n/a -> n/a (+n/a) ==
+d2c-mmoff-4096/log.txt:== cache census: SYCL 0.src entries 332 -> 332 (+0); NEO files n/a -> n/a (+n/a) ==
+d2c-wu-32768/log.txt:== cache census: SYCL 0.src entries 332 -> 332 (+0); NEO files n/a -> n/a (+n/a) ==
+
+###### 9. THE TESTS (ctest, ZE_AFFINITY_MASK=0)
+1/1 Test #18: mmvq_multi_parity ................   Passed    1.96 sec
+100% tests passed, 0 tests failed out of 1
+-- the families whose kernels this pass warms:
+75% tests passed, 4 tests failed out of 16
+	 15 - elementwise_parity (Failed)
+	 16 - quantize_act_parity (Failed)
+	 19 - iq_multi_parity (Failed)
+	 45 - expert_multi_test (Failed)
+-- the full suite (the S4 set) vs the recorded baseline (5 failed of 49, the same five names):
+90% tests passed, 5 tests failed out of 49
+	  5 - platform_memory_test (Failed)
+	 15 - elementwise_parity (Failed)
+	 16 - quantize_act_parity (Failed)
+	 19 - iq_multi_parity (Failed)
+	 45 - expert_multi_test (Failed)
+-- the baseline (s4/runs/ctest/full.log):
+90% tests passed, 5 tests failed out of 49
+	  5 - platform_memory_test (Failed)
+	 15 - elementwise_parity (Failed)
+	 16 - quantize_act_parity (Failed)
+	 19 - iq_multi_parity (Failed)
+	 45 - expert_multi_test (Failed)
+
+###### 10. MACHINE STATE AT THE END OF THIS CARD
+   no engine of ours
+   no server of ours
+   ZE_AFFINITY_MASK=<unset>
+0.73 2.96 3.54 1/1662 1443463
+   port 8099 free

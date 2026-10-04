@@ -1,0 +1,397 @@
+{
+ "copy_i32_from_mapped": {
+  "n": 1,
+  "first_s": 0.0,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/4001708643134391013/6142509188972423790/9327767619666270553"
+ },
+ "copy_from_mapped": {
+  "n": 1,
+  "first_s": 0.01,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/4127077798830111857/6142509188972423790/9327767619666270553"
+ },
+ "broadcast_streams": {
+  "n": 1,
+  "first_s": 0.02,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/12548442913383129406/6142509188972423790/9327767619666270553"
+ },
+ "native_q6_k_mmvq -> native_q6_k_mmvq_kernel<false>": {
+  "n": 1,
+  "first_s": 0.07,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/12432804901965948032/6142509188972423790/9327767619666270553"
+ },
+ "gdn_conv_l2_multi -> gdn_conv_l2_multi_kernel": {
+  "n": 1,
+  "first_s": 0.1,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/13075632749294808346/6142509188972423790/9327767619666270553"
+ },
+ "gdn_ab_multi -> gdn_ab_multi_kernel": {
+  "n": 1,
+  "first_s": 0.17,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/834600343746756479/6142509188972423790/9327767619666270553"
+ },
+ "native_q4_k_mmvq -> native_q4_k_mmvq_kernel<false>": {
+  "n": 1,
+  "first_s": 0.22,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/1954232617974074993/6142509188972423790/9327767619666270553"
+ },
+ "gdn_step_norm_multi -> gdn_step_norm_multi_kernel": {
+  "n": 1,
+  "first_s": 0.29,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/15160920372875681164/6142509188972423790/9327767619666270553"
+ },
+ "bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<256>": {
+  "n": 1,
+  "first_s": 0.32,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/10965761105225777888/6142509188972423790/9327767619666270553"
+ },
+ "native_router_top10 -> route": {
+  "n": 1,
+  "first_s": 0.38,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/9723552573029034931/6142509188972423790/9327767619666270553"
+ },
+ "doorbell_publish -> doorbell_publish_kernel": {
+  "n": 1,
+  "first_s": 0.41,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/16078437399455694654/6142509188972423790/9327767619666270553"
+ },
+ "f32_to_bf16_bulk": {
+  "n": 1,
+  "first_s": 0.42,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/8802521919406327916/6142509188972423790/9327767619666270553"
+ },
+ "native_iq4_xs_mmvq -> native_iq4_xs_mmvq_kernel<true>": {
+  "n": 1,
+  "first_s": 0.57,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/11316501759764417792/6142509188972423790/9327767619666270553"
+ },
+ "shared_expert_multi": {
+  "n": 4,
+  "first_s": 0.59,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/15927319744615241900/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_small_mmvq_kernel<strata::kernels::(anonymous namespace)::IQ4NLBlock, 4, true>": {
+  "n": 1,
+  "first_s": 0.69,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/13947510128571340664/6142509188972423790/9327767619666270553"
+ },
+ "quantize_q8_1_rows -> quantize_q8_1_kernel": {
+  "n": 1,
+  "first_s": 0.73,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/4445601202705495735/6142509188972423790/9327767619666270553"
+ },
+ "wait_flag_ge": {
+  "n": 1,
+  "first_s": 0.75,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/10288604128819614344/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_gu_multi_kernel<18>": {
+  "n": 1,
+  "first_s": 0.85,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/16089370800611617940/6142509188972423790/9327767619666270553"
+ },
+ "native_expert_grouped": {
+  "n": 1,
+  "first_s": 0.86,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/4290195423659741661/6142509188972423790/9327767619666270553"
+ },
+ "native_expert_grouped -> quantize_q8_1_kernel": {
+  "n": 1,
+  "first_s": 0.89,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/13336952786837953556/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_down_multi_kernel<20>": {
+  "n": 1,
+  "first_s": 0.96,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/5350516174721338053/6142509188972423790/9327767619666270553"
+ },
+ "fetch_blobs": {
+  "n": 1,
+  "first_s": 0.97,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/17585137301805496473/6142509188972423790/9327767619666270553"
+ },
+ "rebase_ptrs": {
+  "n": 1,
+  "first_s": 0.98,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/14171026265943830583/6142509188972423790/9327767619666270553"
+ },
+ "copy_rows_from_mapped -> copy_rows_from_mapped_kernel": {
+  "n": 1,
+  "first_s": 1.0,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/4936254076729333970/6142509188972423790/9327767619666270553"
+ },
+ "moe_hit_add": {
+  "n": 1,
+  "first_s": 1.01,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/14448467540382485989/6142509188972423790/9327767619666270553"
+ },
+ "native_moe_combine": {
+  "n": 1,
+  "first_s": 1.03,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/2337216146340389673/6142509188972423790/9327767619666270553"
+ },
+ "native_gr_post -> post": {
+  "n": 1,
+  "first_s": 1.04,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/8513865140357551402/6142509188972423790/9327767619666270553"
+ },
+ "native_gr_rms_norm_weighted -> weighted_rms_norm<1024>": {
+  "n": 1,
+  "first_s": 1.08,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/17283561583743195954/6142509188972423790/9327767619666270553"
+ },
+ "native_ple_postops -> gate_kernel": {
+  "n": 1,
+  "first_s": 1.12,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/15202210252317252371/6142509188972423790/9327767619666270553"
+ },
+ "native_ple_postops": {
+  "n": 2,
+  "first_s": 1.13,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/13712488633747083194/6142509188972423790/9327767619666270553"
+ },
+ "ple_history_advance": {
+  "n": 1,
+  "first_s": 1.15,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/15362198688576159269/6142509188972423790/9327767619666270553"
+ },
+ "native_q5_k_mmvq -> native_q5_k_mmvq_kernel<false>": {
+  "n": 1,
+  "first_s": 1.2,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/10652336760802637127/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_gu_multi_kernel<22>": {
+  "n": 1,
+  "first_s": 1.3,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/11996410633827233055/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_down_multi_kernel<42>": {
+  "n": 1,
+  "first_s": 1.39,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/7662659655150817849/6142509188972423790/9327767619666270553"
+ },
+ "native_qsa_indexer_append -> append<false>": {
+  "n": 1,
+  "first_s": 1.45,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/17819383927351521517/6142509188972423790/9327767619666270553"
+ },
+ "qsa_block_scores -> block_scores_multi_kernel": {
+  "n": 1,
+  "first_s": 1.49,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/10010679668444384200/6142509188972423790/9327767619666270553"
+ },
+ "qsa_decode_attn_batch -> attn_chunk_kernel<1>": {
+  "n": 1,
+  "first_s": 1.59,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/14118895262719763634/6142509188972423790/9327767619666270553"
+ },
+ "qsa_decode_attn_batch -> attn_merge_kernel": {
+  "n": 1,
+  "first_s": 1.61,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/15436772251106673373/6142509188972423790/9327767619666270553"
+ },
+ "native_qsa_gate_apply": {
+  "n": 1,
+  "first_s": 1.63,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/10696241077221552007/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_gu_multi_kernel<21>": {
+  "n": 1,
+  "first_s": 1.73,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/4774256852510333175/6142509188972423790/9327767619666270553"
+ },
+ "gdn_conv_commit": {
+  "n": 1,
+  "first_s": 1.75,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/15059260727523158009/6142509188972423790/9327767619666270553"
+ },
+ "copy_indexed": {
+  "n": 1,
+  "first_s": 1.76,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/1121233225532769185/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_small_mmvq_kernel<strata::kernels::(anonymous namespace)::Q80Block, 8, true>": {
+  "n": 1,
+  "first_s": 1.88,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/6395213400300762862/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_gu_multi_kernel<23>": {
+  "n": 1,
+  "first_s": 1.99,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/6039610572074713993/6142509188972423790/9327767619666270553"
+ },
+ "native_gr_down_silu": {
+  "n": 1,
+  "first_s": 2.01,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/9700831990520283291/6142509188972423790/9327767619666270553"
+ },
+ "bf16_gemv_fp32_mmvf -> bf16_f32_mmvf_kernel<160>": {
+  "n": 1,
+  "first_s": 2.04,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/11179300195924865518/6142509188972423790/9327767619666270553"
+ },
+ "native_gr_pre_gated": {
+  "n": 1,
+  "first_s": 2.06,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/18444199217606414839/6142509188972423790/9327767619666270553"
+ },
+ "sample_tokens -> sampler_greedy_kernel": {
+  "n": 1,
+  "first_s": 2.11,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/12205203071179924839/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_small_mmvq_kernel<strata::kernels::(anonymous namespace)::Q80Block, 8, false>": {
+  "n": 1,
+  "first_s": 2.21,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/2511755136697802646/6142509188972423790/9327767619666270553"
+ },
+ "mtp_select -> mtp_select_kernel": {
+  "n": 1,
+  "first_s": 2.22,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/7857945380775787826/6142509188972423790/9327767619666270553"
+ },
+ "moe_group_resident -> group_resident_kernel": {
+  "n": 1,
+  "first_s": 2.25,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/14387931272824937327/6142509188972423790/9327767619666270553"
+ },
+ "quantize_q8_0_scaled -> quantize_q8_0_scaled_kernel": {
+  "n": 1,
+  "first_s": 2.27,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/9584893723527715584/6142509188972423790/9327767619666270553"
+ },
+ "moe_grouped_s2 -> gu_grouped_t_kernel": {
+  "n": 1,
+  "first_s": 2.55,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/16294561139123783391/6142509188972423790/9327767619666270553"
+ },
+ "moe_grouped_s2": {
+  "n": 1,
+  "first_s": 2.56,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/2939167294178148095/6142509188972423790/9327767619666270553"
+ },
+ "moe_grouped_s2 -> down_grouped_t_kernel": {
+  "n": 1,
+  "first_s": 2.68,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/15637065617453086479/6142509188972423790/9327767619666270553"
+ },
+ "shared_expert": {
+  "n": 3,
+  "first_s": 2.69,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/5157335716371048985/6142509188972423790/9327767619666270553"
+ },
+ "row_top_prob -> row_top_prob_kernel": {
+  "n": 1,
+  "first_s": 2.74,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/15085949001776038906/6142509188972423790/9327767619666270553"
+ },
+ "map_ids": {
+  "n": 1,
+  "first_s": 2.75,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/7719745399420782430/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q6KTraits, 4, 4, 1>": {
+  "n": 1,
+  "first_s": 2.83,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/12259092185388536597/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q4KTraits, 4, 4, 1>": {
+  "n": 1,
+  "first_s": 2.91,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/17644973460093497436/6142509188972423790/9327767619666270553"
+ },
+ "bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 4>": {
+  "n": 1,
+  "first_s": 2.95,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/12695592342978455114/6142509188972423790/9327767619666270553"
+ },
+ "native_router_top10_multi -> route": {
+  "n": 1,
+  "first_s": 3.01,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/3891693715832755029/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::IQ4XSTraits, 4, 4, 4>": {
+  "n": 1,
+  "first_s": 3.4,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/7416416865902877940/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE)": {
+  "n": 9,
+  "first_s": 3.87,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/9084646566724584125/6142509188972423790/9327767619666270553"
+ },
+ "native_moe_combine_multi": {
+  "n": 1,
+  "first_s": 3.89,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/6573495319946950633/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q5KTraits, 4, 4, 1>": {
+  "n": 1,
+  "first_s": 3.97,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/13256970385546317555/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q6KTraits, 2, 4, 1>": {
+  "n": 1,
+  "first_s": 4.34,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/13538641460973273530/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q4KTraits, 2, 4, 1>": {
+  "n": 1,
+  "first_s": 4.4,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/15287303289327135007/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::IQ4XSTraits, 2, 4, 4>": {
+  "n": 1,
+  "first_s": 4.67,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/529009880863894114/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q5KTraits, 2, 4, 1>": {
+  "n": 1,
+  "first_s": 4.91,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/17199372150307963846/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q6KTraits, 6, 4, 1>": {
+  "n": 1,
+  "first_s": 6.72,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/7145213772106691719/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q4KTraits, 6, 4, 1>": {
+  "n": 1,
+  "first_s": 6.81,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/387758518472313354/6142509188972423790/9327767619666270553"
+ },
+ "bf16_gemv_fp32_mmvf_multi -> bf16_f32_mmvf_multi_kernel<256, 8>": {
+  "n": 1,
+  "first_s": 6.86,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/7636901835533390696/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::IQ4XSTraits, 6, 4, 4>": {
+  "n": 1,
+  "first_s": 7.38,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/16358170430792929659/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q5KTraits, 6, 4, 1>": {
+  "n": 1,
+  "first_s": 8.22,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/14628511677131266353/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q6KTraits, 3, 4, 1>": {
+  "n": 1,
+  "first_s": 10.41,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/10314574166933118549/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q4KTraits, 3, 4, 1>": {
+  "n": 1,
+  "first_s": 10.48,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/12004853513499543993/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::IQ4XSTraits, 3, 4, 4>": {
+  "n": 1,
+  "first_s": 10.81,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/10564604824716951892/6142509188972423790/9327767619666270553"
+ },
+ "(NO SITE) -> native_mmvq_multi_kernel<strata::kernels::(anonymous namespace)::Q5KTraits, 3, 4, 1>": {
+  "n": 1,
+  "first_s": 11.23,
+  "dir": "/tmp/d2b-cold1/sycl/13665086051514919768/2918638725222361256/6142509188972423790/9327767619666270553"
+ }
+}

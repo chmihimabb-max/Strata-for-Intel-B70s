@@ -1,0 +1,116 @@
+ 
+:: initializing oneAPI environment ...
+   d2c_ctest.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+[  2%] Built target strata-plan
+[  2%] Built target strata_spec
+[  2%] Built target strata-gguf
+[  4%] Built target gguf_reader_test
+[  4%] Built target gguf_split_test
+[  4%] Built target strata-dequant
+[  8%] Built target ggml-base
+[ 11%] Built target strata_core
+[ 14%] Built target conv_cache_test
+[ 14%] Built target controller_test
+[ 14%] Built target coupled_draft_test
+[ 14%] Built target suffix_drafter_test
+[ 14%] Built target bf16_bits_test
+[ 14%] Built target draft_policy_test
+[ 15%] Built target direct_file_async_test
+[ 21%] Built target ggml-cpu
+[ 23%] Linking CXX executable pack_census
+[ 23%] Linking CXX executable platform_memory_test
+[ 23%] Linking CXX executable strata-device
+[ 23%] Linking CXX executable pinned_shared_test
+[ 27%] Built target strata_kernels_cpu
+[ 30%] Built target expert_multi_test
+[ 30%] Built target expert_parity
+[ 30%] Built target pool_test
+[ 31%] Built target pool_stress
+[ 63%] Built target strata_kernels
+[ 65%] Linking CXX executable dequant_s2_parity
+[ 65%] Linking CXX executable strata-load
+[ 65%] Linking CXX executable s2_gemv_parity
+[ 65%] Linking CXX executable s2_gemv_q8_parity
+[ 66%] Built target platform_memory_test
+[ 66%] Built target pinned_shared_test
+[ 66%] Built target strata-device
+[ 66%] Built target pack_census
+[ 67%] Linking CXX executable s_gemv_q8k_parity
+[ 67%] Linking CXX executable router_top10_parity
+[ 67%] Linking CXX executable s_gemv_parity
+[ 67%] Linking CXX executable rope_parity
+[ 68%] Built target s2_gemv_parity
+[ 69%] Built target strata-load
+[ 69%] Built target dequant_s2_parity
+[ 69%] Linking CXX executable bf16_gemv_parity
+[ 69%] Linking CXX executable elementwise_parity
+[ 69%] Linking CXX executable quantize_act_parity
+[ 69%] Built target s2_gemv_q8_parity
+[ 69%] Linking CXX executable s2_expert_grouped_parity
+[ 69%] Built target rope_parity
+[ 69%] Built target router_top10_parity
+[ 69%] Linking CXX executable mmvq_multi_parity
+[ 70%] Linking CXX executable iq_multi_parity
+[ 71%] Built target bf16_gemv_parity
+[ 71%] Built target s_gemv_parity
+[ 72%] Built target quantize_act_parity
+[ 73%] Linking CXX executable kv_q8_parity
+[ 73%] Linking CXX executable kv_q4_parity
+[ 74%] Built target s_gemv_q8k_parity
+[ 74%] Linking CXX executable kv_stream_parity
+[ 74%] Linking CXX executable mmvq_multi_spread
+[ 75%] Built target s2_expert_grouped_parity
+[ 76%] Linking CXX executable sampler_parity
+[ 77%] Built target kv_q4_parity
+[ 77%] Linking CXX executable sycl_handoff_test
+[ 77%] Built target kv_q8_parity
+[ 77%] Linking CXX executable sycl_mapped_alias_test
+[ 77%] Built target kv_stream_parity
+[ 77%] Linking CXX executable qsa_parity
+[ 77%] Built target sampler_parity
+[ 77%] Linking CXX executable gdn_parity
+[ 78%] Built target elementwise_parity
+[ 78%] Linking CXX executable gr_parity
+[ 78%] Built target iq_multi_parity
+[ 79%] Linking CXX executable shared_expert_parity
+[ 80%] Built target sycl_mapped_alias_test
+[ 80%] Linking CXX executable cvec_parity
+[ 80%] Built target sycl_handoff_test
+[ 80%] Linking CXX executable kv_hybrid_parity
+[ 80%] Built target qsa_parity
+[ 80%] Linking CXX executable sycl_prompt_attn_parity
+[ 80%] Built target gdn_parity
+[ 81%] Linking CXX executable iq_parity
+[ 82%] Built target gr_parity
+[ 87%] Built target strata_engine
+[ 87%] Linking CXX executable w4a16_expert_parity
+[ 88%] Built target cvec_parity
+[ 89%] Linking CXX executable w4a16_gemv_bench
+[ 89%] Built target sycl_prompt_attn_parity
+[ 93%] Built target strata_prefill
+[ 93%] Built target kv_hybrid_parity
+[ 94%] Linking CXX executable strata
+[ 94%] Linking CXX executable w4a16_pack_check
+[ 95%] Built target mmvq_multi_parity
+[ 95%] Linking CXX executable sycl_mkl_gemm
+[ 96%] Built target mmvq_multi_spread
+[ 97%] Linking CXX executable sycl_prefill
+[ 97%] Built target w4a16_pack_check
+[ 98%] Built target sycl_mkl_gemm
+[ 98%] Built target iq_parity
+[ 98%] Built target shared_expert_parity
+[100%] Built target w4a16_expert_parity
+[100%] Built target w4a16_gemv_bench
+[100%] Built target strata
+[100%] Built target sycl_prefill
