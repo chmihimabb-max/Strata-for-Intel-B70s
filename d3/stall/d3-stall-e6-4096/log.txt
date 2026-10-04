@@ -1,0 +1,37 @@
+D3 stall arm d3-stall-e6-4096   2026-10-03T20:55:58-06:00
+binary: /home/michael/strata-xpu/strata/build-sycl/strata  (2026-10-03 19:22:10.716037687 -0600 35970200 bytes)  md5 e841fd061fec873c2f24e785973a2ebe
+repo: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context
+env: STRATA_TEST_VERIFY_STALL=1 STRATA_RELEASE_DRAIN_MS=unset SECOND_ASK=1
+arm: max-new=16 max-context=4096 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt one engine, both cards, layer-split auto, spec-min-p 0.7
+   no engine of ours
+ 
+:: initializing oneAPI environment ...
+   d3_stall.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: d3-stall-e6-4096 /home/michael/strata-xpu/strata/build-sycl/strata 16 4096 1 1
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+engine exited 0
+== exit 0, wall 51s ==
+-- generated T lines: 17 --
+98607e99f79f446a08a2b08b98fd068e  /home/michael/strata-xpu/strata/d3/stall/d3-stall-e6-4096/tokens.txt
+PP 3831 3832 13593 281.8
+DONE 16 3832 14923.3 854.3 length 11 11 0 9120 9120 0 0 0.0
+PP 1009 1010 3396 297.2
+DONE 1 1010 3857.8 76.8 stop 0 0 0 480 480 0 0 0.0
+== the engine's own end-of-run lines ==
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata verify: window up to 6 tokens, 74.0 MiB of device buffers
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 1-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 4-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)
+strata verify: captured the 2-token window (upload no error, sync no error)

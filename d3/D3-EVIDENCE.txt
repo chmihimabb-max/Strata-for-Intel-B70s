@@ -1,0 +1,1079 @@
+############ D3 (t_87aa2963) raw evidence   2026-10-03T21:10:16-06:00
+repo: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context   branch sycl-xpu
+
+############ 1. the arm table (d3/d3_report.py)
+tag                    lever                    spec   gr path                 ctx  win  avgT  tok/win  ms/win dec tok/s pre tok/s   acc/off  rate ids md5
+d3-base-131072         -                           4 <unset=default> graph(default)    131072  118  2.37     2.17  102.97     21.07   347.03   140/162 0.864 511a89be345a6583c9bc8c580259d73e
+d3-base-32768          -                           4 <unset=default> graph(default)     32768   92  3.01     2.78  115.74     24.04   314.35   164/185 0.886 d87373e84417dab60732a95eb47666a6
+d3-base-4096           -                           4 <unset=default> graph(default)      4096   54  3.04     2.72  113.72     23.94   225.96    93/110 0.845 66bf952d445e330c974c49e4f220b4b1
+d3-basearmctx-4096     -                           4 <unset=default> graph(default)      4096   54  3.04     2.72  113.02     24.09   255.68    93/110 0.845 66bf952d445e330c974c49e4f220b4b1
+d3-devplan-131072      STRATA_VERIFY_DEVICE_PLAN=1    4    0 closure(env=0)    131072  115  2.40     2.23  109.55     20.32   347.16   143/161 0.888 511a89be345a6583c9bc8c580259d73e
+d3-devplan-32768       STRATA_VERIFY_DEVICE_PLAN=1    4    0 closure(env=0)     32768   92  3.01     2.78  122.84     22.65   314.25   164/185 0.886 d87373e84417dab60732a95eb47666a6
+d3-devplan-4096        STRATA_VERIFY_DEVICE_PLAN=1    4    0 closure(env=0)      4096   53  3.21     2.77  126.89     21.86   225.93    94/117 0.803 66bf952d445e330c974c49e4f220b4b1
+d3-devplan-noh-32768   STRATA_VERIFY_DEVICE_PLAN=1    4 <unset=default> graph(default)     32768   92  3.01     2.78  119.37     23.31   314.64   164/185 0.886 d87373e84417dab60732a95eb47666a6
+d3-devplan-noh-4096    STRATA_VERIFY_DEVICE_PLAN=1    4 <unset=default> graph(default)      4096   54  3.04     2.72  117.55     23.16   227.32    93/110 0.845 66bf952d445e330c974c49e4f220b4b1
+d3-devplan-noh2-32768  STRATA_VERIFY_DEVICE_PLAN=1    4 <unset=default> graph(default)     32768   92  3.01     2.78  118.84     23.41   314.82   164/185 0.886 d87373e84417dab60732a95eb47666a6
+d3-devplan-noh2-4096   STRATA_VERIFY_DEVICE_PLAN=1    4 <unset=default> graph(default)      4096   54  3.04     2.72  116.74     23.32   225.87    93/110 0.845 66bf952d445e330c974c49e4f220b4b1
+d3-hist-131072         hist=1                      4    0 closure(env=0)    131072  115  2.40     2.23  112.63     19.76   346.56   143/161 0.888 511a89be345a6583c9bc8c580259d73e
+d3-hist-32768          hist=1                      4    0 closure(env=0)     32768   92  3.01     2.78  124.96     22.27   351.76   164/185 0.886 d87373e84417dab60732a95eb47666a6
+d3-hist-4096           hist=1                      4    0 closure(env=0)      4096   53  3.21     2.77  128.69     21.55   255.58    94/117 0.803 66bf952d445e330c974c49e4f220b4b1
+d3-histc-131072        hist=1                      4    0 closure(env=0)    131072  115  2.40     2.23  114.10     19.51   347.37   143/161 0.888 511a89be345a6583c9bc8c580259d73e
+d3-histc-32768         hist=1                      4    0 closure(env=0)     32768   92  3.01     2.78  126.97     21.92   314.12   164/185 0.886 d87373e84417dab60732a95eb47666a6
+d3-histc-4096          hist=1                      4    0 closure(env=0)      4096   53  3.19     2.77  130.53     21.25   226.46    94/116 0.810 66bf952d445e330c974c49e4f220b4b1
+d3-nomulti-131072      STRATA_SCORES_MULTI=0       4 <unset=default> graph(default)    131072  118  2.36     2.17  102.46     21.17   347.02   140/160 0.875 511a89be345a6583c9bc8c580259d73e
+d3-nomulti-32768       STRATA_SCORES_MULTI=0       4 <unset=default> graph(default)     32768   92  3.01     2.78  116.01     23.99   313.75   164/185 0.886 d87373e84417dab60732a95eb47666a6
+d3-nomulti-4096        STRATA_SCORES_MULTI=0       4 <unset=default> graph(default)      4096   54  3.04     2.72  114.84     23.71   225.18    93/110 0.845 66bf952d445e330c974c49e4f220b4b1
+d3-oldtopk-4096        STRATA_TOPK_OLD=1           4 <unset=default> graph(default)      4096   54  3.04     2.72  112.06     24.29   256.40    93/110 0.845 66bf952d445e330c974c49e4f220b4b1
+d3-oldtopkhist-131072  STRATA_TOPK_OLD=1           4 <unset=default> graph(default)    131072  118  2.36     2.17  102.91     21.08   348.34   140/160 0.875 511a89be345a6583c9bc8c580259d73e
+d3-oldtopkhist-4096    STRATA_TOPK_OLD=1           4    0 closure(env=0)      4096   53  3.21     2.77  128.12     21.65   256.41    94/117 0.803 66bf952d445e330c974c49e4f220b4b1
+d3-oldtopkhistc-131072 STRATA_TOPK_OLD=1           4    0 closure(env=0)    131072  115  2.40     2.23  114.13     19.51   348.51   143/161 0.888 511a89be345a6583c9bc8c580259d73e
+
+== d3-base-131072 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 118 windows, avg T 2.37, 2.17 tokens/window, 102.97 ms/window = verify 91.30 (GPU-reach wait 78.89 + per-layer host 0.82 [plan 0.27 actq 0.16 jobs 0.15 CPU 0.00] + stage 1.18 + tail 9.27) + commit/emit 1.79 + draft 9.88; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 23.73, PCIe 0.00
+   strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 91 (kernel 0 memset 0 memcpy 72 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 9250.48 ms
+   strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4879.07 ms
+   DONE 256 129024 371798.8 12150.4 length 140 162 0 134400 134400 0 0 0.0
+== d3-base-32768 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 115.74 ms/window = verify 101.65 (GPU-reach wait 86.76 + per-layer host 0.92 [plan 0.28 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.29 + tail 10.96) + commit/emit 1.88 + draft 12.21; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+   strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 93 (kernel 0 memset 0 memcpy 72 barrier 20 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 7927.58 ms
+   strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 4149.94 ms
+   DONE 256 32256 102612.2 10648.5 length 164 185 0 132960 132960 0 0 0.0
+== d3-base-4096 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 113.72 ms/window = verify 101.27 (GPU-reach wait 85.13 + per-layer host 0.93 [plan 0.29 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.18 + tail 10.92) + commit/emit 1.88 + draft 10.58; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+   strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 89 (kernel 0 memset 0 memcpy 72 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 4544.78 ms
+   strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2391.82 ms
+   DONE 147 3832 16958.9 6141.1 stop 93 110 0 78720 78720 0 0 0.0
+== d3-basearmctx-4096 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 113.02 ms/window = verify 100.84 (GPU-reach wait 84.18 + per-layer host 0.97 [plan 0.29 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.19 + tail 10.93) + commit/emit 1.88 + draft 10.30; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+   strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4493.90 ms
+   strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2360.92 ms
+   DONE 147 3832 14987.4 6103.3 stop 93 110 0 78720 78720 0 0 0.0
+== d3-devplan-131072 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 115 windows, avg T 2.40, 2.23 tokens/window, 109.55 ms/window = verify 97.71 (GPU-reach wait 73.57 + per-layer host 0.84 [plan 0.28 actq 0.16 jobs 0.17 CPU 0.00] + stage 1.28 + tail 9.49) + commit/emit 1.95 + draft 9.88; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.00, PCIe 0.00
+   strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 8404.31 ms
+   strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2617 (kernel 1844 memset 0 memcpy 750 barrier 23 event 0 hostfn 0 graph 0) + recorded 0; 104.7 per layer; GPU-reach wait 4425.01 ms
+   DONE 256 129024 371652.6 12597.8 length 143 161 0 132480 132480 0 0 0.0
+== d3-devplan-32768 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 122.84 ms/window = verify 108.76 (GPU-reach wait 81.51 + per-layer host 0.96 [plan 0.30 actq 0.20 jobs 0.22 CPU 0.00] + stage 1.33 + tail 11.14) + commit/emit 2.04 + draft 12.03; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+   strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 7446.72 ms
+   strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 2616 (kernel 1844 memset 0 memcpy 750 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 3880.00 ms
+   DONE 256 32256 102643.5 11301.0 length 164 185 0 132960 132960 0 0 0.0
+== d3-devplan-4096 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 53 windows, avg T 3.21, 2.77 tokens/window, 126.89 ms/window = verify 114.41 (GPU-reach wait 83.18 + per-layer host 0.98 [plan 0.31 actq 0.22 jobs 0.23 CPU 0.00] + stage 1.25 + tail 11.43) + commit/emit 2.04 + draft 10.43; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 32.08, PCIe 0.00
+   strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 4358.89 ms
+   strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2614 (kernel 1844 memset 0 memcpy 750 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 2281.64 ms
+   DONE 147 3832 16961.0 6725.0 stop 94 117 0 81600 81600 0 0 0.0
+== d3-devplan-noh-32768 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 119.37 ms/window = verify 105.32 (GPU-reach wait 89.70 + per-layer host 0.96 [plan 0.29 actq 0.20 jobs 0.20 CPU 0.00] + stage 2.08 + tail 10.94) + commit/emit 1.88 + draft 12.17; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+   strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 95 (kernel 0 memset 0 memcpy 72 barrier 22 event 0 hostfn 0 graph 1) + recorded 0; 4.1 per layer; GPU-reach wait 8195.38 ms
+   strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 102 (kernel 0 memset 0 memcpy 78 barrier 23 event 0 hostfn 0 graph 1) + recorded 0; 4.1 per layer; GPU-reach wait 4289.99 ms
+   DONE 256 32256 102516.8 10981.8 length 164 185 0 132960 132960 0 0 0.0
+== d3-devplan-noh-4096 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 117.55 ms/window = verify 104.99 (GPU-reach wait 88.35 + per-layer host 0.94 [plan 0.29 actq 0.21 jobs 0.20 CPU 0.00] + stage 1.18 + tail 10.94) + commit/emit 1.89 + draft 10.67; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+   strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 95 (kernel 0 memset 0 memcpy 72 barrier 22 event 0 hostfn 0 graph 1) + recorded 0; 4.1 per layer; GPU-reach wait 4716.00 ms
+   strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 2472.64 ms
+   DONE 147 3832 16857.5 6347.5 stop 93 110 0 78720 78720 0 0 0.0
+== d3-devplan-noh2-32768 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 118.84 ms/window = verify 104.78 (GPU-reach wait 89.97 + per-layer host 0.92 [plan 0.28 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.29 + tail 10.95) + commit/emit 1.90 + draft 12.16; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+   strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 95 (kernel 0 memset 0 memcpy 72 barrier 22 event 0 hostfn 0 graph 1) + recorded 0; 4.1 per layer; GPU-reach wait 8220.09 ms
+   strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 102 (kernel 0 memset 0 memcpy 78 barrier 23 event 0 hostfn 0 graph 1) + recorded 0; 4.1 per layer; GPU-reach wait 4291.29 ms
+   DONE 256 32256 102458.3 10933.5 length 164 185 0 132960 132960 0 0 0.0
+== d3-devplan-noh2-4096 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 116.74 ms/window = verify 104.31 (GPU-reach wait 88.39 + per-layer host 0.92 [plan 0.28 actq 0.20 jobs 0.20 CPU 0.00] + stage 1.19 + tail 10.93) + commit/emit 1.86 + draft 10.57; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+   strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 93 (kernel 0 memset 0 memcpy 72 barrier 20 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4718.40 ms
+   strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 2472.02 ms
+   DONE 147 3832 16965.2 6304.2 stop 93 110 0 78720 78720 0 0 0.0
+== d3-hist-131072 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 115 windows, avg T 2.40, 2.23 tokens/window, 112.63 ms/window = verify 100.80 (GPU-reach wait 76.64 + per-layer host 0.85 [plan 0.28 actq 0.16 jobs 0.17 CPU 0.00] + stage 1.24 + tail 9.51) + commit/emit 1.94 + draft 9.89; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.00, PCIe 0.00
+   strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 2258 (kernel 1682 memset 0 memcpy 556 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 8757.04 ms
+   strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2617 (kernel 1844 memset 0 memcpy 750 barrier 23 event 0 hostfn 0 graph 0) + recorded 0; 104.7 per layer; GPU-reach wait 4591.43 ms
+   DONE 256 129024 372297.2 12952.2 length 143 161 0 132480 132480 0 0 0.0
+== d3-hist-32768 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 124.96 ms/window = verify 110.96 (GPU-reach wait 83.72 + per-layer host 1.00 [plan 0.31 actq 0.20 jobs 0.22 CPU 0.00] + stage 1.36 + tail 11.12) + commit/emit 2.06 + draft 11.94; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+   strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 2250 (kernel 1672 memset 0 memcpy 556 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 97.8 per layer; GPU-reach wait 7649.89 ms
+   strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 2597 (kernel 1830 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 103.9 per layer; GPU-reach wait 3977.74 ms
+   DONE 256 32256 91698.5 11496.2 length 164 185 0 132960 132960 0 0 0.0
+== d3-hist-4096 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 53 windows, avg T 3.21, 2.77 tokens/window, 128.69 ms/window = verify 116.59 (GPU-reach wait 86.82 + per-layer host 1.00 [plan 0.31 actq 0.22 jobs 0.23 CPU 0.00] + stage 1.24 + tail 11.45) + commit/emit 2.06 + draft 10.04; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 32.08, PCIe 0.00
+   strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 2248 (kernel 1672 memset 0 memcpy 556 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 97.7 per layer; GPU-reach wait 4550.96 ms
+   strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2597 (kernel 1830 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 103.9 per layer; GPU-reach wait 2376.92 ms
+   DONE 147 3832 14993.1 6820.7 stop 94 117 0 81600 81600 0 0 0.0
+== d3-histc-131072 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 115 windows, avg T 2.40, 2.23 tokens/window, 114.10 ms/window = verify 102.28 (GPU-reach wait 78.26 + per-layer host 0.85 [plan 0.28 actq 0.16 jobs 0.17 CPU 0.00] + stage 1.17 + tail 9.51) + commit/emit 1.94 + draft 9.89; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.00, PCIe 0.00
+   strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 2257 (kernel 1682 memset 0 memcpy 556 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 8943.20 ms
+   strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2616 (kernel 1844 memset 0 memcpy 750 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 4688.99 ms
+   DONE 256 129024 371433.1 13121.8 length 143 161 0 132480 132480 0 0 0.0
+== d3-histc-32768 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 126.97 ms/window = verify 112.86 (GPU-reach wait 85.47 + per-layer host 0.99 [plan 0.30 actq 0.20 jobs 0.23 CPU 0.00] + stage 1.33 + tail 11.13) + commit/emit 2.04 + draft 12.06; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+   strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 7809.79 ms
+   strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 2611 (kernel 1844 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 4077.26 ms
+   DONE 256 32256 102686.7 11681.0 length 164 185 0 132960 132960 0 0 0.0
+== d3-histc-4096 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 53 windows, avg T 3.19, 2.77 tokens/window, 130.53 ms/window = verify 118.03 (GPU-reach wait 87.80 + per-layer host 1.06 [plan 0.31 actq 0.23 jobs 0.25 CPU 0.00] + stage 1.28 + tail 11.38) + commit/emit 2.08 + draft 10.43; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 31.89, PCIe 0.00
+   strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 2258 (kernel 1682 memset 0 memcpy 556 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 4601.74 ms
+   strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2611 (kernel 1844 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 2407.10 ms
+   DONE 147 3832 16921.2 6918.1 stop 94 116 0 81120 81120 0 0 0.0
+== d3-nomulti-131072 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 118 windows, avg T 2.36, 2.17 tokens/window, 102.46 ms/window = verify 90.76 (GPU-reach wait 78.21 + per-layer host 0.81 [plan 0.27 actq 0.16 jobs 0.15 CPU 0.00] + stage 1.20 + tail 9.24) + commit/emit 1.79 + draft 9.91; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 23.56, PCIe 0.00
+   strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 92 (kernel 0 memset 0 memcpy 72 barrier 19 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 9170.46 ms
+   strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4832.41 ms
+   DONE 256 129024 371806.8 12090.0 length 140 160 0 133440 133440 0 0 0.0
+== d3-nomulti-32768 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 116.01 ms/window = verify 101.93 (GPU-reach wait 87.10 + per-layer host 0.93 [plan 0.29 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.27 + tail 10.94) + commit/emit 1.89 + draft 12.19; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+   strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 93 (kernel 0 memset 0 memcpy 72 barrier 20 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 7957.78 ms
+   strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 4163.96 ms
+   DONE 256 32256 102809.4 10673.3 length 164 185 0 132960 132960 0 0 0.0
+== d3-nomulti-4096 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 114.84 ms/window = verify 102.34 (GPU-reach wait 86.03 + per-layer host 0.94 [plan 0.29 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.23 + tail 10.93) + commit/emit 1.88 + draft 10.61; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+   strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4592.83 ms
+   strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2408.69 ms
+   DONE 147 3832 17017.8 6201.2 stop 93 110 0 78720 78720 0 0 0.0
+== d3-oldtopk-4096 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 112.06 ms/window = verify 99.94 (GPU-reach wait 83.83 + per-layer host 1.00 [plan 0.29 actq 0.20 jobs 0.25 CPU 0.00] + stage 1.20 + tail 10.94) + commit/emit 1.88 + draft 10.25; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+   strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4475.31 ms
+   strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2342.93 ms
+   DONE 147 3832 14945.2 6051.2 stop 93 110 0 78720 78720 0 0 0.0
+== d3-oldtopkhist-131072 (bin e841fd061fec873c2f24e785973a2ebe, hist=0)
+   strata decode timing: 118 windows, avg T 2.36, 2.17 tokens/window, 102.91 ms/window = verify 91.20 (GPU-reach wait 78.60 + per-layer host 0.81 [plan 0.27 actq 0.16 jobs 0.15 CPU 0.00] + stage 1.24 + tail 9.26) + commit/emit 1.81 + draft 9.91; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 23.56, PCIe 0.00
+   strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 91 (kernel 0 memset 0 memcpy 72 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 9216.49 ms
+   strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4860.80 ms
+   DONE 256 129024 370397.0 12143.4 length 140 160 0 133440 133440 0 0 0.0
+== d3-oldtopkhist-4096 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 53 windows, avg T 3.21, 2.77 tokens/window, 128.12 ms/window = verify 116.02 (GPU-reach wait 86.35 + per-layer host 1.02 [plan 0.31 actq 0.22 jobs 0.23 CPU 0.00] + stage 1.25 + tail 11.43) + commit/emit 2.06 + draft 10.05; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 32.08, PCIe 0.00
+   strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 2246 (kernel 1672 memset 0 memcpy 556 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 97.7 per layer; GPU-reach wait 4525.82 ms
+   strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2597 (kernel 1830 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 103.9 per layer; GPU-reach wait 2365.50 ms
+   DONE 147 3832 14944.9 6790.6 stop 94 117 0 81600 81600 0 0 0.0
+== d3-oldtopkhistc-131072 (bin e841fd061fec873c2f24e785973a2ebe, hist=1)
+   strata decode timing: 115 windows, avg T 2.40, 2.23 tokens/window, 114.13 ms/window = verify 102.32 (GPU-reach wait 78.21 + per-layer host 0.86 [plan 0.29 actq 0.16 jobs 0.18 CPU 0.00] + stage 1.23 + tail 9.52) + commit/emit 1.92 + draft 9.88; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.00, PCIe 0.00
+   strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 2256 (kernel 1682 memset 0 memcpy 556 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 8936.56 ms
+   strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2616 (kernel 1844 memset 0 memcpy 750 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 4682.58 ms
+   DONE 256 129024 370217.1 13124.7 length 143 161 0 132480 132480 0 0 0.0
+
+############ 1b. the engine's own window account + P9 stage table per arm (d3/d3_stages.py)
+tag                    win  avgT   ms/win   verify     wait     tail   commit    draft   tok/s | P9 stage: q+q-idx/scores+topk/attn    total scoresTK     attn
+d3-base-131072         118  2.37   102.97    91.30    78.89     9.27     1.79     9.88   21.07 | -                               -        -        -
+d3-base-32768           92  3.01   115.74   101.65    86.76    10.96     1.88    12.21   24.04 | -                               -        -        -
+d3-base-4096            54  3.04   113.72   101.27    85.13    10.92     1.88    10.58   23.94 | -                               -        -        -
+d3-basearmctx-4096      54  3.04   113.02   100.84    84.18    10.93     1.88    10.30   24.09 | -                               -        -        -
+d3-devplan-131072      115  2.40   109.55    97.71    73.57     9.49     1.95     9.88   20.32 | 1.72                        35.23     2.57     0.63
+d3-devplan-32768        92  3.01   122.84   108.76    81.51    11.14     2.04    12.03   22.65 | 2.07                        39.46     0.90     0.69
+d3-devplan-4096         53  3.21   126.89   114.41    83.18    11.43     2.04    10.43   21.86 | 2.19                        40.27     0.27     0.74
+d3-devplan-noh-32768    92  3.01   119.37   105.32    89.70    10.94     1.88    12.17   23.31 | -                               -        -        -
+d3-devplan-noh-4096     54  3.04   117.55   104.99    88.35    10.94     1.89    10.67   23.16 | -                               -        -        -
+d3-devplan-noh2-32768    92  3.01   118.84   104.78    89.97    10.95     1.90    12.16   23.41 | -                               -        -        -
+d3-devplan-noh2-4096    54  3.04   116.74   104.31    88.39    10.93     1.86    10.57   23.32 | -                               -        -        -
+d3-hist-131072         115  2.40   112.63   100.80    76.64     9.51     1.94     9.89   19.76 | 1.78                        36.93     1.97     0.63
+d3-hist-32768           92  3.01   124.96   110.96    83.72    11.12     2.06    11.94   22.27 | 2.10                        40.72     0.78     0.73
+d3-hist-4096            53  3.21   128.69   116.59    86.82    11.45     2.06    10.04   21.55 | 2.25                        42.24     0.35     0.76
+d3-histc-131072        115  2.40   114.10   102.28    78.26     9.51     1.94     9.89   19.51 | 1.78                        37.70     2.65     0.63
+d3-histc-32768          92  3.01   126.97   112.86    85.47    11.13     2.04    12.06   21.92 | 2.10                        41.40     0.92     0.70
+d3-histc-4096           53  3.19   130.53   118.03    87.80    11.38     2.08    10.43   21.25 | 2.24                        42.68     0.28     0.76
+d3-nomulti-131072      118  2.36   102.46    90.76    78.21     9.24     1.79     9.91   21.17 | -                               -        -        -
+d3-nomulti-32768        92  3.01   116.01   101.93    87.10    10.94     1.89    12.19   23.99 | -                               -        -        -
+d3-nomulti-4096         54  3.04   114.84   102.34    86.03    10.93     1.88    10.61   23.71 | -                               -        -        -
+d3-oldtopk-4096         54  3.04   112.06    99.94    83.83    10.94     1.88    10.25   24.29 | -                               -        -        -
+d3-oldtopkhist-131072   118  2.36   102.91    91.20    78.60     9.26     1.81     9.91   21.08 | -                               -        -        -
+d3-oldtopkhist-4096     53  3.21   128.12   116.02    86.35    11.43     2.06    10.05   21.65 | 2.23                        41.98     0.28     0.76
+d3-oldtopkhistc-131072   115  2.40   114.13   102.32    78.21     9.52     1.92     9.88   19.51 | 1.80                        37.71     2.66     0.63
+
+############ 1c. the selection's growth, one line per census arm (d3/d3_select.py --brief)
+hist.txt                             T window_ms    scores      topk      attn      sel%  waitflag     stamp
+/home/michael/strata-xpu/strata/d3/runs/d3-devplan-131072/hist.txt   4    132.38     5.583     3.159     2.015     6.60%     0.148     2.015
+/home/michael/strata-xpu/strata/d3/runs/d3-devplan-32768/hist.txt   4    126.53     1.494     1.106     2.019     2.05%     0.144     1.975
+/home/michael/strata-xpu/strata/d3/runs/d3-devplan-4096/hist.txt   4    122.87     0.207     0.490     1.973     0.57%     0.143     1.993
+/home/michael/strata-xpu/strata/d3/runs/d3-hist-131072/hist.txt   4    140.25     5.361     1.403     1.944     4.82%    16.867     2.001
+/home/michael/strata-xpu/strata/d3/runs/d3-hist-32768/hist.txt   4    131.82     1.466     0.750     2.000     1.68%    15.423     1.685
+/home/michael/strata-xpu/strata/d3/runs/d3-hist-4096/hist.txt   4    132.07     0.210     0.684     2.031     0.68%    14.690     1.703
+/home/michael/strata-xpu/strata/d3/runs/d3-histc-131072/hist.txt   4    140.82     5.378     3.044     1.965     5.98%    15.853     1.994
+/home/michael/strata-xpu/strata/d3/runs/d3-histc-32768/hist.txt   4    137.52     1.438     1.070     1.949     1.82%    17.813     2.011
+/home/michael/strata-xpu/strata/d3/runs/d3-histc-4096/hist.txt   4    136.33     0.205     0.485     1.961     0.51%    18.462     2.028
+/home/michael/strata-xpu/strata/d3/runs/d3-oldtopkhist-4096/hist.txt   4    132.27     0.207     0.489     2.000     0.53%    15.924     1.707
+/home/michael/strata-xpu/strata/d3/runs/d3-oldtopkhistc-131072/hist.txt   4    141.19     5.360     3.034     1.941     5.95%    16.161     2.037
+
+############ 2. the census per arm (d3/d3_select.py: per-window device time, the selection, the handshake)
+== /home/michael/strata-xpu/strata/d3/runs/d3-devplan-131072/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3824         0      81.19        1.920        0.000        2.36%
+   2    4        4832         0     132.38        5.583        0.000        4.22%
+   3    4        4832         0     133.97        5.634        0.000        4.21%
+   4    2        4160         0      85.05        2.858        0.000        3.36%
+   5    4        4832         0     127.02        5.394        0.000        4.25%
+   6    1        3824         0      66.15        1.594        0.000        2.41%
+   7    1        3824         0      59.81        1.421        0.000        2.38%
+   8    1        3824         0      59.74        1.439        0.000        2.41%
+
+   ---- window 2: win=2 stage T=4 pos0=129024 layers 23..47 n=25 wall=78.10ms
+        counted sites 4832, device time 132.376 ms, wall 78.1 ms, submissions 4832
+        -- the selection --
+           qsa_block_scores                               12 launches      5.583 ms   4.22%
+           qsa_block_topk_ref                             12 launches      3.159 ms   2.39%
+           qsa_decode_attn_batch                          24 launches      2.015 ms   1.52%
+           native_qsa_indexer_append                      48 launches      0.103 ms   0.08%
+        -- the per-layer handshake --
+           doorbell_publish                               48 launches      0.356 ms   0.27%
+           wait_flag_ge_or                               144 launches      0.148 ms   0.11%
+        -- the instrument itself --
+           gpu_stamp                                     950 launches      2.015 ms   1.52%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     52.542 ms  39.69%
+           launch_down                                    96 launches     18.235 ms  13.77%
+           launch_gu                                      96 launches     15.938 ms  12.04%
+           launch_multi                                  288 launches     12.645 ms   9.55%
+           qsa_block_scores                               12 launches      5.583 ms   4.22%
+           resident_plan                                  48 launches      4.370 ms   3.30%
+           qsa_block_topk_ref                             12 launches      3.159 ms   2.39%
+           copy_from_mapped                               41 launches      2.313 ms   1.75%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.069 ms   1.56%
+           gpu_stamp                                     950 launches      2.015 ms   1.52%
+           qsa_decode_attn_batch                          24 launches      2.015 ms   1.52%
+           kv_stream_resolve                              24 launches      1.740 ms   1.31%
+           kv_append_q8_step                              48 launches      1.692 ms   1.28%
+           bf16_gemv_fp32_mmvf                            16 launches      1.262 ms   0.95%
+
+== /home/michael/strata-xpu/strata/d3/runs/d3-devplan-32768/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3824         0      91.89        0.642        0.000        0.70%
+   2    4        4832         0     126.53        1.494        0.000        1.18%
+   3    4        4832         0     127.32        1.494        0.000        1.17%
+   4    2        4160         0      81.85        0.791        0.000        0.97%
+   5    1        3824         0      56.89        0.407        0.000        0.72%
+   6    3        4496         0     105.71        1.096        0.000        1.04%
+   7    4        4832         0     127.42        1.524        0.000        1.20%
+   8    4        4832         0     129.68        1.454        0.000        1.12%
+
+   ---- window 2: win=2 stage T=4 pos0=32256 layers 23..47 n=25 wall=74.97ms
+        counted sites 4832, device time 126.526 ms, wall 74.97 ms, submissions 4832
+        -- the selection --
+           qsa_decode_attn_batch                          24 launches      2.019 ms   1.60%
+           qsa_block_scores                               12 launches      1.494 ms   1.18%
+           qsa_block_topk_ref                             12 launches      1.106 ms   0.87%
+           native_qsa_indexer_append                      48 launches      0.106 ms   0.08%
+        -- the per-layer handshake --
+           doorbell_publish                               48 launches      0.349 ms   0.28%
+           wait_flag_ge_or                               144 launches      0.144 ms   0.11%
+        -- the instrument itself --
+           gpu_stamp                                     950 launches      1.975 ms   1.56%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     52.965 ms  41.86%
+           launch_down                                    96 launches     18.179 ms  14.37%
+           launch_gu                                      96 launches     15.924 ms  12.59%
+           launch_multi                                  288 launches     12.758 ms  10.08%
+           resident_plan                                  48 launches      4.315 ms   3.41%
+           copy_from_mapped                               41 launches      2.329 ms   1.84%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.092 ms   1.65%
+           qsa_decode_attn_batch                          24 launches      2.019 ms   1.60%
+           gpu_stamp                                     950 launches      1.975 ms   1.56%
+           kv_append_q8_step                              48 launches      1.709 ms   1.35%
+           kv_stream_resolve                              24 launches      1.574 ms   1.24%
+           qsa_block_scores                               12 launches      1.494 ms   1.18%
+           bf16_gemv_fp32_mmvf                            16 launches      1.261 ms   1.00%
+                                                        1306 launches      1.218 ms   0.96%
+
+== /home/michael/strata-xpu/strata/d3/runs/d3-devplan-4096/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3824         0      71.77        0.099        0.000        0.14%
+   2    4        4832         0     122.87        0.207        0.000        0.17%
+   3    2        4160         0      79.28        0.126        0.000        0.16%
+   4    1        3824         0      57.63        0.085        0.000        0.15%
+   5    1        3824         0      55.86        0.084        0.000        0.15%
+   6    2        4160         0      75.94        0.121        0.000        0.16%
+   7    4        4832         0     120.35        0.201        0.000        0.17%
+   8    4        4832         0     122.94        0.204        0.000        0.17%
+
+   ---- window 2: win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=71.22ms
+        counted sites 4832, device time 122.870 ms, wall 71.22 ms, submissions 4832
+        -- the selection --
+           qsa_decode_attn_batch                          24 launches      1.973 ms   1.61%
+           qsa_block_topk_ref                             12 launches      0.490 ms   0.40%
+           qsa_block_scores                               12 launches      0.207 ms   0.17%
+           native_qsa_indexer_append                      48 launches      0.102 ms   0.08%
+        -- the per-layer handshake --
+           doorbell_publish                               48 launches      0.349 ms   0.28%
+           wait_flag_ge_or                               144 launches      0.143 ms   0.12%
+        -- the instrument itself --
+           gpu_stamp                                     950 launches      1.993 ms   1.62%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     52.319 ms  42.58%
+           launch_down                                    96 launches     18.178 ms  14.79%
+           launch_gu                                      96 launches     15.957 ms  12.99%
+           launch_multi                                  288 launches     12.596 ms  10.25%
+           resident_plan                                  48 launches      4.323 ms   3.52%
+           copy_from_mapped                               41 launches      2.333 ms   1.90%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.041 ms   1.66%
+           gpu_stamp                                     950 launches      1.993 ms   1.62%
+           qsa_decode_attn_batch                          24 launches      1.973 ms   1.61%
+           kv_append_q8_step                              48 launches      1.714 ms   1.39%
+           bf16_gemv_fp32_mmvf                            16 launches      1.264 ms   1.03%
+                                                        1306 launches      1.192 ms   0.97%
+           gdn_step_norm_multi                            36 launches      0.911 ms   0.74%
+           kv_stream_resolve                              24 launches      0.767 ms   0.62%
+
+== /home/michael/strata-xpu/strata/d3/runs/d3-hist-131072/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3824         0      92.41        1.483        1.432        3.15%
+   2    4        4832         0     140.25        5.361        1.403        4.82%
+   3    4        4832         0     136.32        5.672        1.468        5.24%
+   4    2        4160         0      93.65        2.806        1.408        4.50%
+   5    4        4832         0     131.59        5.496        1.433        5.27%
+   6    1        3824         0      69.73        1.584        1.501        4.42%
+   7    1        3824         0      64.30        1.418        1.346        4.30%
+   8    1        3824         0      64.59        1.428        1.354        4.31%
+
+   ---- window 2: win=2 stage T=4 pos0=129024 layers 23..47 n=25 wall=80.13ms
+        counted sites 4832, device time 140.249 ms, wall 80.13 ms, submissions 4832
+        -- the selection --
+           qsa_block_scores                               12 launches      5.361 ms   3.82%
+           qsa_decode_attn_batch                          24 launches      1.944 ms   1.39%
+           qsa_block_topk                                 12 launches      1.403 ms   1.00%
+           native_qsa_indexer_append                      48 launches      0.097 ms   0.07%
+        -- the per-layer handshake --
+           wait_flag_ge                                  144 launches     16.867 ms  12.03%
+           doorbell_publish                               48 launches      0.342 ms   0.24%
+        -- the instrument itself --
+           gpu_stamp                                     998 launches      2.001 ms   1.43%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     51.366 ms  36.62%
+           launch_down                                    96 launches     17.648 ms  12.58%
+           wait_flag_ge                                  144 launches     16.867 ms  12.03%
+           launch_gu                                      96 launches     15.519 ms  11.06%
+           launch_multi                                  288 launches     12.408 ms   8.85%
+           qsa_block_scores                               12 launches      5.361 ms   3.82%
+           copy_from_mapped                               41 launches      2.346 ms   1.67%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.002 ms   1.43%
+           gpu_stamp                                     998 launches      2.001 ms   1.43%
+           qsa_decode_attn_batch                          24 launches      1.944 ms   1.39%
+           kv_stream_resolve                              24 launches      1.731 ms   1.23%
+           kv_append_q8_step                              48 launches      1.681 ms   1.20%
+           qsa_block_topk                                 12 launches      1.403 ms   1.00%
+           bf16_gemv_fp32_mmvf                            16 launches      1.263 ms   0.90%
+
+== /home/michael/strata-xpu/strata/d3/runs/d3-hist-32768/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3800         0      96.12        0.525        0.918        1.50%
+   2    4        4808         0     131.82        1.466        0.750        1.68%
+   3    4        4808         0     128.81        1.496        0.751        1.74%
+   4    2        4136         0      89.14        0.782        0.753        1.72%
+   5    1        3800         0      62.44        0.405        0.687        1.75%
+   6    3        4472         0     112.14        1.085        0.701        1.59%
+   7    4        4808         0     122.92        1.441        0.730        1.77%
+   8    4        4808         0     130.46        1.460        0.750        1.69%
+
+   ---- window 2: win=2 stage T=4 pos0=32256 layers 23..47 n=25 wall=74.58ms
+        counted sites 4808, device time 131.823 ms, wall 74.58 ms, submissions 4808
+        -- the selection --
+           qsa_decode_attn_batch                          24 launches      2.000 ms   1.52%
+           qsa_block_scores                               12 launches      1.466 ms   1.11%
+           qsa_block_topk                                 12 launches      0.750 ms   0.57%
+           native_qsa_indexer_append                      48 launches      0.097 ms   0.07%
+        -- the per-layer handshake --
+           wait_flag_ge                                  144 launches     15.423 ms  11.70%
+           doorbell_publish                               48 launches      0.360 ms   0.27%
+        -- the instrument itself --
+           gpu_stamp                                     998 launches      1.685 ms   1.28%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     52.009 ms  39.45%
+           launch_down                                    96 launches     17.785 ms  13.49%
+           launch_gu                                      96 launches     15.581 ms  11.82%
+           wait_flag_ge                                  144 launches     15.423 ms  11.70%
+           launch_multi                                  288 launches     12.506 ms   9.49%
+           copy_from_mapped                               41 launches      2.318 ms   1.76%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.034 ms   1.54%
+           qsa_decode_attn_batch                          24 launches      2.000 ms   1.52%
+           gpu_stamp                                     998 launches      1.685 ms   1.28%
+           qsa_block_scores                               12 launches      1.466 ms   1.11%
+           bf16_gemv_fp32_mmvf                            16 launches      1.262 ms   0.96%
+                                                        1306 launches      1.203 ms   0.91%
+           gdn_step_norm_multi                            36 launches      0.906 ms   0.69%
+           qsa_block_topk                                 12 launches      0.750 ms   0.57%
+
+== /home/michael/strata-xpu/strata/d3/runs/d3-hist-4096/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3800         0      99.00        0.103        0.771        0.88%
+   2    4        4808         0     132.07        0.210        0.684        0.68%
+   3    2        4136         0      90.55        0.129        0.686        0.90%
+   4    1        3800         0      61.71        0.082        0.675        1.23%
+   5    1        3800         0      61.73        0.081        0.621        1.14%
+   6    2        4136         0      81.10        0.122        0.601        0.89%
+   7    4        4808         0     124.86        0.202        0.658        0.69%
+   8    4        4808         0     123.17        0.203        0.669        0.71%
+
+   ---- window 2: win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=76.75ms
+        counted sites 4808, device time 132.075 ms, wall 76.75 ms, submissions 4808
+        -- the selection --
+           qsa_decode_attn_batch                          24 launches      2.031 ms   1.54%
+           qsa_block_topk                                 12 launches      0.684 ms   0.52%
+           qsa_block_scores                               12 launches      0.210 ms   0.16%
+           native_qsa_indexer_append                      48 launches      0.098 ms   0.07%
+        -- the per-layer handshake --
+           wait_flag_ge                                  144 launches     14.690 ms  11.12%
+           doorbell_publish                               48 launches      0.357 ms   0.27%
+        -- the instrument itself --
+           gpu_stamp                                     998 launches      1.703 ms   1.29%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     52.796 ms  39.97%
+           launch_down                                    96 launches     18.363 ms  13.90%
+           launch_gu                                      96 launches     16.059 ms  12.16%
+           wait_flag_ge                                  144 launches     14.690 ms  11.12%
+           launch_multi                                  288 launches     12.698 ms   9.61%
+           copy_from_mapped                               41 launches      2.395 ms   1.81%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.077 ms   1.57%
+           qsa_decode_attn_batch                          24 launches      2.031 ms   1.54%
+           gpu_stamp                                     998 launches      1.703 ms   1.29%
+           bf16_gemv_fp32_mmvf                            16 launches      1.262 ms   0.96%
+                                                        1306 launches      1.205 ms   0.91%
+           gdn_step_norm_multi                            36 launches      0.936 ms   0.71%
+           native_quantize_q8_1                          193 launches      0.688 ms   0.52%
+           qsa_block_topk                                 12 launches      0.684 ms   0.52%
+
+== /home/michael/strata-xpu/strata/d3/runs/d3-histc-131072/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3824         0      92.97        1.449        0.000        1.56%
+   2    4        4832         0     140.82        5.378        0.000        3.82%
+   3    4        4832         0     139.99        6.227        0.000        4.45%
+   4    2        4160         0      92.98        2.784        0.000        2.99%
+   5    4        4832         0     131.57        5.606        0.000        4.26%
+   6    1        3824         0      70.09        1.566        0.000        2.23%
+   7    1        3824         0      66.42        1.430        0.000        2.15%
+   8    1        3824         0      65.95        1.440        0.000        2.18%
+
+   ---- window 2: win=2 stage T=4 pos0=129024 layers 23..47 n=25 wall=80.25ms
+        counted sites 4832, device time 140.815 ms, wall 80.25 ms, submissions 4832
+        -- the selection --
+           qsa_block_scores                               12 launches      5.378 ms   3.82%
+           qsa_block_topk_ref                             12 launches      3.044 ms   2.16%
+           qsa_decode_attn_batch                          24 launches      1.965 ms   1.40%
+           native_qsa_indexer_append                      48 launches      0.099 ms   0.07%
+        -- the per-layer handshake --
+           wait_flag_ge                                  144 launches     15.853 ms  11.26%
+           doorbell_publish                               48 launches      0.344 ms   0.24%
+        -- the instrument itself --
+           gpu_stamp                                     998 launches      1.994 ms   1.42%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     51.251 ms  36.40%
+           launch_down                                    96 launches     17.650 ms  12.53%
+           wait_flag_ge                                  144 launches     15.853 ms  11.26%
+           launch_gu                                      96 launches     15.488 ms  11.00%
+           launch_multi                                  288 launches     12.379 ms   8.79%
+           qsa_block_scores                               12 launches      5.378 ms   3.82%
+           qsa_block_topk_ref                             12 launches      3.044 ms   2.16%
+           copy_from_mapped                               41 launches      2.326 ms   1.65%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      1.997 ms   1.42%
+           gpu_stamp                                     998 launches      1.994 ms   1.42%
+           qsa_decode_attn_batch                          24 launches      1.965 ms   1.40%
+           kv_stream_resolve                              24 launches      1.750 ms   1.24%
+           kv_append_q8_step                              48 launches      1.684 ms   1.20%
+           bf16_gemv_fp32_mmvf                            16 launches      1.262 ms   0.90%
+
+== /home/michael/strata-xpu/strata/d3/runs/d3-histc-32768/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3824         0     102.45        0.524        0.000        0.51%
+   2    4        4832         0     137.52        1.438        0.000        1.05%
+   3    4        4832         0     128.56        1.467        0.000        1.14%
+   4    2        4160         0      91.01        0.762        0.000        0.84%
+   5    1        3824         0      63.64        0.405        0.000        0.64%
+   6    3        4496         0     114.47        1.081        0.000        0.94%
+   7    4        4832         0     124.61        1.438        0.000        1.15%
+   8    4        4832         0     133.00        1.476        0.000        1.11%
+
+   ---- window 2: win=2 stage T=4 pos0=32256 layers 23..47 n=25 wall=78.88ms
+        counted sites 4832, device time 137.520 ms, wall 78.88 ms, submissions 4832
+        -- the selection --
+           qsa_decode_attn_batch                          24 launches      1.949 ms   1.42%
+           qsa_block_scores                               12 launches      1.438 ms   1.05%
+           qsa_block_topk_ref                             12 launches      1.070 ms   0.78%
+           native_qsa_indexer_append                      48 launches      0.102 ms   0.07%
+        -- the per-layer handshake --
+           wait_flag_ge                                  144 launches     17.813 ms  12.95%
+           doorbell_publish                               48 launches      0.357 ms   0.26%
+        -- the instrument itself --
+           gpu_stamp                                     998 launches      2.011 ms   1.46%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     51.808 ms  37.67%
+           wait_flag_ge                                  144 launches     17.813 ms  12.95%
+           launch_down                                    96 launches     17.717 ms  12.88%
+           launch_gu                                      96 launches     15.522 ms  11.29%
+           launch_multi                                  288 launches     12.489 ms   9.08%
+           copy_from_mapped                               41 launches      2.334 ms   1.70%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.029 ms   1.48%
+           gpu_stamp                                     998 launches      2.011 ms   1.46%
+           qsa_decode_attn_batch                          24 launches      1.949 ms   1.42%
+           kv_append_q8_step                              48 launches      1.688 ms   1.23%
+           kv_stream_resolve                              24 launches      1.559 ms   1.13%
+           qsa_block_scores                               12 launches      1.438 ms   1.05%
+           bf16_gemv_fp32_mmvf                            16 launches      1.261 ms   0.92%
+                                                        1306 launches      1.191 ms   0.87%
+
+== /home/michael/strata-xpu/strata/d3/runs/d3-histc-4096/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3824         0      96.90        0.103        0.000        0.11%
+   2    4        4832         0     136.33        0.205        0.000        0.15%
+   3    2        4160         0      91.16        0.127        0.000        0.14%
+   4    1        3824         0      62.50        0.084        0.000        0.13%
+   5    1        3824         0      62.83        0.083        0.000        0.13%
+   6    2        4160         0      81.86        0.122        0.000        0.15%
+   7    4        4832         0     125.62        0.203        0.000        0.16%
+   8    4        4832         0     128.17        0.208        0.000        0.16%
+
+   ---- window 2: win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=76.59ms
+        counted sites 4832, device time 136.328 ms, wall 76.59 ms, submissions 4832
+        -- the selection --
+           qsa_decode_attn_batch                          24 launches      1.961 ms   1.44%
+           qsa_block_topk_ref                             12 launches      0.485 ms   0.36%
+           qsa_block_scores                               12 launches      0.205 ms   0.15%
+           native_qsa_indexer_append                      48 launches      0.102 ms   0.07%
+        -- the per-layer handshake --
+           wait_flag_ge                                  144 launches     18.462 ms  13.54%
+           doorbell_publish                               48 launches      0.350 ms   0.26%
+        -- the instrument itself --
+           gpu_stamp                                     998 launches      2.028 ms   1.49%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     51.882 ms  38.06%
+           wait_flag_ge                                  144 launches     18.462 ms  13.54%
+           launch_down                                    96 launches     18.026 ms  13.22%
+           launch_gu                                      96 launches     15.798 ms  11.59%
+           launch_multi                                  288 launches     12.535 ms   9.19%
+           copy_from_mapped                               41 launches      2.344 ms   1.72%
+           gpu_stamp                                     998 launches      2.028 ms   1.49%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.017 ms   1.48%
+           qsa_decode_attn_batch                          24 launches      1.961 ms   1.44%
+           kv_append_q8_step                              48 launches      1.722 ms   1.26%
+           bf16_gemv_fp32_mmvf                            16 launches      1.260 ms   0.92%
+                                                        1306 launches      1.195 ms   0.88%
+           gdn_step_norm_multi                            36 launches      0.904 ms   0.66%
+           kv_stream_resolve                              24 launches      0.766 ms   0.56%
+
+== /home/michael/strata-xpu/strata/d3/runs/d3-oldtopkhist-4096/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3800         0      98.91        0.102        0.000        0.10%
+   2    4        4808         0     132.27        0.207        0.000        0.16%
+   3    2        4136         0      92.03        0.131        0.000        0.14%
+   4    1        3800         0      61.52        0.083        0.000        0.14%
+   5    1        3800         0      61.49        0.082        0.000        0.13%
+   6    2        4136         0      80.69        0.121        0.000        0.15%
+   7    4        4808         0     125.21        0.206        0.000        0.16%
+   8    4        4808         0     125.27        0.207        0.000        0.17%
+
+   ---- window 2: win=2 stage T=4 pos0=3832 layers 23..47 n=25 wall=77.47ms
+        counted sites 4808, device time 132.273 ms, wall 77.47 ms, submissions 4808
+        -- the selection --
+           qsa_decode_attn_batch                          24 launches      2.000 ms   1.51%
+           qsa_block_topk_ref                             12 launches      0.489 ms   0.37%
+           qsa_block_scores                               12 launches      0.207 ms   0.16%
+           native_qsa_indexer_append                      48 launches      0.098 ms   0.07%
+        -- the per-layer handshake --
+           wait_flag_ge                                  144 launches     15.924 ms  12.04%
+           doorbell_publish                               48 launches      0.348 ms   0.26%
+        -- the instrument itself --
+           gpu_stamp                                     998 launches      1.707 ms   1.29%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     52.419 ms  39.63%
+           launch_down                                    96 launches     18.239 ms  13.79%
+           launch_gu                                      96 launches     15.948 ms  12.06%
+           wait_flag_ge                                  144 launches     15.924 ms  12.04%
+           launch_multi                                  288 launches     12.619 ms   9.54%
+           copy_from_mapped                               41 launches      2.336 ms   1.77%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      2.051 ms   1.55%
+           qsa_decode_attn_batch                          24 launches      2.000 ms   1.51%
+           gpu_stamp                                     998 launches      1.707 ms   1.29%
+           bf16_gemv_fp32_mmvf                            16 launches      1.263 ms   0.95%
+                                                        1306 launches      1.184 ms   0.90%
+           gdn_step_norm_multi                            36 launches      0.914 ms   0.69%
+           native_quantize_q8_1                          193 launches      0.682 ms   0.52%
+           gdn_ab_multi                                   36 launches      0.650 ms   0.49%
+
+== /home/michael/strata-xpu/strata/d3/runs/d3-oldtopkhistc-131072/hist.txt
+   win  T        subs     sites   total_ms    scores_ms      topk_ms       share%
+   1    1        3824         0      97.49        1.866        0.000        1.91%
+   2    4        4832         0     141.19        5.360        0.000        3.80%
+   3    4        4832         0     134.94        5.483        0.000        4.06%
+   4    2        4160         0      94.84        2.815        0.000        2.97%
+   5    4        4832         0     133.41        5.454        0.000        4.09%
+   6    1        3824         0      71.14        1.576        0.000        2.22%
+   7    1        3824         0      66.08        1.419        0.000        2.15%
+   8    1        3824         0      66.00        1.423        0.000        2.16%
+
+   ---- window 2: win=2 stage T=4 pos0=129024 layers 23..47 n=25 wall=80.88ms
+        counted sites 4832, device time 141.194 ms, wall 80.88 ms, submissions 4832
+        -- the selection --
+           qsa_block_scores                               12 launches      5.360 ms   3.80%
+           qsa_block_topk_ref                             12 launches      3.034 ms   2.15%
+           qsa_decode_attn_batch                          24 launches      1.941 ms   1.37%
+           native_qsa_indexer_append                      48 launches      0.097 ms   0.07%
+        -- the per-layer handshake --
+           wait_flag_ge                                  144 launches     16.161 ms  11.45%
+           doorbell_publish                               48 launches      0.344 ms   0.24%
+        -- the instrument itself --
+           gpu_stamp                                     998 launches      2.037 ms   1.44%
+        -- the window's top families by device time --
+           launch_multi_n                                301 launches     51.313 ms  36.34%
+           launch_down                                    96 launches     17.684 ms  12.52%
+           wait_flag_ge                                  144 launches     16.161 ms  11.45%
+           launch_gu                                      96 launches     15.501 ms  10.98%
+           launch_multi                                  288 launches     12.360 ms   8.75%
+           qsa_block_scores                               12 launches      5.360 ms   3.80%
+           qsa_block_topk_ref                             12 launches      3.034 ms   2.15%
+           copy_from_mapped                               41 launches      2.349 ms   1.66%
+           gpu_stamp                                     998 launches      2.037 ms   1.44%
+           bf16_gemv_fp32_mmvf_multi                     120 launches      1.995 ms   1.41%
+           qsa_decode_attn_batch                          24 launches      1.941 ms   1.37%
+           kv_stream_resolve                              24 launches      1.732 ms   1.23%
+           kv_append_q8_step                              48 launches      1.710 ms   1.21%
+           bf16_gemv_fp32_mmvf                            16 launches      1.263 ms   0.89%
+
+
+############ 3. per-arm raw lines (the engine's own)
+---- d3-base-131072
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 91d94bb D3 (t_87aa2963): the write-up draft (verdict, the attribution with file:lines, the handshake count, the dispatch/safety analysis) and the remaining chain
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 384375 ms (2026-10-03T20:26:33-06:00) ==
+engine exited 0 at epoch 1791080794.333969
+== engine exit 0, wall 422 s (ask wall 384375 ms) ==
+strata decode timing: 118 windows, avg T 2.37, 2.17 tokens/window, 102.97 ms/window = verify 91.30 (GPU-reach wait 78.89 + per-layer host 0.82 [plan 0.27 actq 0.16 jobs 0.15 CPU 0.00] + stage 1.18 + tail 9.27) + commit/emit 1.79 + draft 9.88; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 23.73, PCIe 0.00
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 91 (kernel 0 memset 0 memcpy 72 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 9250.48 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4879.07 ms
+DONE 256 129024 371798.8 12150.4 length 140 162 0 134400 134400 0 0 0.0
+   T lines 256   md5 c60e72d397e9b1cd44dab9c5ab1187c8
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-base-32768
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 91d94bb D3 (t_87aa2963): the write-up draft (verdict, the attribution with file:lines, the handshake count, the dispatch/safety analysis) and the remaining chain
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 113319 ms (2026-10-03T20:13:02-06:00) ==
+engine exited 0 at epoch 1791079983.079363
+== engine exit 0, wall 151 s (ask wall 113319 ms) ==
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 115.74 ms/window = verify 101.65 (GPU-reach wait 86.76 + per-layer host 0.92 [plan 0.28 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.29 + tail 10.96) + commit/emit 1.88 + draft 12.21; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 93 (kernel 0 memset 0 memcpy 72 barrier 20 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 7927.58 ms
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 4149.94 ms
+DONE 256 32256 102612.2 10648.5 length 164 185 0 132960 132960 0 0 0.0
+   T lines 256   md5 124a3cd39b33f7da31e225829625983a
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-base-4096
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 91d94bb D3 (t_87aa2963): the write-up draft (verdict, the attribution with file:lines, the handshake count, the dispatch/safety analysis) and the remaining chain
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 23184 ms (2026-10-03T20:09:16-06:00) ==
+engine exited 0 at epoch 1791079757.836535
+== engine exit 0, wall 60 s (ask wall 23184 ms) ==
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 113.72 ms/window = verify 101.27 (GPU-reach wait 85.13 + per-layer host 0.93 [plan 0.29 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.18 + tail 10.92) + commit/emit 1.88 + draft 10.58; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 89 (kernel 0 memset 0 memcpy 72 barrier 16 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 4544.78 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2391.82 ms
+DONE 147 3832 16958.9 6141.1 stop 93 110 0 78720 78720 0 0 0.0
+   T lines 147   md5 ac9f16fceed82e5681e42bd197835c51
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-basearmctx-4096
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 7690621 D3 (t_87aa2963): the sharing A/B at 4K/32K (-1.0%/-0.2%, ids identical) and the E-6 sync ceiling (+2.9%/+3.3%, ids identical)
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 21168 ms (2026-10-03T20:37:40-06:00) ==
+engine exited 0 at epoch 1791081461.833800
+== engine exit 0, wall 58 s (ask wall 21168 ms) ==
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 113.02 ms/window = verify 100.84 (GPU-reach wait 84.18 + per-layer host 0.97 [plan 0.29 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.19 + tail 10.93) + commit/emit 1.88 + draft 10.30; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4493.90 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2360.92 ms
+DONE 147 3832 14987.4 6103.3 stop 93 110 0 78720 78720 0 0 0.0
+   T lines 147   md5 ac9f16fceed82e5681e42bd197835c51
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-devplan-131072
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=STRATA_VERIFY_DEVICE_PLAN=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 384816 ms (2026-10-03T20:44:49-06:00) ==
+engine exited 0 at epoch 1791081890.237809
+== engine exit 0, wall 422 s (ask wall 384816 ms) ==
+strata decode timing: 115 windows, avg T 2.40, 2.23 tokens/window, 109.55 ms/window = verify 97.71 (GPU-reach wait 73.57 + per-layer host 0.84 [plan 0.28 actq 0.16 jobs 0.17 CPU 0.00] + stage 1.28 + tail 9.49) + commit/emit 1.95 + draft 9.88; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.00, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 4.14 conv 0.09 ab 0.23 z 2.41 rec 0.33 out-proj 2.19 hc-read1+router 3.09 shared+quant 2.17 waitA 0.05 VRAM hits 6.85 waitB 0.11 PCIe grp 0.34 copy+combine 0.14 (gap) 0.03   hc0 norm 0.15   hc0 down 0.74   hc0 up 0.66 | QSA layers: q8+kv-idx 0.07 k/v+norm-rope 0.24 kv+idx append 0.54 q+q-idx 1.72 scores+topk 2.57 kv-resolve 0.17 attention 0.63 gate 0.03 out-proj 0.75 hc-read1+router 1.04 shared+quant 0.75 waitA 0.02 VRAM hits 2.31 waitB 0.03 PCIe grp 0.11 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.23   hc0 up 0.22 | total 35.23 ms/window over 115 windows
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 8404.31 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2617 (kernel 1844 memset 0 memcpy 750 barrier 23 event 0 hostfn 0 graph 0) + recorded 0; 104.7 per layer; GPU-reach wait 4425.01 ms
+DONE 256 129024 371652.6 12597.8 length 143 161 0 132480 132480 0 0 0.0
+   T lines 256   md5 c60e72d397e9b1cd44dab9c5ab1187c8
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+---- d3-devplan-32768
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=STRATA_VERIFY_DEVICE_PLAN=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 91d94bb D3 (t_87aa2963): the write-up draft (verdict, the attribution with file:lines, the handshake count, the dispatch/safety analysis) and the remaining chain
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 114379 ms (2026-10-03T20:19:25-06:00) ==
+engine exited 0 at epoch 1791080366.304629
+== engine exit 0, wall 152 s (ask wall 114379 ms) ==
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 122.84 ms/window = verify 108.76 (GPU-reach wait 81.51 + per-layer host 0.96 [plan 0.30 actq 0.20 jobs 0.22 CPU 0.00] + stage 1.33 + tail 11.14) + commit/emit 2.04 + draft 12.03; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 4.72 conv 0.09 ab 0.25 z 2.81 rec 0.37 out-proj 2.47 hc-read1+router 3.68 shared+quant 2.61 waitA 0.07 VRAM hits 8.57 waitB 0.10 PCIe grp 0.41 copy+combine 0.14 (gap) 0.03   hc0 norm 0.16   hc0 down 0.83   hc0 up 0.79 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.28 kv+idx append 0.68 q+q-idx 2.07 scores+topk 0.90 kv-resolve 0.13 attention 0.69 gate 0.02 out-proj 0.81 hc-read1+router 1.20 shared+quant 0.89 waitA 0.02 VRAM hits 2.82 waitB 0.03 PCIe grp 0.13 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.26   hc0 up 0.25 | total 39.46 ms/window over 92 windows
+strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 7446.72 ms
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 2616 (kernel 1844 memset 0 memcpy 750 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 3880.00 ms
+DONE 256 32256 102643.5 11301.0 length 164 185 0 132960 132960 0 0 0.0
+   T lines 256   md5 124a3cd39b33f7da31e225829625983a
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+---- d3-devplan-4096
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=STRATA_VERIFY_DEVICE_PLAN=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 91d94bb D3 (t_87aa2963): the write-up draft (verdict, the attribution with file:lines, the handshake count, the dispatch/safety analysis) and the remaining chain
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 24193 ms (2026-10-03T20:16:47-06:00) ==
+engine exited 0 at epoch 1791080208.338653
+== engine exit 0, wall 61 s (ask wall 24193 ms) ==
+strata decode timing: 53 windows, avg T 3.21, 2.77 tokens/window, 126.89 ms/window = verify 114.41 (GPU-reach wait 83.18 + per-layer host 0.98 [plan 0.31 actq 0.22 jobs 0.23 CPU 0.00] + stage 1.25 + tail 11.43) + commit/emit 2.04 + draft 10.43; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 32.08, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 4.83 conv 0.09 ab 0.26 z 2.93 rec 0.38 out-proj 2.51 hc-read1+router 3.91 shared+quant 2.74 waitA 0.07 VRAM hits 8.89 waitB 0.11 PCIe grp 0.43 copy+combine 0.14 (gap) 0.03   hc0 norm 0.19   hc0 down 0.85   hc0 up 0.84 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.28 kv+idx append 0.73 q+q-idx 2.19 scores+topk 0.27 kv-resolve 0.09 attention 0.74 gate 0.02 out-proj 0.82 hc-read1+router 1.25 shared+quant 0.92 waitA 0.02 VRAM hits 2.88 waitB 0.03 PCIe grp 0.14 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.26   hc0 up 0.26 | total 40.27 ms/window over 53 windows
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 4358.89 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2614 (kernel 1844 memset 0 memcpy 750 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 2281.64 ms
+DONE 147 3832 16961.0 6725.0 stop 94 117 0 81600 81600 0 0 0.0
+   T lines 147   md5 ac9f16fceed82e5681e42bd197835c51
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+---- d3-devplan-noh2-32768
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=STRATA_VERIFY_DEVICE_PLAN=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 113806 ms (2026-10-03T21:00:47-06:00) ==
+engine exited 0 at epoch 1791082848.590381
+== engine exit 0, wall 151 s (ask wall 113806 ms) ==
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 118.84 ms/window = verify 104.78 (GPU-reach wait 89.97 + per-layer host 0.92 [plan 0.28 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.29 + tail 10.95) + commit/emit 1.90 + draft 12.16; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 95 (kernel 0 memset 0 memcpy 72 barrier 22 event 0 hostfn 0 graph 1) + recorded 0; 4.1 per layer; GPU-reach wait 8220.09 ms
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 102 (kernel 0 memset 0 memcpy 78 barrier 23 event 0 hostfn 0 graph 1) + recorded 0; 4.1 per layer; GPU-reach wait 4291.29 ms
+DONE 256 32256 102458.3 10933.5 length 164 185 0 132960 132960 0 0 0.0
+   T lines 256   md5 124a3cd39b33f7da31e225829625983a
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-devplan-noh2-4096
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=STRATA_VERIFY_DEVICE_PLAN=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 23699 ms (2026-10-03T20:58:10-06:00) ==
+engine exited 0 at epoch 1791082691.166659
+== engine exit 0, wall 61 s (ask wall 23699 ms) ==
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 116.74 ms/window = verify 104.31 (GPU-reach wait 88.39 + per-layer host 0.92 [plan 0.28 actq 0.20 jobs 0.20 CPU 0.00] + stage 1.19 + tail 10.93) + commit/emit 1.86 + draft 10.57; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 93 (kernel 0 memset 0 memcpy 72 barrier 20 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4718.40 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 2472.02 ms
+DONE 147 3832 16965.2 6304.2 stop 93 110 0 78720 78720 0 0 0.0
+   T lines 147   md5 ac9f16fceed82e5681e42bd197835c51
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-devplan-noh-32768
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=STRATA_VERIFY_DEVICE_PLAN=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 113871 ms (2026-10-03T20:55:47-06:00) ==
+engine exited 0 at epoch 1791082548.818176
+== engine exit 0, wall 151 s (ask wall 113871 ms) ==
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 119.37 ms/window = verify 105.32 (GPU-reach wait 89.70 + per-layer host 0.96 [plan 0.29 actq 0.20 jobs 0.20 CPU 0.00] + stage 2.08 + tail 10.94) + commit/emit 1.88 + draft 12.17; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 95 (kernel 0 memset 0 memcpy 72 barrier 22 event 0 hostfn 0 graph 1) + recorded 0; 4.1 per layer; GPU-reach wait 8195.38 ms
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 102 (kernel 0 memset 0 memcpy 78 barrier 23 event 0 hostfn 0 graph 1) + recorded 0; 4.1 per layer; GPU-reach wait 4289.99 ms
+DONE 256 32256 102516.8 10981.8 length 164 185 0 132960 132960 0 0 0.0
+   T lines 256   md5 124a3cd39b33f7da31e225829625983a
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-devplan-noh-4096
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=STRATA_VERIFY_DEVICE_PLAN=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 23679 ms (2026-10-03T20:53:10-06:00) ==
+engine exited 0 at epoch 1791082391.338962
+== engine exit 0, wall 61 s (ask wall 23679 ms) ==
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 117.55 ms/window = verify 104.99 (GPU-reach wait 88.35 + per-layer host 0.94 [plan 0.29 actq 0.21 jobs 0.20 CPU 0.00] + stage 1.18 + tail 10.94) + commit/emit 1.89 + draft 10.67; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 95 (kernel 0 memset 0 memcpy 72 barrier 22 event 0 hostfn 0 graph 1) + recorded 0; 4.1 per layer; GPU-reach wait 4716.00 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 2472.64 ms
+DONE 147 3832 16857.5 6347.5 stop 93 110 0 78720 78720 0 0 0.0
+   T lines 147   md5 ac9f16fceed82e5681e42bd197835c51
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-hist-131072
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: c834bb3 D3 (t_87aa2963): the arm rig, retargeted at d3/runs and at the config of record as D2 landed it
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 385855 ms (2026-10-03T19:51:31-06:00) ==
+engine exited 0 at epoch 1791078692.405716
+== engine exit 0, wall 423 s (ask wall 385855 ms) ==
+strata decode timing: 115 windows, avg T 2.40, 2.23 tokens/window, 112.63 ms/window = verify 100.80 (GPU-reach wait 76.64 + per-layer host 0.85 [plan 0.28 actq 0.16 jobs 0.17 CPU 0.00] + stage 1.24 + tail 9.51) + commit/emit 1.94 + draft 9.89; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.00, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 4.48 conv 0.09 ab 0.23 z 2.67 rec 0.36 out-proj 2.43 hc-read1+router 2.55 shared+quant 2.38 waitA 0.12 VRAM hits 7.77 waitB 0.11 PCIe grp 0.38 waitCPU 0.04 copy+combine 0.16 (gap) 0.03   hc0 norm 0.79   hc0 down 0.81   hc0 up 0.72 | QSA layers: q8+kv-idx 0.07 k/v+norm-rope 0.25 kv+idx append 0.56 q+q-idx 1.78 scores+topk 1.97 kv-resolve 0.17 attention 0.63 gate 0.02 out-proj 0.74 hc-read1+router 0.79 shared+quant 0.76 waitA 0.05 VRAM hits 2.30 waitB 0.03 PCIe grp 0.11 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.24   hc0 up 0.21 | total 36.93 ms/window over 115 windows
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 2258 (kernel 1682 memset 0 memcpy 556 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 8757.04 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2617 (kernel 1844 memset 0 memcpy 750 barrier 23 event 0 hostfn 0 graph 0) + recorded 0; 104.7 per layer; GPU-reach wait 4591.43 ms
+DONE 256 129024 372297.2 12952.2 length 143 161 0 132480 132480 0 0 0.0
+   T lines 256   md5 c60e72d397e9b1cd44dab9c5ab1187c8
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+---- d3-hist-32768
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: c834bb3 D3 (t_87aa2963): the arm rig, retargeted at d3/runs and at the config of record as D2 landed it
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 103256 ms (2026-10-03T19:44:21-06:00) ==
+engine exited 0 at epoch 1791078262.889149
+== engine exit 0, wall 140 s (ask wall 103256 ms) ==
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 124.96 ms/window = verify 110.96 (GPU-reach wait 83.72 + per-layer host 1.00 [plan 0.31 actq 0.20 jobs 0.22 CPU 0.00] + stage 1.36 + tail 11.12) + commit/emit 2.06 + draft 11.94; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: hc-read0 0.01 q8+qkv/q-idx gemv 5.04 conv 0.10 ab 0.27 z 3.06 rec 0.40 out-proj 2.68 hc-read1+router 2.84 shared+quant 2.78 waitA 0.15 VRAM hits 9.54 waitB 0.11 PCIe grp 0.45 waitCPU 0.05 copy+combine 0.17 (gap) 0.03   hc0 norm 0.96   hc0 down 0.89   hc0 up 0.86 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.28 kv+idx append 0.10 q+q-idx 2.10 scores+topk 0.78 kv-resolve 0.02 attention 0.73 gate 0.02 out-proj 0.82 hc-read1+router 0.88 shared+quant 0.89 waitA 0.04 VRAM hits 2.80 waitB 0.03 PCIe grp 0.13 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.26   hc0 up 0.25 | total 40.72 ms/window over 92 windows
+strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 2250 (kernel 1672 memset 0 memcpy 556 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 97.8 per layer; GPU-reach wait 7649.89 ms
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 2597 (kernel 1830 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 103.9 per layer; GPU-reach wait 3977.74 ms
+DONE 256 32256 91698.5 11496.2 length 164 185 0 132960 132960 0 0 0.0
+   T lines 256   md5 124a3cd39b33f7da31e225829625983a
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+---- d3-hist-4096
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 4ad2d12 D2 (t_0416a0c0): the three follow-up cards, and the evidence regenerated with every arm
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 22179 ms (2026-10-03T19:41:55-06:00) ==
+engine exited 0 at epoch 1791078115.983284
+== engine exit 0, wall 60 s (ask wall 22179 ms) ==
+strata decode timing: 53 windows, avg T 3.21, 2.77 tokens/window, 128.69 ms/window = verify 116.59 (GPU-reach wait 86.82 + per-layer host 1.00 [plan 0.31 actq 0.22 jobs 0.23 CPU 0.00] + stage 1.24 + tail 11.45) + commit/emit 2.06 + draft 10.04; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 32.08, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 5.21 conv 0.10 ab 0.29 z 3.20 rec 0.42 out-proj 2.80 hc-read1+router 2.98 shared+quant 2.96 waitA 0.12 VRAM hits 10.10 waitB 0.11 PCIe grp 0.47 waitCPU 0.04 copy+combine 0.17 (gap) 0.03   hc0 norm 1.04   hc0 down 0.93   hc0 up 0.90 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.29 kv+idx append 0.11 q+q-idx 2.25 scores+topk 0.35 kv-resolve 0.01 attention 0.76 gate 0.02 out-proj 0.84 hc-read1+router 0.91 shared+quant 0.94 waitA 0.06 VRAM hits 2.90 waitB 0.03 PCIe grp 0.14 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.27   hc0 up 0.27 | total 42.24 ms/window over 53 windows
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 2248 (kernel 1672 memset 0 memcpy 556 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 97.7 per layer; GPU-reach wait 4550.96 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2597 (kernel 1830 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 103.9 per layer; GPU-reach wait 2376.92 ms
+DONE 147 3832 14993.1 6820.7 stop 94 117 0 81600 81600 0 0 0.0
+   T lines 147   md5 ac9f16fceed82e5681e42bd197835c51
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+---- d3-histc-131072
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 6d81040 D3 (t_87aa2963): the last blocks (E-6 device plan, the top-k dispatch pair), the notes, and the evidence collector
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 384836 ms (2026-10-03T20:05:47-06:00) ==
+engine exited 0 at epoch 1791079547.926386
+== engine exit 0, wall 422 s (ask wall 384836 ms) ==
+strata decode timing: 115 windows, avg T 2.40, 2.23 tokens/window, 114.10 ms/window = verify 102.28 (GPU-reach wait 78.26 + per-layer host 0.85 [plan 0.28 actq 0.16 jobs 0.17 CPU 0.00] + stage 1.17 + tail 9.51) + commit/emit 1.94 + draft 9.89; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.00, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 4.48 conv 0.10 ab 0.25 z 2.67 rec 0.36 out-proj 2.43 hc-read1+router 2.56 shared+quant 2.35 waitA 0.14 VRAM hits 7.81 waitB 0.11 PCIe grp 0.39 waitCPU 0.04 copy+combine 0.16 (gap) 0.03   hc0 norm 0.79   hc0 down 0.81   hc0 up 0.73 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.25 kv+idx append 0.56 q+q-idx 1.78 scores+topk 2.65 kv-resolve 0.17 attention 0.63 gate 0.02 out-proj 0.75 hc-read1+router 0.78 shared+quant 0.75 waitA 0.04 VRAM hits 2.31 waitB 0.03 PCIe grp 0.11 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.24   hc0 up 0.21 | total 37.70 ms/window over 115 windows
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 2257 (kernel 1682 memset 0 memcpy 556 barrier 19 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 8943.20 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2616 (kernel 1844 memset 0 memcpy 750 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 4688.99 ms
+DONE 256 129024 371433.1 13121.8 length 143 161 0 132480 132480 0 0 0.0
+   T lines 256   md5 c60e72d397e9b1cd44dab9c5ab1187c8
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+---- d3-histc-32768
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: b300306 D3 (t_87aa2963): the arm-CTX census at 4K and 32K - the scores grow 7.0x, the top-k is flat
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 114838 ms (2026-10-03T19:58:38-06:00) ==
+engine exited 0 at epoch 1791079119.575567
+== engine exit 0, wall 153 s (ask wall 114838 ms) ==
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 126.97 ms/window = verify 112.86 (GPU-reach wait 85.47 + per-layer host 0.99 [plan 0.30 actq 0.20 jobs 0.23 CPU 0.00] + stage 1.33 + tail 11.13) + commit/emit 2.04 + draft 12.06; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 4.99 conv 0.10 ab 0.30 z 3.03 rec 0.41 out-proj 2.65 hc-read1+router 2.84 shared+quant 2.76 waitA 0.17 VRAM hits 9.55 waitB 0.11 PCIe grp 0.45 waitCPU 0.04 copy+combine 0.17 (gap) 0.03   hc0 norm 0.95   hc0 down 0.89   hc0 up 0.86 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.28 kv+idx append 0.69 q+q-idx 2.10 scores+topk 0.92 kv-resolve 0.14 attention 0.70 gate 0.02 out-proj 0.81 hc-read1+router 0.87 shared+quant 0.88 waitA 0.04 VRAM hits 2.79 waitB 0.03 PCIe grp 0.13 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.26   hc0 up 0.25 | total 41.40 ms/window over 92 windows
+strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 2259 (kernel 1682 memset 0 memcpy 556 barrier 21 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 7809.79 ms
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 2611 (kernel 1844 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 4077.26 ms
+DONE 256 32256 102686.7 11681.0 length 164 185 0 132960 132960 0 0 0.0
+   T lines 256   md5 124a3cd39b33f7da31e225829625983a
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+---- d3-histc-4096
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: b300306 D3 (t_87aa2963): the arm-CTX census at 4K and 32K - the scores grow 7.0x, the top-k is flat
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 24190 ms (2026-10-03T19:53:42-06:00) ==
+engine exited 0 at epoch 1791078823.859353
+== engine exit 0, wall 61 s (ask wall 24190 ms) ==
+strata decode timing: 53 windows, avg T 3.19, 2.77 tokens/window, 130.53 ms/window = verify 118.03 (GPU-reach wait 87.80 + per-layer host 1.06 [plan 0.31 actq 0.23 jobs 0.25 CPU 0.00] + stage 1.28 + tail 11.38) + commit/emit 2.08 + draft 10.43; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 31.89, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 5.20 conv 0.10 ab 0.28 z 3.19 rec 0.42 out-proj 2.75 hc-read1+router 2.94 shared+quant 2.91 waitA 0.21 VRAM hits 10.00 waitB 0.11 PCIe grp 0.47 waitCPU 0.04 copy+combine 0.18 (gap) 0.03   hc0 norm 1.05   hc0 down 0.93   hc0 up 0.90 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.29 kv+idx append 0.75 q+q-idx 2.24 scores+topk 0.28 kv-resolve 0.10 attention 0.76 gate 0.02 out-proj 0.83 hc-read1+router 0.92 shared+quant 0.93 waitA 0.04 VRAM hits 2.90 waitB 0.03 PCIe grp 0.14 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.27   hc0 up 0.26 | total 42.68 ms/window over 53 windows
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 2258 (kernel 1682 memset 0 memcpy 556 barrier 20 event 0 hostfn 0 graph 0) + recorded 0; 98.2 per layer; GPU-reach wait 4601.74 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2611 (kernel 1844 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 104.4 per layer; GPU-reach wait 2407.10 ms
+DONE 147 3832 16921.2 6918.1 stop 94 116 0 81120 81120 0 0 0.0
+   T lines 147   md5 ac9f16fceed82e5681e42bd197835c51
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+---- d3-nomulti-131072
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=STRATA_SCORES_MULTI=0
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 7690621 D3 (t_87aa2963): the sharing A/B at 4K/32K (-1.0%/-0.2%, ids identical) and the E-6 sync ceiling (+2.9%/+3.3%, ids identical)
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 384178 ms (2026-10-03T20:33:41-06:00) ==
+engine exited 0 at epoch 1791081222.067077
+== engine exit 0, wall 422 s (ask wall 384178 ms) ==
+strata decode timing: 118 windows, avg T 2.36, 2.17 tokens/window, 102.46 ms/window = verify 90.76 (GPU-reach wait 78.21 + per-layer host 0.81 [plan 0.27 actq 0.16 jobs 0.15 CPU 0.00] + stage 1.20 + tail 9.24) + commit/emit 1.79 + draft 9.91; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 23.56, PCIe 0.00
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 92 (kernel 0 memset 0 memcpy 72 barrier 19 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 9170.46 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4832.41 ms
+DONE 256 129024 371806.8 12090.0 length 140 160 0 133440 133440 0 0 0.0
+   T lines 256   md5 c60e72d397e9b1cd44dab9c5ab1187c8
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-nomulti-32768
+ctx=32768 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx32768.txt (139825 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=STRATA_SCORES_MULTI=0
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 91d94bb D3 (t_87aa2963): the write-up draft (verdict, the attribution with file:lines, the handshake count, the dispatch/safety analysis) and the remaining chain
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 113836 ms (2026-10-03T20:15:39-06:00) ==
+engine exited 0 at epoch 1791080140.548602
+== engine exit 0, wall 151 s (ask wall 113836 ms) ==
+strata decode timing: 92 windows, avg T 3.01, 2.78 tokens/window, 116.01 ms/window = verify 101.93 (GPU-reach wait 87.10 + per-layer host 0.93 [plan 0.29 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.27 + tail 10.94) + commit/emit 1.89 + draft 12.19; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.11, PCIe 0.00
+strata submit: stage window T=4 pos0=32507 layers 0..22 (23): submitted 93 (kernel 0 memset 0 memcpy 72 barrier 20 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 7957.78 ms
+strata submit: stage window T=4 pos0=32507 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 4163.96 ms
+DONE 256 32256 102809.4 10673.3 length 164 185 0 132960 132960 0 0 0.0
+   T lines 256   md5 124a3cd39b33f7da31e225829625983a
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-nomulti-4096
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=STRATA_SCORES_MULTI=0
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 91d94bb D3 (t_87aa2963): the write-up draft (verdict, the attribution with file:lines, the handshake count, the dispatch/safety analysis) and the remaining chain
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 23679 ms (2026-10-03T20:10:25-06:00) ==
+engine exited 0 at epoch 1791079826.122292
+== engine exit 0, wall 62 s (ask wall 23679 ms) ==
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 114.84 ms/window = verify 102.34 (GPU-reach wait 86.03 + per-layer host 0.94 [plan 0.29 actq 0.20 jobs 0.19 CPU 0.00] + stage 1.23 + tail 10.93) + commit/emit 1.88 + draft 10.61; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4592.83 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 96 (kernel 0 memset 0 memcpy 78 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 2408.69 ms
+DONE 147 3832 17017.8 6201.2 stop 93 110 0 78720 78720 0 0 0.0
+   T lines 147   md5 ac9f16fceed82e5681e42bd197835c51
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-oldtopk-4096
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=STRATA_TOPK_OLD=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: b300306 D3 (t_87aa2963): the arm-CTX census at 4K and 32K - the scores grow 7.0x, the top-k is flat
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 21183 ms (2026-10-03T19:54:46-06:00) ==
+engine exited 0 at epoch 1791078887.655828
+== engine exit 0, wall 57 s (ask wall 21183 ms) ==
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 112.06 ms/window = verify 99.94 (GPU-reach wait 83.83 + per-layer host 1.00 [plan 0.29 actq 0.20 jobs 0.25 CPU 0.00] + stage 1.20 + tail 10.94) + commit/emit 1.88 + draft 10.25; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4475.31 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2342.93 ms
+DONE 147 3832 14945.2 6051.2 stop 93 110 0 78720 78720 0 0 0.0
+   T lines 147   md5 ac9f16fceed82e5681e42bd197835c51
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-oldtopkhist-131072
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=STRATA_TOPK_OLD=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 382879 ms (2026-10-03T20:51:55-06:00) ==
+engine exited 0 at epoch 1791082316.815321
+== engine exit 0, wall 420 s (ask wall 382879 ms) ==
+strata decode timing: 118 windows, avg T 2.36, 2.17 tokens/window, 102.91 ms/window = verify 91.20 (GPU-reach wait 78.60 + per-layer host 0.81 [plan 0.27 actq 0.16 jobs 0.15 CPU 0.00] + stage 1.24 + tail 9.26) + commit/emit 1.81 + draft 9.91; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 23.56, PCIe 0.00
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 91 (kernel 0 memset 0 memcpy 72 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 9216.49 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4860.80 ms
+DONE 256 129024 370397.0 12143.4 length 140 160 0 133440 133440 0 0 0.0
+   T lines 256   md5 c60e72d397e9b1cd44dab9c5ab1187c8
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+
+---- d3-oldtopkhist-4096
+ctx=4096 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt (16146 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=STRATA_TOPK_OLD=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: 7690621 D3 (t_87aa2963): the sharing A/B at 4K/32K (-1.0%/-0.2%, ids identical) and the E-6 sync ceiling (+2.9%/+3.3%, ids identical)
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 22185 ms (2026-10-03T20:36:36-06:00) ==
+engine exited 0 at epoch 1791081397.022052
+== engine exit 0, wall 60 s (ask wall 22185 ms) ==
+strata decode timing: 53 windows, avg T 3.21, 2.77 tokens/window, 128.12 ms/window = verify 116.02 (GPU-reach wait 86.35 + per-layer host 1.02 [plan 0.31 actq 0.22 jobs 0.23 CPU 0.00] + stage 1.25 + tail 11.43) + commit/emit 2.06 + draft 10.05; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 32.08, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: q8+qkv/q-idx gemv 5.19 conv 0.11 ab 0.29 z 3.21 rec 0.41 out-proj 2.77 hc-read1+router 2.94 shared+quant 2.91 waitA 0.17 VRAM hits 10.03 waitB 0.11 PCIe grp 0.47 waitCPU 0.04 copy+combine 0.18 (gap) 0.03   hc0 norm 1.03   hc0 down 0.93   hc0 up 0.90 | QSA layers: q8+kv-idx 0.08 k/v+norm-rope 0.29 kv+idx append 0.12 q+q-idx 2.23 scores+topk 0.28 kv-resolve 0.01 attention 0.76 gate 0.02 out-proj 0.84 hc-read1+router 0.91 shared+quant 0.93 waitA 0.04 VRAM hits 2.94 waitB 0.03 PCIe grp 0.14 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.27   hc0 up 0.27 | total 41.98 ms/window over 53 windows
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 2246 (kernel 1672 memset 0 memcpy 556 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 97.7 per layer; GPU-reach wait 4525.82 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 2597 (kernel 1830 memset 0 memcpy 750 barrier 17 event 0 hostfn 0 graph 0) + recorded 0; 103.9 per layer; GPU-reach wait 2365.50 ms
+DONE 147 3832 14944.9 6790.6 stop 94 117 0 81600 81600 0 0 0.0
+   T lines 147   md5 ac9f16fceed82e5681e42bd197835c51
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+---- d3-oldtopkhistc-131072
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=0 hist=1/8 profile=1
+onecard=<none> extra= extraenv=STRATA_TOPK_OLD=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+== the ask finished=1 after 383879 ms (2026-10-03T21:07:55-06:00) ==
+engine exited 0 at epoch 1791083276.130301
+== engine exit 0, wall 421 s (ask wall 383879 ms) ==
+strata decode timing: 115 windows, avg T 2.40, 2.23 tokens/window, 114.13 ms/window = verify 102.32 (GPU-reach wait 78.21 + per-layer host 0.86 [plan 0.29 actq 0.16 jobs 0.18 CPU 0.00] + stage 1.23 + tail 9.52) + commit/emit 1.92 + draft 9.88; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 24.00, PCIe 0.00
+strata decode GPU stages (ms/window): GDN layers: hc-read0 0.00 q8+qkv/q-idx gemv 4.50 conv 0.11 ab 0.24 z 2.66 rec 0.37 out-proj 2.43 hc-read1+router 2.57 shared+quant 2.35 waitA 0.13 VRAM hits 7.81 waitB 0.11 PCIe grp 0.38 waitCPU 0.04 copy+combine 0.16 (gap) 0.03   hc0 norm 0.79   hc0 down 0.81   hc0 up 0.72 | QSA layers: q8+kv-idx 0.07 k/v+norm-rope 0.26 kv+idx append 0.56 q+q-idx 1.80 scores+topk 2.66 kv-resolve 0.17 attention 0.63 gate 0.02 out-proj 0.74 hc-read1+router 0.78 shared+quant 0.76 waitA 0.04 VRAM hits 2.30 waitB 0.03 PCIe grp 0.11 waitCPU 0.01 copy+combine 0.05 (gap) 0.01   hc0 norm 0.05   hc0 down 0.24   hc0 up 0.21 | total 37.71 ms/window over 115 windows
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 2256 (kernel 1682 memset 0 memcpy 556 barrier 18 event 0 hostfn 0 graph 0) + recorded 0; 98.1 per layer; GPU-reach wait 8936.56 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 2616 (kernel 1844 memset 0 memcpy 750 barrier 22 event 0 hostfn 0 graph 0) + recorded 0; 104.6 per layer; GPU-reach wait 4682.58 ms
+DONE 256 129024 370217.1 13124.7 length 143 161 0 132480 132480 0 0 0.0
+   T lines 256   md5 c60e72d397e9b1cd44dab9c5ab1187c8
+strata/sycl: STRATA_SYCL_GRAPH=0 - the launch-closure replay is used (a window costs one submission per kernel)
+
+############ 4. the #267 stall arms (the release path's guarantee)
+---- d3-stall-4096
+binary: /home/michael/strata-xpu/strata/build-sycl/strata  (2026-10-03 19:22:10.716037687 -0600 35970200 bytes)  md5 e841fd061fec873c2f24e785973a2ebe
+env: STRATA_TEST_VERIFY_STALL=1 STRATA_RELEASE_DRAIN_MS=unset SECOND_ASK=1
+arm: max-new=16 max-context=4096 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt one engine, both cards, layer-split auto, spec-min-p 0.7
+== exit 250, wall 109s ==
+verify release: enter (thread 2102035180072210629, budget 5000 ms)
+verify release: flag publication 0.078 ms; drain budget 5000 ms
+verify release: the GPU finished; drain 3.410 ms, release 3.492 ms (publication 3.491 ms)
+strata: released the verify window's GPU waits (#267): the GPU finished in 3 ms
+verify release: enter (thread 2102035180072210629, budget 5000 ms)
+verify release: flag publication 0.021 ms; drain budget 5000 ms
+verify teardown: the window on cs_ was released (#267); it finished (1.063 ms of a 5000 ms budget)
+verify release: the GPU finished; drain 3.223 ms, release 3.244 ms (publication 3.244 ms)
+strata: released the verify window's GPU waits (#267): the GPU finished in 3 ms
+   T lines 0   md5 d41d8cd98f00b204e9800998ecf8427e
+
+---- d3-stall-e6-4096
+binary: /home/michael/strata-xpu/strata/build-sycl/strata  (2026-10-03 19:22:10.716037687 -0600 35970200 bytes)  md5 e841fd061fec873c2f24e785973a2ebe
+env: STRATA_TEST_VERIFY_STALL=1 STRATA_RELEASE_DRAIN_MS=unset SECOND_ASK=1
+arm: max-new=16 max-context=4096 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-needle-ctx4096.txt one engine, both cards, layer-split auto, spec-min-p 0.7
+== exit 0, wall 51s ==
+   T lines 17   md5 98607e99f79f446a08a2b08b98fd068e
+
+############ 5. the state this card left the machine in
+no engine running
+no server running
+port 8099 free
+                     michael   37892 F...m gnome-text-edit
+                     michael   38552 F...m missioncenter
+/dev/dri/renderD129: michael   12379 F.... ptyxis
+                     michael   14495 F.... nautilus
+                     michael   37892 F.... gnome-text-edit
+                     michael   38552 F.... missioncenter
+1.99 14.38 17.64 1/1652 1334190
+build-sycl/strata md5 e841fd061fec873c2f24e785973a2ebe

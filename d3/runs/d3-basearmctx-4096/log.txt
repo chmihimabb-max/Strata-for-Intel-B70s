@@ -43,3 +43,22 @@ ask: 16155 B, ids 3832
 == drive pid 1320283; waiting for 'everything loaded' ==
 == loaded=1 after 31s (2026-10-03T20:37:19-06:00) ==
 == ask fed at 2026-10-03T20:37:19-06:00 (epoch_ms 1791081439756) ==
+== the ask finished=1 after 21168 ms (2026-10-03T20:37:40-06:00) ==
+engine exited 0 at epoch 1791081461.833800
+== engine exit 0, wall 58 s (ask wall 21168 ms) ==
+== the graph path's own banner ==
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+== the engine's numbers ==
+strata serve: prompt chunk auto: 8192 tokens
+strata decode timing: 54 windows, avg T 3.04, 2.72 tokens/window, 113.02 ms/window = verify 100.84 (GPU-reach wait 84.18 + per-layer host 0.97 [plan 0.29 actq 0.21 jobs 0.19 CPU 0.00] + stage 1.19 + tail 10.93) + commit/emit 1.88 + draft 10.30; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 30.37, PCIe 0.00
+strata serve: prompt 3832 tokens = 0 reused + 3832 read in 14987 ms (255.7 tok/s), 147 generated in 6103 ms (24.1 tok/s), drafts accepted 93 of 110, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (78720 hits / 78720 lookups)
+== submit lines ==
+strata submit: stage window T=4 pos0=3970 layers 0..22 (23): submitted 90 (kernel 0 memset 0 memcpy 72 barrier 17 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 4393.35 ms
+strata submit: stage window T=4 pos0=3970 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 2309.25 ms
+strata submit: stage window T=4 pos0=3974 layers 0..22 (23): submitted 88 (kernel 0 memset 0 memcpy 72 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4493.90 ms
+strata submit: stage window T=4 pos0=3974 layers 23..47 (25): submitted 97 (kernel 0 memset 0 memcpy 78 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 3.9 per layer; GPU-reach wait 2360.92 ms
+== the request ==
+DONE 147 3832 14987.4 6103.3 stop 93 110 0 78720 78720 0 0 0.0
+PP lines: 1  last: PP 3831 3832 13610 281.5
+T lines: 147  md5 ac9f16fceed82e5681e42bd197835c51

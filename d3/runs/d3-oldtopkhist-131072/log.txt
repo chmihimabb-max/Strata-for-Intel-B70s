@@ -1,0 +1,64 @@
+D3 arm d3-oldtopkhist-131072   2026-10-03T20:45:00-06:00
+ctx=131072 max-new=256 prompt=/home/michael/strata-xpu/m6c/prompts/prompt-ctx131072.txt (559528 B) prefill=auto kvres=32768
+spec=4 spec-min-p=0.7 mtp-max-t=<none> graph=<unset=default> hist=0/2 profile=0
+onecard=<none> extra= extraenv=STRATA_TOPK_OLD=1
+ZE_AFFINITY_MASK=<unset> SYCL_CACHE_DIR=/home/michael/strata-xpu/sycl-cache/m6c  mtp=/home/michael/strata-xpu/mtp/rt
+HEAD: eeab591 D3 (t_87aa2963): the sharing A/B at 128K, the ids guard table, the E-6 ceiling, the stall proof, and the top-k dispatch pair at one max-context
+engine binary: 2026-10-03 19:22:10.716037687 -0600  35970200 bytes  md5 e841fd061fec873c2f24e785973a2ebe
+-- device check BEFORE the run --
+   no engine of ours
+   no server of ours
+                     USER        PID ACCESS COMMAND
+/dev/dri/renderD128: michael    4359 F.... gnome-shell
+                     michael    4867 F...m Xwayland
+                     michael    5200 F...m ibus-x11
+                     michael    5201 F...m mutter-x11-fram
+                     michael   12379 F...m ptyxis
+                     michael   12722 F...m firefox
+                     michael   14495 F...m nautilus
+                     michael   37892 F...m gnome-text-edit
+                     michael   38552 F...m missioncenter
+/dev/dri/renderD129: michael   12379 F.... ptyxis
+                     michael   14495 F.... nautilus
+                     michael   37892 F.... gnome-text-edit
+                     michael   38552 F.... missioncenter
+16.84 22.00 20.02 1/1660 1323389
+ 
+:: initializing oneAPI environment ...
+   d3_run_arm.sh: BASH_VERSION = 5.3.9(1)-release
+   args: Using "$@" for setvars.sh arguments: 
+:: compiler -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dpl -- latest
+:: mkl -- latest
+:: tbb -- latest
+:: tcm -- latest
+:: umf -- latest
+:: oneAPI environment initialized ::
+ 
+== the exact command ==
+cd /home/michael/strata-xpu/strata/d3/runs/d3-oldtopkhist-131072 && /home/michael/strata-xpu/strata/build-sycl/strata --serve --pack /run/media/michael/2208B12208B0F63F/strata-iq3s/pack --native /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00001-of-00002.gguf --ple-gguf /home/michael/.cache/huggingface/hub/models--ISTA-DASLab--Qwen3.8-Flash-Next-GSQ-RCO-GGUF/snapshots/ed59f92082b1e93c0e96d60a8b11aab089b52f09/IQ3_S/Qwen3.8-Flash-Next-GSQ-RCO-IQ3_S-00002-of-00002.gguf --mtp /home/michael/strata-xpu/mtp/rt --kv int8 --expert-cache auto --expert-profile /home/michael/strata-xpu/strata/data/expert-profile.bin --mmap-experts --prefill auto --spec 4 --spec-min-p 0.7 --max-context 131072 --no-capture --stats --prompt-cache 0 --prompt-cache-every 0 --layer-split auto --kv-resident 32768   (stdin from /home/michael/strata-xpu/strata/d3/runs/d3-oldtopkhist-131072/stdin.fifo)
+ask: 559537 B, ids 129024
+== drive pid 1323681; waiting for 'everything loaded' ==
+== loaded=1 after 32s (2026-10-03T20:45:33-06:00) ==
+== ask fed at 2026-10-03T20:45:33-06:00 (epoch_ms 1791081933007) ==
+== the ask finished=1 after 382879 ms (2026-10-03T20:51:55-06:00) ==
+engine exited 0 at epoch 1791082316.815321
+== engine exit 0, wall 420 s (ask wall 382879 ms) ==
+== the graph path's own banner ==
+strata/sycl: the graph path is ON (default since D1; STRATA_SYCL_GRAPH=0 turns it off) - a window's capture records a SYCL command_graph and cudaGraphLaunch submits it in ONE submission
+== the engine's numbers ==
+strata serve: prompt chunk auto: 8192 tokens
+strata decode timing: 118 windows, avg T 2.36, 2.17 tokens/window, 102.91 ms/window = verify 91.20 (GPU-reach wait 78.60 + per-layer host 0.81 [plan 0.27 actq 0.16 jobs 0.15 CPU 0.00] + stage 1.24 + tail 9.26) + commit/emit 1.81 + draft 9.91; per layer-window: CPU experts 0.00 (0.00 entries), VRAM hits 23.56, PCIe 0.00
+strata serve: prompt 129024 tokens = 0 reused + 129024 read in 370397 ms (348.3 tok/s), 256 generated in 12143 ms (21.1 tok/s), drafts accepted 140 of 160, 0 checkpoints
+strata serve: decode expert cache hit rate: 100.0% (133440 hits / 133440 lookups)
+== submit lines ==
+strata submit: stage window T=4 pos0=129273 layers 0..22 (23): submitted 86 (kernel 0 memset 0 memcpy 72 barrier 13 event 0 hostfn 0 graph 1) + recorded 0; 3.7 per layer; GPU-reach wait 9107.47 ms
+strata submit: stage window T=4 pos0=129273 layers 23..47 (25): submitted 94 (kernel 0 memset 0 memcpy 78 barrier 15 event 0 hostfn 0 graph 1) + recorded 0; 3.8 per layer; GPU-reach wait 4802.09 ms
+strata submit: stage window T=4 pos0=129277 layers 0..22 (23): submitted 91 (kernel 0 memset 0 memcpy 72 barrier 18 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 9216.49 ms
+strata submit: stage window T=4 pos0=129277 layers 23..47 (25): submitted 100 (kernel 0 memset 0 memcpy 78 barrier 21 event 0 hostfn 0 graph 1) + recorded 0; 4.0 per layer; GPU-reach wait 4860.80 ms
+== the request ==
+DONE 256 129024 370397.0 12143.4 length 140 160 0 133440 133440 0 0 0.0
+PP lines: 16  last: PP 129023 129024 367699 350.9
+T lines: 256  md5 c60e72d397e9b1cd44dab9c5ab1187c8

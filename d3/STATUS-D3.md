@@ -54,9 +54,12 @@ side by side), `d3/d3_stall.sh` (the #267 stall rig, P1b's shape), `d3/d3_eviden
    `wait_flag_ge` spins**; the spins are **144 launches and 14.7 / 15.4 / 16.9 ms per window at 4K/32K/128K =
    11.1% / 11.7% / 12.0%** of the window's counted device time — the largest single non-projection family in the
    window.  `STRATA_VERIFY_DEVICE_PLAN=1` (E-6) is the engine's existing answer (the device plans its own group and
-   its waits return on a device-written word), and it is worth **+2.9% / +3.3% decode at 4K / 32K with
-   byte-identical ids**, i.e. the *measured ceiling* for the card's "coarser synchronisation" question: the host's
-   own per-layer work is another 0.7-0.8% and the two together are the whole term (§6.2).
+   its waits return on a device-written word): on the **closure** path it is worth **+2.9% / +3.3% / +4.2% decode at
+   4K / 32K / 128K with byte-identical ids**, and on the **graph path the engine now ships by default it costs
+   −2.6% at both 4K and 32K** (warm re-runs) — so the measured answer to the card's "coarser synchronisation"
+   question is that the per-layer sync has **no headroom left on the shipped configuration** (the graph path already
+   hides the round trip) and the 3-4% on the closure path is the size of that path's own host-gating (§6.2).  The
+   host's own per-layer work is another 0.7-0.8% and the two together are the whole term.
 5. **The one named opportunity this card leaves behind**: the depth-growing score sweep moves its working set at
    **28-37 GB/s** — the same class of device moves an order of magnitude more — because each `(block, query)` pair
    is a serial chain of four head dot-products behind a fixed 256-block grid.  Its own bandwidth floor at 32K is
@@ -252,9 +255,12 @@ The census records the **launcher** symbol, and the memory kernel has its own la
 and at 128K the direction is the other way from 4K: the memory kernel costs **2.2× the register one**
 (3.044 against 1.403 ms, +1.64 ms = **+1.2% of the window**), which is what the register kernel's "keys read once"
 buys once `n_bid` is 32,257 blocks — a top-k of 3.0 ms is 2.2% of a window on the record's config against 1.0% on
-the arms'.  Both 128K arms emitted the **same token ids** (`c60e72d3…`), i.e. the two kernels select identically
-on this data, as their contract says, so this is a speed question only; and `d3-oldtopkhist-131072` (E3) is the
-clean same-maxctx pair that separates the kernel from the max-context.
+the arms'.  Three independent comparisons put that gap at **+1.63 to +1.65 ms** and all three carry the same
+`511a89be…`/`c60e72d3…` token stream: this cross-max-context census pair (+1.641), the same-max-context census pair
+at 128K (`d3-oldtopkhistc-131072`: maxctx 131,072 with the memory kernel forced, top-k device **3.034 ms against
+1.403**, +1.631 ms, scores 5.360 against 5.361 — i.e. the scores are capacity-independent at 128K too), and the
+uninstrumented wall pair (§5.2's E3, +1.65 ms).  So this is a clean speed question with identical selections, and
+the fix is §5.3's.
 
 Two things fall out of this table and one does not:
 
@@ -271,8 +277,43 @@ Two things fall out of this table and one does not:
 
 ### 5.2 The clean pair at one max-context, and the max-context effect alone
 
-[PENDING-E: E1 (maxctx 4096, `STRATA_TOPK_OLD=1` = the memory kernel forced, against `d3-hist-4096`) and E2
-(maxctx 262144 against the arm's own CTX at 4K, uninstrumented).]
+**E1 — the same max-context, one env var between the arms** (`d3-oldtopkhist-4096` sets `STRATA_TOPK_OLD=1`, which
+forces the memory kernel; the control is `d3-hist-4096` with everything else identical: maxctx 4096, closure, the
+census instruments on):
+
+| arm | top-k launcher | top-k device ms (T=4 window) | top-k % of the window | window, counted device time |
+|---|---|---|---|---|
+| `d3-hist-4096` (default) | `qsa_block_topk` (register) | **0.684** | 0.52% | 132.07 ms |
+| `d3-oldtopkhist-4096` (**memory forced**) | `qsa_block_topk_ref` | **0.489** | 0.37% | 132.27 ms |
+
+The **29% gap is the kernel, not the max-context**: the forced pair reproduces the cross-max-context pair's gap
+exactly (0.489 against 0.485 at the record's maxctx), so §5.1's 4K row is a dispatch effect and the 128K row
+(`d3-oldtopkhist-131072`, E3, pending at the time of writing) is the same-maxctx control for the depth.
+
+**E2 — the record's `--max-context` itself**, uninstrumented, graph path (the served configuration), with the
+top-k kernel held at what each configuration dispatches:
+
+| arm | max-context | top-k kernel | ms/window | decode tok/s | prefill tok/s (4K prompt) | ids |
+|---|---|---|---|---|---|---|
+| `d3-oldtopk-4096` | 4,096 | memory (forced) | **112.06** | **24.29** | 256.40 | `66bf952d…` |
+| `d3-basearmctx-4096` | 4,096 | register (dispatch) | 113.02 | 24.09 | 255.68 | `66bf952d…` |
+| `d3-base-4096` | **262,144** | memory (dispatch) | 113.72 | 23.94 | **225.96** | `66bf952d…` |
+
+Two effects, both small at the window level and both worth knowing because the record carries them: the record's
+max-context is **+1.66 ms/window against the 4,096-cell configuration with the same top-k** (+1.5% window, −1.4%
+decode) and **−11.6% of the 4K prefill** (225.96 against 255.68 tok/s) — the price of pinning a 262,144-cell KV
+allocation — while the register kernel's 4K advantage recovers 0.96 ms of it (24.29 → 24.09 tok/s at equal
+max-context).
+
+**E3 — the same question at 128K**, and three comparisons agree: `d3-oldtopk-131072` runs the record's own end-of-run
+configuration at 128K with the memory kernel forced (maxctx 131,072, graph path, no instruments) and reads
+**102.91 ms/window, 21.08 tok/s**, against D2's published 128K `--spec-min-p 0.7` arm on the same max-context and
+path — which took the register kernel — at **101.26 ms / 21.42 tok/s** (D2's `d2-minp07-131072`, same binary family,
+cross-session): **+1.65 ms**.  The other two are §5.1's census pairs at **+1.641** (cross-max-context) and **+1.631**
+ms (same max-context, `d3-oldtopkhistc-131072`, maxctx 131,072 both sides).  So at 128K the dispatch difference is
+real, it is the kernel's, and the max-context's own effect at 128K is ~0 (both configurations stream KV there).
+
+
 
 ### 5.3 Why "pass the window's own reach" is not a safe fix here
 
@@ -331,10 +372,10 @@ The handshake is the largest single non-projection family in the window, and it 
 | 32K | **15.423 ms** | **11.70%** | 0.357 ms | 0.90 ms | 85.11 ms = 68% of 124.96 ms |
 | 128K | **16.867 ms** | **12.03%** | 0.342 ms | 0.81 ms | 76.77… (see the decode-timing lines in the evidence) |
 
-The two sides are worth reading together: the **device** spends 102-117 µs per layer spinning on the host's flags,
-while the **host's** own per-layer work is **21 µs per layer** (1.0 ms / 48) — i.e. the device's stall is **not**
-waiting for the host's arithmetic, it is waiting for the *round trip* (ring → host wakes → publish → device
-observes).  That is the term a coarser sync can buy, and it is what §6.2 measures.
+The two sides are worth reading together: the **device** spends 102-117 µs per wait and **three waits per layer**,
+i.e. ~306-351 µs of spin per layer, while the **host's** own per-layer work is **21 µs per layer** (1.0 ms / 48) —
+so the device's stall is **not** waiting for the host's arithmetic, it is waiting for the *round trip* (ring → host
+wakes → publish → device observes).  That is the term a coarser sync can buy, and it is what §6.2 measures.
 
 ### 6.2 The measured ceiling: E-6, the engine's own coarsest exact sync
 
@@ -360,9 +401,6 @@ a "sync every N layers" design is what it measures plus the host's own per-layer
 dropped too (1.00 / 0.90 ms per window = 0.8% / 0.7%, §6.1).  Measured with the census instruments so it is
 directly comparable to `d3-histc-*` (same closure path, same stamps, same max-context):
 
-[PENDING-D: the E-6 table at 4K/32K/128K: wait_flag_ge/wait_flag_ge_or launches and ms, the window, decode tok/s,
-and the ids md5 against `d3-histc-*`.]
-
 The 4K pair, with the same instruments, the same `--max-context 262144` and one env var between them:
 
 | arm | the device's per-layer waits | window, counted device time | window, decode line | decode tok/s | ids md5 |
@@ -371,16 +409,52 @@ The 4K pair, with the same instruments, the same `--max-context 262144` and one 
 | `d3-devplan-4096` (**E-6**) | `wait_flag_ge_or` **0.143 ms** (144 launches, 1 µs each) | **122.87 ms (−9.9%)** | **126.89 ms (−2.8%)** | **21.86 (+2.9%)** | `66bf952d…` **identical** |
 | `d3-histc-32768` (control) | `wait_flag_ge` **17.813 ms** | 137.52 ms | 126.97 ms | 21.92 | `d87373e8…` |
 | `d3-devplan-32768` (**E-6**) | `wait_flag_ge_or` **0.144 ms** | **126.53 ms (−8.0%)** | **122.84 ms (−3.3%)** | **22.65 (+3.3%)** | `d87373e8…` **identical** |
+| `d3-histc-131072` (control) | `wait_flag_ge` **15.853 ms** | 140.82 ms | 114.10 ms | 19.51 | `511a89be…` |
+| `d3-devplan-131072` (**E-6**) | `wait_flag_ge_or` **0.148 ms** | **132.38 ms (−6.0%)** | **109.55 ms (−4.0%)** | **20.32 (+4.2%)** | `511a89be…` **identical** |
 
-So the device's stall on the host's flags is **17.7-18.5 ms of device time per window** and removing it is worth
-**−3.6 / −4.1 ms of the window's wall, i.e. +2.9% / +3.3% decode, at 4K / 32K**, with identical greedy ids; the
-smaller wall figure than the device figure is the overlap: part of the time the device spends spinning, the host
-spends waiting for the device's ring (§6.1's 83-88 ms), so only the unoverlapped part leaves the critical path.
-**This is the measured ceiling for the card's "coarser synchronisation" question**: the engine's own device-plan
-mode, which is exact (its bail-out writes `*skip = 0` whenever a layer has a non-resident expert), buys ~3% of the
-decode window and nothing more can be bought by coarser cadence alone (the host's own per-layer work is another
-0.7-0.8%, and the two together are the whole term).
+So the device's stall on the host's flags is **15.9-18.5 ms of device time per window** and removing it is worth
+**+2.9% / +3.3% / +4.2% decode at 4K / 32K / 128K** — growing with depth, as the handshake's share does — with
+identical greedy ids at all three lengths.  The smaller wall saving than the device saving (4-10% of the device
+window, 2.8-4.0% of the wall) is the overlap: while the device spins, the host is itself waiting for the device's
+next ring (§6.1's 78-87 ms), so only the unoverlapped part leaves the critical path.  **On the closure path this is
+the measured ceiling for the card's "coarser synchronisation" question**: the engine's own device-plan mode, which
+is exact (its bail-out writes `*skip = 0` whenever a layer has a non-resident expert), buys 3-4% of the decode
+window; the host's own per-layer work is another 0.7-0.8%, and the two together are the whole term.  On the path
+the engine actually ships it buys nothing — the next table is the reason this card reports E-6 as a lever with a
+sign, not as a win.
 
+
+
+**... and E-6's sign depends on which path the window runs on, which is the interesting part.**  The same switch,
+uninstrumented and on the shipped default (the graph path, `d3-base-*` as the control), *costs*:
+
+| arm | path | window | decode tok/s | ids md5 |
+|---|---|---|---|---|
+| `d3-base-4096` (control) | graph | 113.72 ms | 23.94 | `66bf952d…` |
+| `d3-devplan-noh-4096` (E-6) | graph | 117.55 ms | 23.16 | `66bf952d…` **identical** |
+| `d3-devplan-noh2-4096` (E-6, re-run warm — D2's JIT rule) | graph | **116.74 ms** | **23.32** | `66bf952d…` |
+| `d3-base-32768` (control) | graph | 115.74 ms | 24.04 | `d87373e8…` |
+| `d3-devplan-noh-32768` (E-6) | graph | 119.37 ms | 23.31 | `d87373e8…` **identical** |
+| `d3-devplan-noh2-32768` (E-6, re-run warm) | graph | **118.84 ms** | **23.41** | `d87373e8…` |
+
+i.e. **+2.9 / +3.3 / +4.2% decode on the closure path and −2.6% / −2.6% on the graph path at 4K / 32K** (the warm
+re-runs are the quoted ones: −2.6% at both lengths).  The
+reading that fits both measurements (an inference — the device's own wait time on the graph path is not directly
+measurable here, since the census needs per-launch device timestamps and a replayed graph has none, D1; and P9's
+stage table's `waitA/waitB` fields under-report the spin kernels by two orders against the census, so they cannot
+settle it either) is: **on the closure path the per-layer publications are submissions and the host is the gate,
+so the device really does stall (~18 ms/window, §6.1's census); on the graph path the whole window is one
+submission and the host publishes each layer ahead of the device, so the device's waits cost ~nothing and E-6's
+device-side plan kernel is added work.**  Either way the answer to the card's question is a measured one: **the
+per-layer sync has no headroom left on the configuration the engine ships** (the graph path, the default since D1),
+and the ~3-4% it is worth on the closure path is the size of the closure path's own host-gating, not a separate
+optimisation.
+
+**And the stall rig shows what E-6 does to the #267 failure mode**: with E-6 on, `STRATA_TEST_VERIFY_STALL=1`
+(which withholds the last layer's flag) **does not stall the window at all** — the run completes both asks
+normally (17 tokens generated, exit **0**, 51 s) because the device-planned group never reads the host's flag
+(`wait_flag_ge_or` returns on the device-written `skip`).  The release path is therefore not even entered; the
+guarantee is not weakened, it is not needed for that failure mode.
 
 **A design for a coarser cadence, and why it is not implemented here.**  The host must publish per layer today
 because the *plan* (which resident slot holds each of the group's experts) and the CPU share are computed host-side
@@ -432,10 +506,16 @@ card — which is why §6.2's E-6 number is reported as a lever and not landed.
   percent (D2 measured −0.6% between two binaries on the same configuration that session); the ±0.2-0.3 ms
   differences §5.1 quotes for the top-k at 4K/32K are inside it, and the 128K pair (+1.64 ms, +1.3% of the window)
   is a single A/B.
-* **The 128K top-k comparison is cross-`--max-context`** (262,144 against 131,072): the arms differ in the KV
-  allocation as well as in the dispatch.  `d3-oldtopkhist-131072` (E3) is the same-maxctx pair that separates
-  them, and its result is reported in §5.2; until it is read, the kernel's share of that +1.3% is an inference
-  from the census symbol, not a clean measurement.
+* **The 128K top-k comparison started cross-`--max-context`** (262,144 against 131,072) and now has a same-config
+  pair too (`d3-oldtopkhistc-131072`, maxctx 131,072 both sides, +1.631 ms against the cross-max-context pair's
+  +1.641 ms and the wall pair's +1.65 ms) — so the kernel's share is measured three ways, but the *wall* pair is
+  cross-session (D2's `d2-minp07-131072`) and none of the three is a repeat measurement of the same arm.
+* **E-6's sign flip between the two paths is measured, not diagnosed.**  The closure path gains 2.9-4.2% and the
+  graph path loses 2.6%, both with identical ids; the mechanism offered in §6.2 (the graph path's host publishes
+  ahead, so E-6 only adds the device-side plan) is an inference.  What would settle it: a per-layer device-side
+  timestamp for the wait kernels **on the graph path**, which this port cannot produce (a replayed graph hands the
+  driver one submission and no per-kernel timestamp — D1's own note), or a device-side counter for the spin
+  iterations, which the engine does not have.
 * **The max-context effect itself is measured at 4K only** (`d3-basearmctx-4096` against `d3-base-4096`): a
   request at 262,144 cells pins ~3.3 GB of KV state that the 4,096-cell configuration does not, and the two
   configurations' expert caches are therefore not the same size even though both report 100% residency.
